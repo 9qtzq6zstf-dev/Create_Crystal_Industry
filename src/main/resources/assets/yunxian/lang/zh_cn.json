@@ -1,8 +1,9 @@
 {
     "itemGroup.yunxian": "云仙",
-    "block.yunxian.yunxian_budding": "玫瑰石英母岩",
-    "block.yunxian.yunxian_cluster": "玫瑰石英晶簇",
-    "block.yunxian.yunxian_small_bud": "小型玫瑰石英芽",
-    "block.yunxian.yunxian_medium_bud": "中型玫瑰石英芽",
-    "block.yunxian.yunxian_large_bud": "大型玫瑰石英芽"
+    "block.yunxian.rose_quarzt_budding": "玫瑰石英母岩",
+    "block.yunxian.rose_quarzt_small_bud": "小型玫瑰石英芽",
+    "block.yunxian.rose_quarzt_medium_bud": "中型玫瑰石英芽",
+    "block.yunxian.rose_quarzt_large_bud": "大型玫瑰石英芽",
+    "block.yunxian.rose_quarzt_cluster": "玫瑰石英晶簇",
+    "block.yunxian.accelerator": "电力催生器"
 }

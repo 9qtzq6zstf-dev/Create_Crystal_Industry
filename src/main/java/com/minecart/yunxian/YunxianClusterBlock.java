@@ -11,6 +11,4 @@ public class YunxianClusterBlock extends AmethystClusterBlock {
         super(stage, height, properties);
         this.stageKey = stageKey;
     }
-
-    // 不再重写 getDrops，完全使用战利品表系统
 }

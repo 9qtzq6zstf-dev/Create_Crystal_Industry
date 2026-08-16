@@ -48,16 +48,16 @@ public class YunxianBuddingBlock extends BuddingAmethystBlock {
         // 判断当前邻居方块的类型，决定下一个要生长的阶段
         if (canGrowAt(neighborState)) {
             // 空位 → 小芽
-            nextBlock = ModBlocks.YUNXIAN_SMALL_BUD.get();
-        } else if (neighborState.is(ModBlocks.YUNXIAN_SMALL_BUD.get()) && sameFacing(neighborState, side)) {
+            nextBlock = ModBlocks.ROSE_QUARTZ_SMALL_BUD.get();
+        } else if (neighborState.is(ModBlocks.ROSE_QUARTZ_SMALL_BUD.get()) && sameFacing(neighborState, side)) {
             // 小芽（朝向正确）→ 中芽
-            nextBlock = ModBlocks.YUNXIAN_MEDIUM_BUD.get();
-        } else if (neighborState.is(ModBlocks.YUNXIAN_MEDIUM_BUD.get()) && sameFacing(neighborState, side)) {
+            nextBlock = ModBlocks.ROSE_QUARTZ_MEDIUM_BUD.get();
+        } else if (neighborState.is(ModBlocks.ROSE_QUARTZ_MEDIUM_BUD.get()) && sameFacing(neighborState, side)) {
             // 中芽（朝向正确）→ 大芽
-            nextBlock = ModBlocks.YUNXIAN_LARGE_BUD.get();
-        } else if (neighborState.is(ModBlocks.YUNXIAN_LARGE_BUD.get()) && sameFacing(neighborState, side)) {
+            nextBlock = ModBlocks.ROSE_QUARTZ_LARGE_BUD.get();
+        } else if (neighborState.is(ModBlocks.ROSE_QUARTZ_LARGE_BUD.get()) && sameFacing(neighborState, side)) {
             // 大芽（朝向正确）→ 完整簇
-            nextBlock = ModBlocks.YUNXIAN_CLUSTER.get();
+            nextBlock = ModBlocks.ROSE_QUARTZ_CLUSTER.get();
         }
 
         // 如果有下一个阶段，则更新方块

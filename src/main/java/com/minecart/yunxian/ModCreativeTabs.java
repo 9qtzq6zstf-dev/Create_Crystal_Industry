@@ -21,15 +21,16 @@ public class ModCreativeTabs {
                             // 设置标签页标题（翻译键：itemGroup.yunxian）
                             .title(Component.translatable("itemGroup.yunxian"))
                             // 设置图标（使用完整水晶簇）
-                            .icon(() -> new ItemStack(ModBlocks.YUNXIAN_CLUSTER.get()))
+                            .icon(() -> new ItemStack(ModBlocks.ROSE_QUARTZ_CLUSTER.get()))
                             // 添加物品到标签页
                             .displayItems((parameters, output) -> {
                                 // 按照你希望的顺序添加
-                                output.accept(ModBlocks.YUNXIAN_BUDDING.get());
-                                output.accept(ModBlocks.YUNXIAN_SMALL_BUD.get());
-                                output.accept(ModBlocks.YUNXIAN_MEDIUM_BUD.get());
-                                output.accept(ModBlocks.YUNXIAN_LARGE_BUD.get());
-                                output.accept(ModBlocks.YUNXIAN_CLUSTER.get());
+                                output.accept(ModBlocks.ROSE_QUARTZ_BUDDING.get());
+                                output.accept(ModBlocks.ROSE_QUARTZ_SMALL_BUD.get());
+                                output.accept(ModBlocks.ROSE_QUARTZ_MEDIUM_BUD.get());
+                                output.accept(ModBlocks.ROSE_QUARTZ_LARGE_BUD.get());
+                                output.accept(ModBlocks.ROSE_QUARTZ_CLUSTER.get());
+                                output.accept(ModBlocks.ACCELERATOR.get());
                                 // 如果你还有其他物品，比如独立物品，也可以添加
                                 // 但这里所有方块都已自动注册了 BlockItem
                             })

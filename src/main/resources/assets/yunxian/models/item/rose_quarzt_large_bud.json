@@ -1,6 +1,6 @@
 {
     "parent": "minecraft:item/generated",
     "textures": {
-        "layer0": "yunxian:block/yunxian_large_bud"
+        "layer0": "yunxian:block/rose_quarzt_large_bud"
     }
 }

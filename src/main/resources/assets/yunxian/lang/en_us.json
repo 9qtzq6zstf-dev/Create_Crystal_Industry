@@ -1,8 +1,9 @@
 {
     "itemGroup.yunxian": "YunXian",
-    "block.yunxian.yunxian_budding": "Example Budding",
-    "block.yunxian.yunxian_small_bud": "Example Cluster1",
-    "block.yunxian.yunxian_medium_bud": "Example Cluster2",
-    "block.yunxian.yunxian_large_bud": "Example Cluster3",
-    "block.yunxian.yunxian_cluster": "Example Cluster"
+    "block.yunxian.rose_quarzt_budding": "Example Budding",
+    "block.yunxian.rose_quarzt_small_bud": "Example Cluster1",
+    "block.yunxian.rose_quarzt_medium_bud": "Example Cluster2",
+    "block.yunxian.rose_quarzt_large_bud": "Example Cluster3",
+    "block.yunxian.rose_quarzt_cluster": "Example Cluster",
+    "block.yunxian.accelerator": "Example Cluster"
 }

@@ -1,6 +1,6 @@
 {
     "parent": "minecraft:item/generated",
     "textures": {
-        "layer0": "yunxian:block/yunxian_small_bud"
+        "layer0": "yunxian:block/rose_quarzt_small_bud"
     }
 }

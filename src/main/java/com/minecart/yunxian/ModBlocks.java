@@ -17,35 +17,35 @@ public class ModBlocks {
             DeferredRegister.createBlocks(Yunxian.MODID);
 
     // 注册母岩方块
-    public static final DeferredBlock<Block> YUNXIAN_BUDDING =
-            registerBlock("yunxian_budding",
+    public static final DeferredBlock<Block> ROSE_QUARTZ_BUDDING =
+            registerBlock("rose_quarzt_budding",
                     () -> new YunxianBuddingBlock(5,  // 生长概率 1/5
                             BlockBehaviour.Properties.ofFullCopy(Blocks.BUDDING_AMETHYST)
                     ));
 
-    public static final DeferredBlock<Block> YUNXIAN_SMALL_BUD =
-            registerBlock("yunxian_small_bud",
+    public static final DeferredBlock<Block> ROSE_QUARTZ_SMALL_BUD =
+            registerBlock("rose_quarzt_small_bud",
                     () -> new YunxianClusterBlock(1, 1,
                             BlockBehaviour.Properties.ofFullCopy(Blocks.SMALL_AMETHYST_BUD),
                             "small_bud"
                     ));
 
-    public static final DeferredBlock<Block> YUNXIAN_MEDIUM_BUD =
-            registerBlock("yunxian_medium_bud",
+    public static final DeferredBlock<Block> ROSE_QUARTZ_MEDIUM_BUD =
+            registerBlock("rose_quarzt_medium_bud",
                     () -> new YunxianClusterBlock(3, 2,
                             BlockBehaviour.Properties.ofFullCopy(Blocks.MEDIUM_AMETHYST_BUD),
                             "medium_bud"
                     ));
 
-    public static final DeferredBlock<Block> YUNXIAN_LARGE_BUD =
-            registerBlock("yunxian_large_bud",
+    public static final DeferredBlock<Block> ROSE_QUARTZ_LARGE_BUD =
+            registerBlock("rose_quarzt_large_bud",
                     () -> new YunxianClusterBlock(5, 3,
                             BlockBehaviour.Properties.ofFullCopy(Blocks.LARGE_AMETHYST_BUD),
                             "large_bud"
                     ));
 
-    public static final DeferredBlock<Block> YUNXIAN_CLUSTER =
-            registerBlock("yunxian_cluster",
+    public static final DeferredBlock<Block> ROSE_QUARTZ_CLUSTER =
+            registerBlock("rose_quarzt_cluster",
                     () -> new YunxianClusterBlock(7, 3,
                             BlockBehaviour.Properties.ofFullCopy(Blocks.AMETHYST_CLUSTER)
                                     .noOcclusion()
