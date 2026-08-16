@@ -1,0 +1,9 @@
+{
+    "replace": false,
+    "values": [
+        "yunxian:yunxian_small_bud",
+        "yunxian:yunxian_medium_bud",
+        "yunxian:yunxian_large_bud",
+        "yunxian:yunxian_cluster"
+    ]
+}

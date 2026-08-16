@@ -1,0 +1,24 @@
+# Gradle
+.gradle/
+build/
+gradle/
+*.log
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.settings/
+.classpath
+.project
+*.swp
+
+# Minecraft 运行环境
+run/
+logs/
+eclipse/
+bin/
+
+# 本地配置文件（如不共享）
+gradle.properties.local
+local.properties

@@ -1,0 +1,30 @@
+{
+    "variants": {
+        "facing=down": {
+            "model": "yunxian:block/yunxian_large_bud",
+            "x": 180
+        },
+        "facing=east": {
+            "model": "yunxian:block/yunxian_large_bud",
+            "x": 90,
+            "y": 90
+        },
+        "facing=north": {
+            "model": "yunxian:block/yunxian_large_bud",
+            "x": 90
+        },
+        "facing=south": {
+            "model": "yunxian:block/yunxian_large_bud",
+            "x": 90,
+            "y": 180
+        },
+        "facing=up": {
+            "model": "yunxian:block/yunxian_large_bud"
+        },
+        "facing=west": {
+            "model": "yunxian:block/yunxian_large_bud",
+            "x": 90,
+            "y": 270
+        }
+    }
+}
