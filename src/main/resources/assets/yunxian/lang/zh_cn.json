@@ -7,8 +7,13 @@
     "block.yunxian.rose_quartz_cluster": "玫瑰石英晶簇",
     "block.yunxian.accelerator": "电力催生器",
     "block.yunxian.raw_iron_budding": "粗铁母岩",
-    "block.yunxian.raw_iron_small_bud": "粗铁小芽",
-    "block.yunxian.raw_iron_medium_bud": "粗铁中芽",
-    "block.yunxian.raw_iron_large_bud": "粗铁大芽",
-    "block.yunxian.raw_iron_cluster": "粗铁晶簇"
+    "block.yunxian.raw_iron_small_bud": "小型粗铁芽",
+    "block.yunxian.raw_iron_medium_bud": "中型粗铁芽",
+    "block.yunxian.raw_iron_large_bud": "大型粗铁芽",
+    "block.yunxian.raw_iron_cluster": "粗铁晶簇",
+    "block.yunxian.raw_gold_budding": "粗金母岩",
+    "block.yunxian.raw_gold_small_bud": "小型粗金芽",
+    "block.yunxian.raw_gold_medium_bud": "中型粗金芽",
+    "block.yunxian.raw_gold_large_bud": "大型粗金芽",
+    "block.yunxian.raw_gold_cluster": "粗金晶簇"
 }
