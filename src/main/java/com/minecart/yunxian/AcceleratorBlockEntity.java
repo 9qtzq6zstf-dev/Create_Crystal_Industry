@@ -5,10 +5,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.AmethystClusterBlock;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.energy.EnergyStorage;
@@ -22,94 +19,55 @@ public class AcceleratorBlockEntity extends BlockEntity implements IEnergyStorag
     private static final int MAX_RECEIVE = 100;
     private static final int ENERGY_COST_PER_OPERATION = 10;
 
-    // ===== 能量存储 =====
-    private final EnergyStorage energyStorage;
+    // ===== 定时器配置（每 tick 工作） =====
+    private static final int INTERVAL_TICKS = 1;      // 每 tick 执行一次
+    // 不再使用概率过滤，每次都调用 randomTick
 
-    // ===== 定时器 =====
-    private static final int INTERVAL_TICKS = 10;
     private int tickCounter = 0;
+    private final EnergyStorage energyStorage;
 
     public AcceleratorBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.ACCELERATOR.get(), pos, state);
         this.energyStorage = new EnergyStorage(MAX_ENERGY, MAX_RECEIVE, 0);
     }
 
+    // ===== 核心 tick 逻辑 =====
     public void tick(Level level, BlockPos pos, BlockState state) {
         if (level.isClientSide() || !(level instanceof ServerLevel serverLevel)) {
             return;
         }
 
+        // 1. 定时器（每 tick 都工作）
         tickCounter++;
         if (tickCounter % INTERVAL_TICKS != 0) {
             return;
         }
 
+        // 2. 能量检查
         if (energyStorage.getEnergyStored() < ENERGY_COST_PER_OPERATION) {
+            // 能量不足时，更新 POWERED 为 false
+            if (state.getValue(AcceleratorBlock.POWERED)) {
+                level.setBlock(pos, state.setValue(AcceleratorBlock.POWERED, false), 3);
+            }
             return;
         }
 
+        // 3. 同步 POWERED 状态（能量充足时显示激活）
+        if (!state.getValue(AcceleratorBlock.POWERED)) {
+            level.setBlock(pos, state.setValue(AcceleratorBlock.POWERED, true), 3);
+        }
+
+        // 4. 对周围六个方向施加随机刻（无概率过滤）
         for (Direction direction : Direction.values()) {
             BlockPos neighborPos = pos.relative(direction);
             BlockState neighborState = level.getBlockState(neighborPos);
 
-            if (!(neighborState.getBlock() instanceof YunxianBuddingBlock)) {
-                continue;
-            }
-
-            energyStorage.extractEnergy(ENERGY_COST_PER_OPERATION, false);
-            simulateBuddingGrowth(serverLevel, neighborPos, neighborState, serverLevel.random);
-        }
-    }
-
-    private void simulateBuddingGrowth(ServerLevel level, BlockPos budPos, BlockState budState, RandomSource random) {
-        if (!level.getFluidState(budPos).isEmpty()) {
-            return;
+            // 调用 randomTick，由方块自己决定是否生长
+            neighborState.randomTick(serverLevel, neighborPos, serverLevel.random);
         }
 
-        if (random.nextInt(1) != 0) {
-            return;
-        }
-
-        Direction direction = Direction.getRandom(random);
-        BlockPos targetPos = budPos.relative(direction);
-        BlockState targetState = level.getBlockState(targetPos);
-
-        int clusterCount = 0;
-        for (Direction dir : Direction.values()) {
-            BlockPos neighborPos = targetPos.relative(dir);
-            BlockState neighborState = level.getBlockState(neighborPos);
-            Block block = neighborState.getBlock();
-            if (block == ModBlocks.YUNXIAN_SMALL_BUD.get() ||
-                    block == ModBlocks.YUNXIAN_MEDIUM_BUD.get() ||
-                    block == ModBlocks.YUNXIAN_LARGE_BUD.get() ||
-                    block == ModBlocks.YUNXIAN_CLUSTER.get()) {
-                clusterCount++;
-            }
-        }
-        if (clusterCount >= 4) {
-            return;
-        }
-
-        Block nextBlock = null;
-        Block targetBlock = targetState.getBlock();
-
-        if (targetState.isAir() || targetState.canBeReplaced()) {
-            nextBlock = ModBlocks.YUNXIAN_SMALL_BUD.get();
-        } else if (targetBlock == ModBlocks.YUNXIAN_SMALL_BUD.get()) {
-            nextBlock = ModBlocks.YUNXIAN_MEDIUM_BUD.get();
-        } else if (targetBlock == ModBlocks.YUNXIAN_MEDIUM_BUD.get()) {
-            nextBlock = ModBlocks.YUNXIAN_LARGE_BUD.get();
-        } else if (targetBlock == ModBlocks.YUNXIAN_LARGE_BUD.get()) {
-            nextBlock = ModBlocks.YUNXIAN_CLUSTER.get();
-        } else {
-            return;
-        }
-
-        BlockState newState = nextBlock.defaultBlockState()
-                .setValue(AmethystClusterBlock.FACING, direction)
-                .setValue(AmethystClusterBlock.WATERLOGGED, false);
-
-        level.setBlockAndUpdate(targetPos, newState);
+        // 5. 消耗能量（固定消耗，无论成功与否）
+        energyStorage.extractEnergy(ENERGY_COST_PER_OPERATION, false);
     }
 
     // ===== IEnergyStorage 实现 =====
@@ -120,7 +78,7 @@ public class AcceleratorBlockEntity extends BlockEntity implements IEnergyStorag
 
     @Override
     public int extractEnergy(int maxExtract, boolean simulate) {
-        return 0;
+        return 0; // 不允许外部提取能量
     }
 
     @Override
@@ -144,7 +102,6 @@ public class AcceleratorBlockEntity extends BlockEntity implements IEnergyStorag
     }
 
     // ===== 数据持久化 =====
-
     @Override
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
@@ -159,7 +116,7 @@ public class AcceleratorBlockEntity extends BlockEntity implements IEnergyStorag
         }
     }
 
-    // ===== 获取 Capability =====
+    // ===== 获取 Capability（用于其他模组连接） =====
     @Nullable
     public IEnergyStorage getEnergyCapability(@Nullable Direction side) {
         return this;

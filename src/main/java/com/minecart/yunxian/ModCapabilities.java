@@ -10,7 +10,6 @@ public class ModCapabilities {
     }
 
     private static void registerCapabilities(RegisterCapabilitiesEvent event) {
-        // 注册加速器的能量能力
         event.registerBlockEntity(
                 Capabilities.EnergyStorage.BLOCK,
                 ModBlockEntities.ACCELERATOR.get(),
