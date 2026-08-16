@@ -12,6 +12,10 @@ repositories {
     maven {
         url = "https://maven.createmod.net"
     }
+    maven {
+        url = "https://maven.ithundxr.dev/snapshots"
+    }
+    mavenCentral()
 }
 
 base {
@@ -98,7 +102,21 @@ sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 
 dependencies {
-    implementation("com.simibubi.create:create-${minecraft_version}:${create_version}")
+
+    // 机械动力 (slim 版本)
+    implementation("com.simibubi.create:create-${minecraft_version}:${create_version}:slim") {
+        transitive = false
+    }
+
+    // Ponder (正确的坐标)
+    implementation("net.createmod.ponder:ponder-neoforge:${ponder_version}+mc${minecraft_version}")
+
+    // Flywheel (正确的坐标，分为编译时和运行时)
+    compileOnly("dev.engine-room.flywheel:flywheel-neoforge-api-${minecraft_version}:${flywheel_version}")
+    runtimeOnly("dev.engine-room.flywheel:flywheel-neoforge-${minecraft_version}:${flywheel_version}")
+
+    // Registrate
+    implementation("com.tterrag.registrate:Registrate:${registrate_version}")
 }
 
 // This block of code expands all declared replace properties in the specified resource targets.
