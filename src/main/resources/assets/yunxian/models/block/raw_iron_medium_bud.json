@@ -2,6 +2,6 @@
     "parent": "block/cross",
     "render_type": "cutout",
     "textures": {
-        "cross": "yunxian:block/rose_quarzt_medium_bud"
+        "cross": "yunxian:block/raw_iron_medium_bud"
     }
 }

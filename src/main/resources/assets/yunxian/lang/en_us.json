@@ -1,9 +1,14 @@
 {
     "itemGroup.yunxian": "YunXian",
-    "block.yunxian.rose_quarzt_budding": "Example Budding",
-    "block.yunxian.rose_quarzt_small_bud": "Example Cluster1",
-    "block.yunxian.rose_quarzt_medium_bud": "Example Cluster2",
-    "block.yunxian.rose_quarzt_large_bud": "Example Cluster3",
-    "block.yunxian.rose_quarzt_cluster": "Example Cluster",
-    "block.yunxian.accelerator": "Example Cluster"
+    "block.yunxian.rose_quartz_budding": "Rose Quarzt Budding",
+    "block.yunxian.rose_quartz_small_bud": "Rose Quarzt Small Bud",
+    "block.yunxian.rose_quartz_medium_bud": "Rose Quarzt Medium Bud",
+    "block.yunxian.rose_quartz_large_bud": "Rose Quarzt Large Bud",
+    "block.yunxian.rose_quartz_cluster": "Rose Quarzt Cluster",
+    "block.yunxian.accelerator": "Accelerator",
+    "block.yunxian.raw_iron_budding": "Raw Iron Budding",
+    "block.yunxian.raw_iron_small_bud": "Raw Iron Small Bud",
+    "block.yunxian.raw_iron_medium_bud": "Raw Iron Medium Bud",
+    "block.yunxian.raw_iron_large_bud": "Raw Iron Large Bud",
+    "block.yunxian.raw_iron_cluster": "Raw Iron Cluster"
 }

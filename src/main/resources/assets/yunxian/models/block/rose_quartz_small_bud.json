@@ -1,0 +1,7 @@
+{
+    "parent": "block/cross",
+    "render_type": "cutout",
+    "textures": {
+        "cross": "yunxian:block/rose_quartz_small_bud"
+    }
+}
