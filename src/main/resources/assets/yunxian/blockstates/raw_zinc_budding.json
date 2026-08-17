@@ -1,5 +1,5 @@
 {
     "variants": {
-        "": { "model": "yunxian:block/raw_zinc_budding" }
+        "": { "model": "yunxian:block/raw_zinc/raw_zinc_budding" }
     }
 }

@@ -2,6 +2,6 @@
     "parent": "block/cross",
     "render_type": "cutout",
     "textures": {
-        "cross": "yunxian:block/raw_zinc_cluster"
+        "cross": "yunxian:block/raw_zinc/raw_zinc_cluster"
     }
 }

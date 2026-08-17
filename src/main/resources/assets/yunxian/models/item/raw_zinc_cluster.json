@@ -1,6 +1,6 @@
 {
     "parent": "minecraft:item/generated",
     "textures": {
-        "layer0": "yunxian:block/raw_zinc_cluster"
+        "layer0": "yunxian:block/raw_zinc/raw_zinc_cluster"
     }
 }

@@ -1,5 +1,5 @@
 {
     "variants": {
-        "": { "model": "yunxian:block/accelerator" }
+        "": { "model": "yunxian:block/accelerator/accelerator" }
     }
 }

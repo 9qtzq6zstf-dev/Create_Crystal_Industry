@@ -1,5 +1,5 @@
 {
     "variants": {
-        "": { "model": "yunxian:block/raw_gold_budding" }
+        "": { "model": "yunxian:block/raw_gold/raw_gold_budding" }
     }
 }

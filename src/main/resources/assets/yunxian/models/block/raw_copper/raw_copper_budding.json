@@ -1,6 +1,6 @@
 {
     "parent": "minecraft:block/cube_all",
     "textures": {
-        "all": "yunxian:block/raw_copper_budding"
+        "all": "yunxian:block/raw_copper/raw_copper_budding"
     }
 }
