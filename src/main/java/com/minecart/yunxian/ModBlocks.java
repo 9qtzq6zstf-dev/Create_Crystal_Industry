@@ -1,5 +1,7 @@
 package com.minecart.yunxian;
 
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
@@ -188,6 +190,51 @@ public class ModBlocks {
                             RAW_COPPER_CLUSTER.get(),
                             Blocks.COPPER_ORE,         // 石头→铜矿石
                             Blocks.DEEPSLATE_COPPER_ORE // 深板岩→深层铜矿石
+                    ));
+    // ===== 粗锌系列 =====
+    public static final DeferredBlock<Block> RAW_ZINC_SMALL_BUD =
+            registerBlock("raw_zinc_small_bud",
+                    () -> new YunxianClusterBlock(1, 1,
+                            BlockBehaviour.Properties.ofFullCopy(Blocks.SMALL_AMETHYST_BUD),
+                            "small_bud"
+                    ));
+
+    public static final DeferredBlock<Block> RAW_ZINC_MEDIUM_BUD =
+            registerBlock("raw_zinc_medium_bud",
+                    () -> new YunxianClusterBlock(3, 2,
+                            BlockBehaviour.Properties.ofFullCopy(Blocks.MEDIUM_AMETHYST_BUD),
+                            "medium_bud"
+                    ));
+
+    public static final DeferredBlock<Block> RAW_ZINC_LARGE_BUD =
+            registerBlock("raw_zinc_large_bud",
+                    () -> new YunxianClusterBlock(5, 3,
+                            BlockBehaviour.Properties.ofFullCopy(Blocks.LARGE_AMETHYST_BUD),
+                            "large_bud"
+                    ));
+
+    public static final DeferredBlock<Block> RAW_ZINC_CLUSTER =
+            registerBlock("raw_zinc_cluster",
+                    () -> new YunxianClusterBlock(7, 3,
+                            BlockBehaviour.Properties.ofFullCopy(Blocks.AMETHYST_CLUSTER)
+                                    .noOcclusion()
+                                    .isRedstoneConductor((state, level, pos) -> false)
+                                    .isSuffocating((state, level, pos) -> false)
+                                    .isViewBlocking((state, level, pos) -> false),
+                            "cluster"
+                    ));
+
+    public static final DeferredBlock<Block> RAW_ZINC_BUDDING =
+            registerBlock("raw_zinc_budding",
+                    () -> new OreConvertingBuddingBlock(5,
+                            BlockBehaviour.Properties.ofFullCopy(Blocks.BUDDING_AMETHYST),
+                            RAW_ZINC_SMALL_BUD.get(),
+                            RAW_ZINC_MEDIUM_BUD.get(),
+                            RAW_ZINC_LARGE_BUD.get(),
+                            RAW_ZINC_CLUSTER.get(),
+                            // 锌矿石（机械动力物品）
+                            BuiltInRegistries.BLOCK.get(ResourceLocation.parse("create:zinc_ore")),
+                            BuiltInRegistries.BLOCK.get(ResourceLocation.parse("create:deepslate_zinc_ore"))
                     ));
     //催生器
     // ===== 催生器 =====

@@ -20,5 +20,10 @@
     "block.yunxian.raw_copper_small_bud": "Raw Copper Small Bud",
     "block.yunxian.raw_copper_medium_bud": "Raw Copper Medium Bud",
     "block.yunxian.raw_copper_large_bud": "Raw Copper Large Bud",
-    "block.yunxian.raw_copper_cluster": "Raw Copper Cluster"
+    "block.yunxian.raw_copper_cluster": "Raw Copper Cluster",
+    "block.yunxian.raw_zinc_budding": "Raw Zinc Budding",
+    "block.yunxian.raw_zinc_small_bud": "Raw Zinc Small Bud",
+    "block.yunxian.raw_zinc_medium_bud": "Raw Zinc Medium Bud",
+    "block.yunxian.raw_zinc_large_bud": "Raw Zinc Large Bud",
+    "block.yunxian.raw_zinc_cluster": "Raw Zinc Cluster"
 }

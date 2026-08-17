@@ -1,0 +1,30 @@
+{
+    "variants": {
+        "facing=down": {
+            "model": "yunxian:block/raw_zinc_small_bud",
+            "x": 180
+        },
+        "facing=east": {
+            "model": "yunxian:block/raw_zinc_small_bud",
+            "x": 90,
+            "y": 90
+        },
+        "facing=north": {
+            "model": "yunxian:block/raw_zinc_small_bud",
+            "x": 90
+        },
+        "facing=south": {
+            "model": "yunxian:block/raw_zinc_small_bud",
+            "x": 90,
+            "y": 180
+        },
+        "facing=up": {
+            "model": "yunxian:block/raw_zinc_small_bud"
+        },
+        "facing=west": {
+            "model": "yunxian:block/raw_zinc_small_bud",
+            "x": 90,
+            "y": 270
+        }
+    }
+}

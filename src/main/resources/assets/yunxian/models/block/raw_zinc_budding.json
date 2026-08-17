@@ -1,0 +1,6 @@
+{
+    "parent": "minecraft:block/cube_all",
+    "textures": {
+        "all": "yunxian:block/raw_zinc_budding"
+    }
+}

@@ -15,6 +15,11 @@
         "yunxian:raw_gold_small_bud",
         "yunxian:raw_gold_medium_bud",
         "yunxian:raw_gold_large_bud",
-        "yunxian:raw_gold_cluster"
+        "yunxian:raw_gold_cluster",
+        "yunxian:raw_zinc_budding",
+        "yunxian:raw_zinc_small_bud",
+        "yunxian:raw_zinc_medium_bud",
+        "yunxian:raw_zinc_large_bud",
+        "yunxian:raw_zinc_cluster"
     ]
 }

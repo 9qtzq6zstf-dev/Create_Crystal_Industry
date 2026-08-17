@@ -25,6 +25,12 @@
         "yunxian:raw_copper_large_bud",
         "yunxian:raw_copper_cluster",
         
+        "yunxian:raw_zinc_budding",
+        "yunxian:raw_zinc_small_bud",
+        "yunxian:raw_zinc_medium_bud",
+        "yunxian:raw_zinc_large_bud",
+        "yunxian:raw_zinc_cluster",
+        
         "yunxian:accelerator"
     ]
 }
