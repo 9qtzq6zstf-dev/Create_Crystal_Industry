@@ -58,6 +58,7 @@ public class ModBlocks {
                             ROSE_QUARTZ_CLUSTER.get()
                     ));
     // ===== 粗铁系列 =====
+    // ===== 粗铁系列 =====
     public static final DeferredBlock<Block> RAW_IRON_SMALL_BUD =
             registerBlock("raw_iron_small_bud",
                     () -> new YunxianClusterBlock(1, 1,
@@ -89,15 +90,16 @@ public class ModBlocks {
                                     .isViewBlocking((state, level, pos) -> false),
                             "cluster"
                     ));
-
     public static final DeferredBlock<Block> RAW_IRON_BUDDING =
             registerBlock("raw_iron_budding",
-                    () -> new GenericBuddingBlock(5,
+                    () -> new OreConvertingBuddingBlock(5,
                             BlockBehaviour.Properties.ofFullCopy(Blocks.BUDDING_AMETHYST),
                             RAW_IRON_SMALL_BUD.get(),
                             RAW_IRON_MEDIUM_BUD.get(),
                             RAW_IRON_LARGE_BUD.get(),
-                            RAW_IRON_CLUSTER.get()
+                            RAW_IRON_CLUSTER.get(),
+                            Blocks.IRON_ORE,           // 石头→铁矿石
+                            Blocks.DEEPSLATE_IRON_ORE  // 深板岩→深层铁矿石
                     ));
     // ===== 粗金系列 =====
     public static final DeferredBlock<Block> RAW_GOLD_SMALL_BUD =
@@ -134,12 +136,14 @@ public class ModBlocks {
 
     public static final DeferredBlock<Block> RAW_GOLD_BUDDING =
             registerBlock("raw_gold_budding",
-                    () -> new GenericBuddingBlock(5,
+                    () -> new OreConvertingBuddingBlock(5,
                             BlockBehaviour.Properties.ofFullCopy(Blocks.BUDDING_AMETHYST),
                             RAW_GOLD_SMALL_BUD.get(),
                             RAW_GOLD_MEDIUM_BUD.get(),
                             RAW_GOLD_LARGE_BUD.get(),
-                            RAW_GOLD_CLUSTER.get()
+                            RAW_GOLD_CLUSTER.get(),
+                            Blocks.GOLD_ORE,           // 石头→金矿石
+                            Blocks.DEEPSLATE_GOLD_ORE  // 深板岩→深层金矿石
                     ));
     // ===== 粗铜系列 =====
     public static final DeferredBlock<Block> RAW_COPPER_SMALL_BUD =
@@ -176,12 +180,14 @@ public class ModBlocks {
 
     public static final DeferredBlock<Block> RAW_COPPER_BUDDING =
             registerBlock("raw_copper_budding",
-                    () -> new GenericBuddingBlock(5,
+                    () -> new OreConvertingBuddingBlock(5,
                             BlockBehaviour.Properties.ofFullCopy(Blocks.BUDDING_AMETHYST),
                             RAW_COPPER_SMALL_BUD.get(),
                             RAW_COPPER_MEDIUM_BUD.get(),
                             RAW_COPPER_LARGE_BUD.get(),
-                            RAW_COPPER_CLUSTER.get()
+                            RAW_COPPER_CLUSTER.get(),
+                            Blocks.COPPER_ORE,         // 石头→铜矿石
+                            Blocks.DEEPSLATE_COPPER_ORE // 深板岩→深层铜矿石
                     ));
     //催生器
     // ===== 催生器 =====
