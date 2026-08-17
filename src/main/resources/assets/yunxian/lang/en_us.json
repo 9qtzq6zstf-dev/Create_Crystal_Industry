@@ -25,5 +25,10 @@
     "block.yunxian.raw_zinc_small_bud": "Raw Zinc Small Bud",
     "block.yunxian.raw_zinc_medium_bud": "Raw Zinc Medium Bud",
     "block.yunxian.raw_zinc_large_bud": "Raw Zinc Large Bud",
-    "block.yunxian.raw_zinc_cluster": "Raw Zinc Cluster"
+    "block.yunxian.raw_zinc_cluster": "Raw Zinc Cluster",
+    "block.yunxian.echo_budding": "Echo Budding",
+    "block.yunxian.echo_small_bud": "Echo Small Bud",
+    "block.yunxian.echo_medium_bud": "Echo Medium Bud",
+    "block.yunxian.echo_large_bud": "Echo Large Bud",
+    "block.yunxian.echo_cluster": "Echo Cluster"
 }

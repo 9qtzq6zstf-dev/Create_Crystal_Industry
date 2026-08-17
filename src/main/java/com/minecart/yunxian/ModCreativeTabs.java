@@ -50,6 +50,11 @@ public class ModCreativeTabs {
                                 output.accept(ModBlocks.RAW_ZINC_MEDIUM_BUD.get());
                                 output.accept(ModBlocks.RAW_ZINC_LARGE_BUD.get());
                                 output.accept(ModBlocks.RAW_ZINC_CLUSTER.get());
+                                output.accept(ModBlocks.ECHO_BUDDING.get());
+                                output.accept(ModBlocks.ECHO_SMALL_BUD.get());
+                                output.accept(ModBlocks.ECHO_MEDIUM_BUD.get());
+                                output.accept(ModBlocks.ECHO_LARGE_BUD.get());
+                                output.accept(ModBlocks.ECHO_CLUSTER.get());
                                 output.accept(ModBlocks.ACCELERATOR.get());
                                 output.accept(ModBlocks.SMART_DRILL.get());
                                 // 如果你还有其他物品，比如独立物品，也可以添加

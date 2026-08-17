@@ -25,5 +25,10 @@
     "block.yunxian.raw_zinc_small_bud": "小型粗锌芽",
     "block.yunxian.raw_zinc_medium_bud": "中型粗锌芽",
     "block.yunxian.raw_zinc_large_bud": "大型粗锌芽",
-    "block.yunxian.raw_zinc_cluster": "粗锌晶簇"
+    "block.yunxian.raw_zinc_cluster": "粗锌晶簇",
+    "block.yunxian.echo_budding": "回响母岩",
+    "block.yunxian.echo_small_bud": "小型回响芽",
+    "block.yunxian.echo_medium_bud": "中型回响芽",
+    "block.yunxian.echo_large_bud": "大型回响芽",
+    "block.yunxian.echo_cluster": "回响晶簇"
 }

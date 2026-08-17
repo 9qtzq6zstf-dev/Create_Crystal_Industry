@@ -20,6 +20,11 @@
         "yunxian:raw_zinc_small_bud",
         "yunxian:raw_zinc_medium_bud",
         "yunxian:raw_zinc_large_bud",
-        "yunxian:raw_zinc_cluster"
+        "yunxian:raw_zinc_cluster",
+        "yunxian:echo_budding",
+        "yunxian:echo_small_bud",
+        "yunxian:echo_medium_bud",
+        "yunxian:echo_large_bud",
+        "yunxian:echo_cluster"
     ]
 }

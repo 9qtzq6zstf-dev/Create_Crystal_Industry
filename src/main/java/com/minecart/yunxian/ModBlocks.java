@@ -236,6 +236,48 @@ public class ModBlocks {
                             BuiltInRegistries.BLOCK.get(ResourceLocation.parse("create:zinc_ore")),
                             BuiltInRegistries.BLOCK.get(ResourceLocation.parse("create:deepslate_zinc_ore"))
                     ));
+    // ===== Echo系列 =====
+    public static final DeferredBlock<Block> ECHO_SMALL_BUD =
+            registerBlock("echo_small_bud",
+                    () -> new YunxianClusterBlock(1, 1,
+                            BlockBehaviour.Properties.ofFullCopy(Blocks.SMALL_AMETHYST_BUD),
+                            "small_bud"
+                    ));
+
+    public static final DeferredBlock<Block> ECHO_MEDIUM_BUD =
+            registerBlock("echo_medium_bud",
+                    () -> new YunxianClusterBlock(3, 2,
+                            BlockBehaviour.Properties.ofFullCopy(Blocks.MEDIUM_AMETHYST_BUD),
+                            "medium_bud"
+                    ));
+
+    public static final DeferredBlock<Block> ECHO_LARGE_BUD =
+            registerBlock("echo_large_bud",
+                    () -> new YunxianClusterBlock(5, 3,
+                            BlockBehaviour.Properties.ofFullCopy(Blocks.LARGE_AMETHYST_BUD),
+                            "large_bud"
+                    ));
+
+    public static final DeferredBlock<Block> ECHO_CLUSTER =
+            registerBlock("echo_cluster",
+                    () -> new YunxianClusterBlock(7, 3,
+                            BlockBehaviour.Properties.ofFullCopy(Blocks.AMETHYST_CLUSTER)
+                                    .noOcclusion()
+                                    .isRedstoneConductor((state, level, pos) -> false)
+                                    .isSuffocating((state, level, pos) -> false)
+                                    .isViewBlocking((state, level, pos) -> false),
+                            "cluster"
+                    ));
+
+    public static final DeferredBlock<Block> ECHO_BUDDING =
+            registerBlock("echo_budding",
+                    () -> new GenericBuddingBlock(5,
+                            BlockBehaviour.Properties.ofFullCopy(Blocks.BUDDING_AMETHYST),
+                            ECHO_SMALL_BUD.get(),
+                            ECHO_MEDIUM_BUD.get(),
+                            ECHO_LARGE_BUD.get(),
+                            ECHO_CLUSTER.get()
+                    ));
     //催生器
     // ===== 催生器 =====
     public static final DeferredBlock<Block> ACCELERATOR =
