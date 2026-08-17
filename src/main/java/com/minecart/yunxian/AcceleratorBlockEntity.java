@@ -15,12 +15,12 @@ import org.jetbrains.annotations.Nullable;
 public class AcceleratorBlockEntity extends BlockEntity implements IEnergyStorage {
 
     // ===== 能量配置 =====
-    private static final int MAX_ENERGY = 1000;
+    private static final int MAX_ENERGY = 10000;
     private static final int MAX_RECEIVE = 100;
-    private static final int ENERGY_COST_PER_OPERATION = 10;
+    private static final int ENERGY_COST_PER_OPERATION = 100;
 
     // ===== 定时器配置 =====
-    private static final int INTERVAL_TICKS = 1;
+    private static final int INTERVAL_TICKS = 3;
 
     private int tickCounter = 0;
     private final EnergyStorage energyStorage;
