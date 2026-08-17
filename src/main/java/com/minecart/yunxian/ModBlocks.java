@@ -247,6 +247,13 @@ public class ModBlocks {
                                     .isSuffocating((state, level, pos) -> false)
                                     .isViewBlocking((state, level, pos) -> false)
                     ));
+    //智能钻头
+    public static final DeferredBlock<Block> SMART_DRILL =
+            registerBlock("smart_drill",
+                    () -> new SmartDrillBlock(
+                            BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK)
+                                    .noOcclusion()
+                    ));
 
 
     // 辅助方法：同时注册方块和对应的物品

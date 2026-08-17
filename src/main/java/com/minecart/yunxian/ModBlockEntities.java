@@ -19,4 +19,10 @@ public class ModBlockEntities {
     public static void register(IEventBus modEventBus) {
         BLOCK_ENTITIES.register(modEventBus);
     }
+
+    public static final Supplier<BlockEntityType<SmartDrillBlockEntity>> SMART_DRILL =
+            BLOCK_ENTITIES.register("smart_drill",
+                    () -> BlockEntityType.Builder.of(SmartDrillBlockEntity::new,
+                            ModBlocks.SMART_DRILL.get()).build(null));
+
 }
