@@ -40,6 +40,11 @@ public class ModCreativeTabs {
                                 output.accept(ModBlocks.RAW_GOLD_MEDIUM_BUD.get());
                                 output.accept(ModBlocks.RAW_GOLD_LARGE_BUD.get());
                                 output.accept(ModBlocks.RAW_GOLD_CLUSTER.get());
+                                output.accept(ModBlocks.RAW_COPPER_BUDDING.get());
+                                output.accept(ModBlocks.RAW_COPPER_SMALL_BUD.get());
+                                output.accept(ModBlocks.RAW_COPPER_MEDIUM_BUD.get());
+                                output.accept(ModBlocks.RAW_COPPER_LARGE_BUD.get());
+                                output.accept(ModBlocks.RAW_COPPER_CLUSTER.get());
                                 output.accept(ModBlocks.ACCELERATOR.get());
                                 // 如果你还有其他物品，比如独立物品，也可以添加
                                 // 但这里所有方块都已自动注册了 BlockItem

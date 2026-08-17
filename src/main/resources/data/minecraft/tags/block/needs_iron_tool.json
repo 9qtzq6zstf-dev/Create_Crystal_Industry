@@ -1,18 +1,16 @@
 {
     "replace": false,
     "values": [
-        "yunxian:rose_quarzt_small_bud",
-        "yunxian:rose_quarzt_medium_bud",
-        "yunxian:rose_quarzt_large_bud",
-        "yunxian:rose_quarzt_cluster",
-        "yunxian:rose_quarzt_budding",
-        
+        "yunxian:rose_quartz_budding",
+        "yunxian:rose_quartz_small_bud",
+        "yunxian:rose_quartz_medium_bud",
+        "yunxian:rose_quartz_large_bud",
+        "yunxian:rose_quartz_cluster",
         "yunxian:raw_iron_budding",
         "yunxian:raw_iron_small_bud",
         "yunxian:raw_iron_medium_bud",
         "yunxian:raw_iron_large_bud",
         "yunxian:raw_iron_cluster",
-        
         "yunxian:raw_gold_budding",
         "yunxian:raw_gold_small_bud",
         "yunxian:raw_gold_medium_bud",

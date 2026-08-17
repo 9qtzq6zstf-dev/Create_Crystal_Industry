@@ -141,6 +141,48 @@ public class ModBlocks {
                             RAW_GOLD_LARGE_BUD.get(),
                             RAW_GOLD_CLUSTER.get()
                     ));
+    // ===== 粗铜系列 =====
+    public static final DeferredBlock<Block> RAW_COPPER_SMALL_BUD =
+            registerBlock("raw_copper_small_bud",
+                    () -> new YunxianClusterBlock(1, 1,
+                            BlockBehaviour.Properties.ofFullCopy(Blocks.SMALL_AMETHYST_BUD),
+                            "small_bud"
+                    ));
+
+    public static final DeferredBlock<Block> RAW_COPPER_MEDIUM_BUD =
+            registerBlock("raw_copper_medium_bud",
+                    () -> new YunxianClusterBlock(3, 2,
+                            BlockBehaviour.Properties.ofFullCopy(Blocks.MEDIUM_AMETHYST_BUD),
+                            "medium_bud"
+                    ));
+
+    public static final DeferredBlock<Block> RAW_COPPER_LARGE_BUD =
+            registerBlock("raw_copper_large_bud",
+                    () -> new YunxianClusterBlock(5, 3,
+                            BlockBehaviour.Properties.ofFullCopy(Blocks.LARGE_AMETHYST_BUD),
+                            "large_bud"
+                    ));
+
+    public static final DeferredBlock<Block> RAW_COPPER_CLUSTER =
+            registerBlock("raw_copper_cluster",
+                    () -> new YunxianClusterBlock(7, 3,
+                            BlockBehaviour.Properties.ofFullCopy(Blocks.AMETHYST_CLUSTER)
+                                    .noOcclusion()
+                                    .isRedstoneConductor((state, level, pos) -> false)
+                                    .isSuffocating((state, level, pos) -> false)
+                                    .isViewBlocking((state, level, pos) -> false),
+                            "cluster"
+                    ));
+
+    public static final DeferredBlock<Block> RAW_COPPER_BUDDING =
+            registerBlock("raw_copper_budding",
+                    () -> new GenericBuddingBlock(5,
+                            BlockBehaviour.Properties.ofFullCopy(Blocks.BUDDING_AMETHYST),
+                            RAW_COPPER_SMALL_BUD.get(),
+                            RAW_COPPER_MEDIUM_BUD.get(),
+                            RAW_COPPER_LARGE_BUD.get(),
+                            RAW_COPPER_CLUSTER.get()
+                    ));
     //催生器
     // ===== 催生器 =====
     public static final DeferredBlock<Block> ACCELERATOR =
