@@ -1,12 +1,12 @@
 {
+	"format_version": "1.21.11",
 	"credit": "Made with Blockbench",
 	"parent": "block/block",
 	"textures": {
-		"4": "create:block/mechanical_drill_top",
-		"10": "create:block/andesite_casing_very_short",
-		"gearbox_top": "create:block/gearbox_top",
-		"particle": "create:block/gearbox",
-		"gearbox": "create:block/gearbox"
+		"4": "yunxian:block/smart_drill/mechanical_drill_top",
+		"10": "yunxian:block/smart_drill/brass_casing_very_short",
+		"particle": "yunxian:block/smart_drill/brass_gearbox",
+		"gearbox": "yunxian:block/smart_drill/brass_gearbox"
 	},
 	"elements": [
 		{
@@ -28,7 +28,7 @@
 				"south": {"uv": [0, 6, 16, 16], "texture": "#10"},
 				"west": {"uv": [14, 6, 16, 16], "texture": "#10"},
 				"up": {"uv": [0, 14, 16, 16], "texture": "#4"},
-				"down": {"uv": [0, 14, 16, 16], "rotation": 180, "texture": "#gearbox_top"}
+				"down": {"uv": [0, 14, 16, 16], "rotation": 180, "texture": "#gearbox"}
 			}
 		},
 		{
@@ -41,7 +41,7 @@
 				"south": {"uv": [0, 6, 16, 16], "texture": "#10"},
 				"west": {"uv": [0, 6, 2, 16], "texture": "#10"},
 				"up": {"uv": [0, 0, 16, 2], "texture": "#4"},
-				"down": {"uv": [0, 0, 16, 2], "rotation": 180, "texture": "#gearbox_top"}
+				"down": {"uv": [0, 0, 16, 2], "rotation": 180, "texture": "#gearbox"}
 			}
 		},
 		{
@@ -52,7 +52,7 @@
 				"east": {"uv": [2, 6, 14, 16], "texture": "#10"},
 				"west": {"uv": [2, 6, 14, 16], "texture": "#10"},
 				"up": {"uv": [0, 2, 2, 14], "texture": "#4"},
-				"down": {"uv": [14, 2, 16, 14], "rotation": 180, "texture": "#gearbox_top"}
+				"down": {"uv": [14, 2, 16, 14], "rotation": 180, "texture": "#gearbox"}
 			}
 		},
 		{
@@ -63,7 +63,7 @@
 				"east": {"uv": [2, 6, 14, 16], "texture": "#10"},
 				"west": {"uv": [2, 6, 14, 16], "texture": "#10"},
 				"up": {"uv": [14, 2, 16, 14], "texture": "#4"},
-				"down": {"uv": [0, 2, 2, 14], "rotation": 180, "texture": "#gearbox_top"}
+				"down": {"uv": [0, 2, 2, 14], "rotation": 180, "texture": "#gearbox"}
 			}
 		}
 	],
@@ -71,6 +71,7 @@
 		{
 			"name": "casing",
 			"origin": [8, 8, 8],
+			"scope": 0,
 			"color": 0,
 			"children": [0, 1, 2, 3, 4]
 		}
