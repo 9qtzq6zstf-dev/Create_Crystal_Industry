@@ -33,7 +33,7 @@
     "block.create_crystal_industry.echo_cluster": "Echo Cluster",
     "block.create_crystal_industry.smart_drill": "Smart Drill",
     "create_crystal_industry.smart_drill.filter": "Mining Filter",
-    "create_crystal_industry.smart_drill.mode": "Harvesting Mode",
+    "create.create_crystal_industry.smart_drill.mode": "Harvesting Mode",
     "create_crystal_industry.smart_drill.mode.normal": "Normal Harvesting",
     "create_crystal_industry.smart_drill.mode.precise": "Silk Touch Harvesting"
 }

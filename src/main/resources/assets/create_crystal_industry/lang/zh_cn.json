@@ -33,7 +33,7 @@
     "block.create_crystal_industry.echo_cluster": "回响晶簇",
     "block.create_crystal_industry.smart_drill": "智能钻头",
     "create_crystal_industry.smart_drill.filter": "挖掘过滤",
-    "create_crystal_industry.smart_drill.mode": "采集模式",
+    "create.create_crystal_industry.smart_drill.mode": "采集模式切换",
     "create_crystal_industry.smart_drill.mode.normal": "普通采集",
     "create_crystal_industry.smart_drill.mode.precise": "精准采集"
 }

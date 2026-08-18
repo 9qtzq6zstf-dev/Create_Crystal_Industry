@@ -2,17 +2,13 @@ package com.minecart.yunxian;
 
 import com.simibubi.create.content.kinetics.drill.DrillBlockEntity;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
-import com.simibubi.create.foundation.blockEntity.behaviour.filtering.FilteringBehaviour;
 import com.simibubi.create.foundation.blockEntity.behaviour.scrollValue.INamedIconOptions;
-import com.simibubi.create.foundation.blockEntity.behaviour.scrollValue.ScrollOptionBehaviour;
 import com.simibubi.create.foundation.gui.AllIcons;
 import com.simibubi.create.foundation.utility.BlockHelper;
 import net.createmod.catnip.math.VecHelper;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
@@ -25,8 +21,7 @@ import net.minecraft.world.phys.Vec3;
 import java.util.List;
 
 public class SmartDrillBlockEntity extends DrillBlockEntity {
-    private FilteringBehaviour filtering;
-    private ScrollOptionBehaviour<DrillMode> mode;
+    private SmartDrillFilterBehaviour filtering;
 
     public SmartDrillBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.SMART_DRILL.get(), pos, state);
@@ -36,21 +31,13 @@ public class SmartDrillBlockEntity extends DrillBlockEntity {
     public void addBehaviours(List<BlockEntityBehaviour> behaviours) {
         super.addBehaviours(behaviours);
 
-        filtering = new FilteringBehaviour(
+        filtering = new SmartDrillFilterBehaviour(
                 this,
-                new SmartDrillValueBoxTransform(SmartDrillValueBoxTransform.Slot.FILTER)
-        ).withCallback(stack -> destroyNextTick());
+                new SmartDrillValueBoxTransform()
+        ).withCallback(stack -> destroyNextTick())
+                .withModeCallback(mode -> destroyNextTick());
         filtering.setLabel(Component.translatable("create_crystal_industry.smart_drill.filter"));
         behaviours.add(filtering);
-
-        mode = new ScrollOptionBehaviour<>(
-                DrillMode.class,
-                Component.translatable("create_crystal_industry.smart_drill.mode"),
-                this,
-                new SmartDrillValueBoxTransform(SmartDrillValueBoxTransform.Slot.MODE)
-        );
-        mode.withCallback(value -> destroyNextTick());
-        behaviours.add(mode);
     }
 
     @Override
@@ -70,7 +57,7 @@ public class SmartDrillBlockEntity extends DrillBlockEntity {
 
     @Override
     public void onBlockBroken(BlockState stateToBreak) {
-        if (mode == null || mode.get() == DrillMode.NORMAL) {
+        if (filtering == null || filtering.getMode() == DrillMode.NORMAL) {
             super.onBlockBroken(stateToBreak);
             return;
         }
