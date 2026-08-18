@@ -30,5 +30,11 @@
     "block.create_crystal_industry.echo_small_bud": "Echo Small Bud",
     "block.create_crystal_industry.echo_medium_bud": "Echo Medium Bud",
     "block.create_crystal_industry.echo_large_bud": "Echo Large Bud",
-    "block.create_crystal_industry.echo_cluster": "Echo Cluster"
+    "block.create_crystal_industry.echo_cluster": "Echo Cluster",
+    "block.create_crystal_industry.smart_drill": "Smart Drill",
+    "create_crystal_industry.smart_drill.filter": "Mining Filter",
+    "create_crystal_industry.smart_drill.mode": "Harvesting Mode",
+    "create_crystal_industry.smart_drill.mode.normal": "Normal Harvesting",
+    "create_crystal_industry.smart_drill.mode.precise": "Silk Touch Harvesting"
 }
+

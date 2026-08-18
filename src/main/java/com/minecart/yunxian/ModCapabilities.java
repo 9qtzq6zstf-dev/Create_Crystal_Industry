@@ -4,7 +4,10 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 
-public class ModCapabilities {
+public final class ModCapabilities {
+    private ModCapabilities() {
+    }
+
     public static void register(IEventBus modEventBus) {
         modEventBus.addListener(ModCapabilities::registerCapabilities);
     }
@@ -13,7 +16,7 @@ public class ModCapabilities {
         event.registerBlockEntity(
                 Capabilities.EnergyStorage.BLOCK,
                 ModBlockEntities.ACCELERATOR.get(),
-                (be, side) -> be.getEnergyCapability(side)
+                (blockEntity, side) -> blockEntity.getEnergyCapability(side)
         );
     }
 }

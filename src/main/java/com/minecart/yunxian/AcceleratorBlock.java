@@ -1,7 +1,6 @@
 package com.minecart.yunxian;
 
 import com.mojang.serialization.MapCodec;
-import com.simibubi.create.content.equipment.wrench.IWrenchable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
@@ -18,14 +17,14 @@ import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import org.jetbrains.annotations.Nullable;
 
-public class AcceleratorBlock extends BaseEntityBlock implements IWrenchable {
+public class AcceleratorBlock extends BaseEntityBlock {
     public static final MapCodec<AcceleratorBlock> CODEC = simpleCodec(AcceleratorBlock::new);
     public static final DirectionProperty FACING = BlockStateProperties.FACING;
     public static final BooleanProperty POWERED = BooleanProperty.create("powered");
 
     public AcceleratorBlock(Properties properties) {
         super(properties);
-        this.registerDefaultState(this.defaultBlockState()
+        registerDefaultState(defaultBlockState()
                 .setValue(FACING, Direction.NORTH)
                 .setValue(POWERED, false));
     }
@@ -49,18 +48,16 @@ public class AcceleratorBlock extends BaseEntityBlock implements IWrenchable {
 
     @Nullable
     @Override
-    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
-        if (level.isClientSide()) {
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state,
+                                                                   BlockEntityType<T> type) {
+        if (level.isClientSide() || type != ModBlockEntities.ACCELERATOR.get()) {
             return null;
         }
-        if (type == ModBlockEntities.ACCELERATOR.get()) {
-            return (lvl, pos, st, blockEntity) -> {
-                if (blockEntity instanceof AcceleratorBlockEntity accelerator) {
-                    accelerator.tick(lvl, pos, st);
-                }
-            };
-        }
-        return null;
+        return (tickLevel, pos, tickState, blockEntity) -> {
+            if (blockEntity instanceof AcceleratorBlockEntity accelerator) {
+                accelerator.tick(tickLevel, pos, tickState);
+            }
+        };
     }
 
     @Override

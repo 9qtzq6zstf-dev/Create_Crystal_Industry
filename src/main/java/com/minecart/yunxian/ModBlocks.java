@@ -13,300 +13,117 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 
 import java.util.function.Supplier;
 
-public class ModBlocks {
-    // 创建一个延迟注册器，用于注册所有方块
-    public static final DeferredRegister.Blocks BLOCKS =
-            DeferredRegister.createBlocks(Yunxian.MODID);
-    // ===== 玫瑰石英系列 =====
-    public static final DeferredBlock<Block> ROSE_QUARTZ_SMALL_BUD =
-            registerBlock("rose_quartz_small_bud",
-                    () -> new YunxianClusterBlock(1, 1,
-                            BlockBehaviour.Properties.ofFullCopy(Blocks.SMALL_AMETHYST_BUD),
-                            "small_bud"
-                    ));
+public final class ModBlocks {
+    public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(Yunxian.MODID);
 
-    public static final DeferredBlock<Block> ROSE_QUARTZ_MEDIUM_BUD =
-            registerBlock("rose_quartz_medium_bud",
-                    () -> new YunxianClusterBlock(3, 2,
-                            BlockBehaviour.Properties.ofFullCopy(Blocks.MEDIUM_AMETHYST_BUD),
-                            "medium_bud"
-                    ));
+    // Rose quartz
+    public static final DeferredBlock<Block> ROSE_QUARTZ_SMALL_BUD = bud("rose_quartz_small_bud", Blocks.SMALL_AMETHYST_BUD, 1, 1, "small_bud");
+    public static final DeferredBlock<Block> ROSE_QUARTZ_MEDIUM_BUD = bud("rose_quartz_medium_bud", Blocks.MEDIUM_AMETHYST_BUD, 3, 2, "medium_bud");
+    public static final DeferredBlock<Block> ROSE_QUARTZ_LARGE_BUD = bud("rose_quartz_large_bud", Blocks.LARGE_AMETHYST_BUD, 5, 3, "large_bud");
+    public static final DeferredBlock<Block> ROSE_QUARTZ_CLUSTER = cluster("rose_quartz_cluster");
+    public static final DeferredBlock<Block> ROSE_QUARTZ_BUDDING = registerBlock("rose_quartz_budding",
+            () -> new GenericBuddingBlock(5, BlockBehaviour.Properties.ofFullCopy(Blocks.BUDDING_AMETHYST),
+                    ROSE_QUARTZ_SMALL_BUD.get(), ROSE_QUARTZ_MEDIUM_BUD.get(),
+                    ROSE_QUARTZ_LARGE_BUD.get(), ROSE_QUARTZ_CLUSTER.get()));
 
-    public static final DeferredBlock<Block> ROSE_QUARTZ_LARGE_BUD =
-            registerBlock("rose_quartz_large_bud",
-                    () -> new YunxianClusterBlock(5, 3,
-                            BlockBehaviour.Properties.ofFullCopy(Blocks.LARGE_AMETHYST_BUD),
-                            "large_bud"
-                    ));
+    // Raw iron
+    public static final DeferredBlock<Block> RAW_IRON_SMALL_BUD = bud("raw_iron_small_bud", Blocks.SMALL_AMETHYST_BUD, 1, 1, "small_bud");
+    public static final DeferredBlock<Block> RAW_IRON_MEDIUM_BUD = bud("raw_iron_medium_bud", Blocks.MEDIUM_AMETHYST_BUD, 3, 2, "medium_bud");
+    public static final DeferredBlock<Block> RAW_IRON_LARGE_BUD = bud("raw_iron_large_bud", Blocks.LARGE_AMETHYST_BUD, 5, 3, "large_bud");
+    public static final DeferredBlock<Block> RAW_IRON_CLUSTER = cluster("raw_iron_cluster");
+    public static final DeferredBlock<Block> RAW_IRON_BUDDING = oreBudding(
+            "raw_iron_budding", RAW_IRON_SMALL_BUD, RAW_IRON_MEDIUM_BUD, RAW_IRON_LARGE_BUD,
+            RAW_IRON_CLUSTER, Blocks.IRON_ORE, Blocks.DEEPSLATE_IRON_ORE);
 
-    public static final DeferredBlock<Block> ROSE_QUARTZ_CLUSTER =
-            registerBlock("rose_quartz_cluster",
-                    () -> new YunxianClusterBlock(7, 3,
-                            BlockBehaviour.Properties.ofFullCopy(Blocks.AMETHYST_CLUSTER)
-                                    .noOcclusion()
-                                    .isRedstoneConductor((state, level, pos) -> false)
-                                    .isSuffocating((state, level, pos) -> false)
-                                    .isViewBlocking((state, level, pos) -> false),
-                            "cluster"
-                    ));
+    // Raw gold
+    public static final DeferredBlock<Block> RAW_GOLD_SMALL_BUD = bud("raw_gold_small_bud", Blocks.SMALL_AMETHYST_BUD, 1, 1, "small_bud");
+    public static final DeferredBlock<Block> RAW_GOLD_MEDIUM_BUD = bud("raw_gold_medium_bud", Blocks.MEDIUM_AMETHYST_BUD, 3, 2, "medium_bud");
+    public static final DeferredBlock<Block> RAW_GOLD_LARGE_BUD = bud("raw_gold_large_bud", Blocks.LARGE_AMETHYST_BUD, 5, 3, "large_bud");
+    public static final DeferredBlock<Block> RAW_GOLD_CLUSTER = cluster("raw_gold_cluster");
+    public static final DeferredBlock<Block> RAW_GOLD_BUDDING = oreBudding(
+            "raw_gold_budding", RAW_GOLD_SMALL_BUD, RAW_GOLD_MEDIUM_BUD, RAW_GOLD_LARGE_BUD,
+            RAW_GOLD_CLUSTER, Blocks.GOLD_ORE, Blocks.DEEPSLATE_GOLD_ORE);
 
-    public static final DeferredBlock<Block> ROSE_QUARTZ_BUDDING =
-            registerBlock("rose_quartz_budding",
-                    () -> new GenericBuddingBlock(5,
-                            BlockBehaviour.Properties.ofFullCopy(Blocks.BUDDING_AMETHYST),
-                            ROSE_QUARTZ_SMALL_BUD.get(),
-                            ROSE_QUARTZ_MEDIUM_BUD.get(),
-                            ROSE_QUARTZ_LARGE_BUD.get(),
-                            ROSE_QUARTZ_CLUSTER.get()
-                    ));
-    // ===== 粗铁系列 =====
-    // ===== 粗铁系列 =====
-    public static final DeferredBlock<Block> RAW_IRON_SMALL_BUD =
-            registerBlock("raw_iron_small_bud",
-                    () -> new YunxianClusterBlock(1, 1,
-                            BlockBehaviour.Properties.ofFullCopy(Blocks.SMALL_AMETHYST_BUD),
-                            "small_bud"
-                    ));
+    // Raw copper
+    public static final DeferredBlock<Block> RAW_COPPER_SMALL_BUD = bud("raw_copper_small_bud", Blocks.SMALL_AMETHYST_BUD, 1, 1, "small_bud");
+    public static final DeferredBlock<Block> RAW_COPPER_MEDIUM_BUD = bud("raw_copper_medium_bud", Blocks.MEDIUM_AMETHYST_BUD, 3, 2, "medium_bud");
+    public static final DeferredBlock<Block> RAW_COPPER_LARGE_BUD = bud("raw_copper_large_bud", Blocks.LARGE_AMETHYST_BUD, 5, 3, "large_bud");
+    public static final DeferredBlock<Block> RAW_COPPER_CLUSTER = cluster("raw_copper_cluster");
+    public static final DeferredBlock<Block> RAW_COPPER_BUDDING = oreBudding(
+            "raw_copper_budding", RAW_COPPER_SMALL_BUD, RAW_COPPER_MEDIUM_BUD, RAW_COPPER_LARGE_BUD,
+            RAW_COPPER_CLUSTER, Blocks.COPPER_ORE, Blocks.DEEPSLATE_COPPER_ORE);
 
-    public static final DeferredBlock<Block> RAW_IRON_MEDIUM_BUD =
-            registerBlock("raw_iron_medium_bud",
-                    () -> new YunxianClusterBlock(3, 2,
-                            BlockBehaviour.Properties.ofFullCopy(Blocks.MEDIUM_AMETHYST_BUD),
-                            "medium_bud"
-                    ));
+    // Raw zinc (Create)
+    public static final DeferredBlock<Block> RAW_ZINC_SMALL_BUD = bud("raw_zinc_small_bud", Blocks.SMALL_AMETHYST_BUD, 1, 1, "small_bud");
+    public static final DeferredBlock<Block> RAW_ZINC_MEDIUM_BUD = bud("raw_zinc_medium_bud", Blocks.MEDIUM_AMETHYST_BUD, 3, 2, "medium_bud");
+    public static final DeferredBlock<Block> RAW_ZINC_LARGE_BUD = bud("raw_zinc_large_bud", Blocks.LARGE_AMETHYST_BUD, 5, 3, "large_bud");
+    public static final DeferredBlock<Block> RAW_ZINC_CLUSTER = cluster("raw_zinc_cluster");
+    public static final DeferredBlock<Block> RAW_ZINC_BUDDING = oreBudding(
+            "raw_zinc_budding", RAW_ZINC_SMALL_BUD, RAW_ZINC_MEDIUM_BUD, RAW_ZINC_LARGE_BUD,
+            RAW_ZINC_CLUSTER,
+            BuiltInRegistries.BLOCK.get(ResourceLocation.parse("create:zinc_ore")),
+            BuiltInRegistries.BLOCK.get(ResourceLocation.parse("create:deepslate_zinc_ore")));
 
-    public static final DeferredBlock<Block> RAW_IRON_LARGE_BUD =
-            registerBlock("raw_iron_large_bud",
-                    () -> new YunxianClusterBlock(5, 3,
-                            BlockBehaviour.Properties.ofFullCopy(Blocks.LARGE_AMETHYST_BUD),
-                            "large_bud"
-                    ));
+    // Echo
+    public static final DeferredBlock<Block> ECHO_SMALL_BUD = bud("echo_small_bud", Blocks.SMALL_AMETHYST_BUD, 1, 1, "small_bud");
+    public static final DeferredBlock<Block> ECHO_MEDIUM_BUD = bud("echo_medium_bud", Blocks.MEDIUM_AMETHYST_BUD, 3, 2, "medium_bud");
+    public static final DeferredBlock<Block> ECHO_LARGE_BUD = bud("echo_large_bud", Blocks.LARGE_AMETHYST_BUD, 5, 3, "large_bud");
+    public static final DeferredBlock<Block> ECHO_CLUSTER = cluster("echo_cluster");
+    public static final DeferredBlock<Block> ECHO_BUDDING = registerBlock("echo_budding",
+            () -> new GenericBuddingBlock(5, BlockBehaviour.Properties.ofFullCopy(Blocks.BUDDING_AMETHYST),
+                    ECHO_SMALL_BUD.get(), ECHO_MEDIUM_BUD.get(), ECHO_LARGE_BUD.get(), ECHO_CLUSTER.get()));
 
-    public static final DeferredBlock<Block> RAW_IRON_CLUSTER =
-            registerBlock("raw_iron_cluster",
-                    () -> new YunxianClusterBlock(7, 3,
-                            BlockBehaviour.Properties.ofFullCopy(Blocks.AMETHYST_CLUSTER)
-                                    .noOcclusion()
-                                    .isRedstoneConductor((state, level, pos) -> false)
-                                    .isSuffocating((state, level, pos) -> false)
-                                    .isViewBlocking((state, level, pos) -> false),
-                            "cluster"
-                    ));
-    public static final DeferredBlock<Block> RAW_IRON_BUDDING =
-            registerBlock("raw_iron_budding",
-                    () -> new OreConvertingBuddingBlock(5,
-                            BlockBehaviour.Properties.ofFullCopy(Blocks.BUDDING_AMETHYST),
-                            RAW_IRON_SMALL_BUD.get(),
-                            RAW_IRON_MEDIUM_BUD.get(),
-                            RAW_IRON_LARGE_BUD.get(),
-                            RAW_IRON_CLUSTER.get(),
-                            Blocks.IRON_ORE,           // 石头→铁矿石
-                            Blocks.DEEPSLATE_IRON_ORE  // 深板岩→深层铁矿石
-                    ));
-    // ===== 粗金系列 =====
-    public static final DeferredBlock<Block> RAW_GOLD_SMALL_BUD =
-            registerBlock("raw_gold_small_bud",
-                    () -> new YunxianClusterBlock(1, 1,
-                            BlockBehaviour.Properties.ofFullCopy(Blocks.SMALL_AMETHYST_BUD),
-                            "small_bud"
-                    ));
+    public static final DeferredBlock<Block> ACCELERATOR = registerBlock("accelerator",
+            () -> new AcceleratorBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK)
+                    .noOcclusion()
+                    .isRedstoneConductor((state, level, pos) -> false)
+                    .isSuffocating((state, level, pos) -> false)
+                    .isViewBlocking((state, level, pos) -> false)));
 
-    public static final DeferredBlock<Block> RAW_GOLD_MEDIUM_BUD =
-            registerBlock("raw_gold_medium_bud",
-                    () -> new YunxianClusterBlock(3, 2,
-                            BlockBehaviour.Properties.ofFullCopy(Blocks.MEDIUM_AMETHYST_BUD),
-                            "medium_bud"
-                    ));
+    public static final DeferredBlock<Block> SMART_DRILL = registerBlock("smart_drill",
+            () -> new SmartDrillBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK).noOcclusion()));
 
-    public static final DeferredBlock<Block> RAW_GOLD_LARGE_BUD =
-            registerBlock("raw_gold_large_bud",
-                    () -> new YunxianClusterBlock(5, 3,
-                            BlockBehaviour.Properties.ofFullCopy(Blocks.LARGE_AMETHYST_BUD),
-                            "large_bud"
-                    ));
+    private ModBlocks() {
+    }
 
-    public static final DeferredBlock<Block> RAW_GOLD_CLUSTER =
-            registerBlock("raw_gold_cluster",
-                    () -> new YunxianClusterBlock(7, 3,
-                            BlockBehaviour.Properties.ofFullCopy(Blocks.AMETHYST_CLUSTER)
-                                    .noOcclusion()
-                                    .isRedstoneConductor((state, level, pos) -> false)
-                                    .isSuffocating((state, level, pos) -> false)
-                                    .isViewBlocking((state, level, pos) -> false),
-                            "cluster"
-                    ));
+    private static DeferredBlock<Block> bud(String name, Block copyFrom, int stage, int height, String stageKey) {
+        return registerBlock(name, () -> new YunxianClusterBlock(
+                stage, height, BlockBehaviour.Properties.ofFullCopy(copyFrom), stageKey));
+    }
 
-    public static final DeferredBlock<Block> RAW_GOLD_BUDDING =
-            registerBlock("raw_gold_budding",
-                    () -> new OreConvertingBuddingBlock(5,
-                            BlockBehaviour.Properties.ofFullCopy(Blocks.BUDDING_AMETHYST),
-                            RAW_GOLD_SMALL_BUD.get(),
-                            RAW_GOLD_MEDIUM_BUD.get(),
-                            RAW_GOLD_LARGE_BUD.get(),
-                            RAW_GOLD_CLUSTER.get(),
-                            Blocks.GOLD_ORE,           // 石头→金矿石
-                            Blocks.DEEPSLATE_GOLD_ORE  // 深板岩→深层金矿石
-                    ));
-    // ===== 粗铜系列 =====
-    public static final DeferredBlock<Block> RAW_COPPER_SMALL_BUD =
-            registerBlock("raw_copper_small_bud",
-                    () -> new YunxianClusterBlock(1, 1,
-                            BlockBehaviour.Properties.ofFullCopy(Blocks.SMALL_AMETHYST_BUD),
-                            "small_bud"
-                    ));
+    private static DeferredBlock<Block> cluster(String name) {
+        return registerBlock(name, () -> new YunxianClusterBlock(
+                7,
+                3,
+                BlockBehaviour.Properties.ofFullCopy(Blocks.AMETHYST_CLUSTER)
+                        .noOcclusion()
+                        .isRedstoneConductor((state, level, pos) -> false)
+                        .isSuffocating((state, level, pos) -> false)
+                        .isViewBlocking((state, level, pos) -> false),
+                "cluster"
+        ));
+    }
 
-    public static final DeferredBlock<Block> RAW_COPPER_MEDIUM_BUD =
-            registerBlock("raw_copper_medium_bud",
-                    () -> new YunxianClusterBlock(3, 2,
-                            BlockBehaviour.Properties.ofFullCopy(Blocks.MEDIUM_AMETHYST_BUD),
-                            "medium_bud"
-                    ));
+    private static DeferredBlock<Block> oreBudding(String name,
+                                                    DeferredBlock<Block> small,
+                                                    DeferredBlock<Block> medium,
+                                                    DeferredBlock<Block> large,
+                                                    DeferredBlock<Block> cluster,
+                                                    Block stoneOre,
+                                                    Block deepslateOre) {
+        return registerBlock(name, () -> new OreConvertingBuddingBlock(
+                5,
+                BlockBehaviour.Properties.ofFullCopy(Blocks.BUDDING_AMETHYST),
+                small.get(), medium.get(), large.get(), cluster.get(), stoneOre, deepslateOre
+        ));
+    }
 
-    public static final DeferredBlock<Block> RAW_COPPER_LARGE_BUD =
-            registerBlock("raw_copper_large_bud",
-                    () -> new YunxianClusterBlock(5, 3,
-                            BlockBehaviour.Properties.ofFullCopy(Blocks.LARGE_AMETHYST_BUD),
-                            "large_bud"
-                    ));
-
-    public static final DeferredBlock<Block> RAW_COPPER_CLUSTER =
-            registerBlock("raw_copper_cluster",
-                    () -> new YunxianClusterBlock(7, 3,
-                            BlockBehaviour.Properties.ofFullCopy(Blocks.AMETHYST_CLUSTER)
-                                    .noOcclusion()
-                                    .isRedstoneConductor((state, level, pos) -> false)
-                                    .isSuffocating((state, level, pos) -> false)
-                                    .isViewBlocking((state, level, pos) -> false),
-                            "cluster"
-                    ));
-
-    public static final DeferredBlock<Block> RAW_COPPER_BUDDING =
-            registerBlock("raw_copper_budding",
-                    () -> new OreConvertingBuddingBlock(5,
-                            BlockBehaviour.Properties.ofFullCopy(Blocks.BUDDING_AMETHYST),
-                            RAW_COPPER_SMALL_BUD.get(),
-                            RAW_COPPER_MEDIUM_BUD.get(),
-                            RAW_COPPER_LARGE_BUD.get(),
-                            RAW_COPPER_CLUSTER.get(),
-                            Blocks.COPPER_ORE,         // 石头→铜矿石
-                            Blocks.DEEPSLATE_COPPER_ORE // 深板岩→深层铜矿石
-                    ));
-    // ===== 粗锌系列 =====
-    public static final DeferredBlock<Block> RAW_ZINC_SMALL_BUD =
-            registerBlock("raw_zinc_small_bud",
-                    () -> new YunxianClusterBlock(1, 1,
-                            BlockBehaviour.Properties.ofFullCopy(Blocks.SMALL_AMETHYST_BUD),
-                            "small_bud"
-                    ));
-
-    public static final DeferredBlock<Block> RAW_ZINC_MEDIUM_BUD =
-            registerBlock("raw_zinc_medium_bud",
-                    () -> new YunxianClusterBlock(3, 2,
-                            BlockBehaviour.Properties.ofFullCopy(Blocks.MEDIUM_AMETHYST_BUD),
-                            "medium_bud"
-                    ));
-
-    public static final DeferredBlock<Block> RAW_ZINC_LARGE_BUD =
-            registerBlock("raw_zinc_large_bud",
-                    () -> new YunxianClusterBlock(5, 3,
-                            BlockBehaviour.Properties.ofFullCopy(Blocks.LARGE_AMETHYST_BUD),
-                            "large_bud"
-                    ));
-
-    public static final DeferredBlock<Block> RAW_ZINC_CLUSTER =
-            registerBlock("raw_zinc_cluster",
-                    () -> new YunxianClusterBlock(7, 3,
-                            BlockBehaviour.Properties.ofFullCopy(Blocks.AMETHYST_CLUSTER)
-                                    .noOcclusion()
-                                    .isRedstoneConductor((state, level, pos) -> false)
-                                    .isSuffocating((state, level, pos) -> false)
-                                    .isViewBlocking((state, level, pos) -> false),
-                            "cluster"
-                    ));
-
-    public static final DeferredBlock<Block> RAW_ZINC_BUDDING =
-            registerBlock("raw_zinc_budding",
-                    () -> new OreConvertingBuddingBlock(5,
-                            BlockBehaviour.Properties.ofFullCopy(Blocks.BUDDING_AMETHYST),
-                            RAW_ZINC_SMALL_BUD.get(),
-                            RAW_ZINC_MEDIUM_BUD.get(),
-                            RAW_ZINC_LARGE_BUD.get(),
-                            RAW_ZINC_CLUSTER.get(),
-                            // 锌矿石（机械动力物品）
-                            BuiltInRegistries.BLOCK.get(ResourceLocation.parse("create:zinc_ore")),
-                            BuiltInRegistries.BLOCK.get(ResourceLocation.parse("create:deepslate_zinc_ore"))
-                    ));
-    // ===== Echo系列 =====
-    public static final DeferredBlock<Block> ECHO_SMALL_BUD =
-            registerBlock("echo_small_bud",
-                    () -> new YunxianClusterBlock(1, 1,
-                            BlockBehaviour.Properties.ofFullCopy(Blocks.SMALL_AMETHYST_BUD),
-                            "small_bud"
-                    ));
-
-    public static final DeferredBlock<Block> ECHO_MEDIUM_BUD =
-            registerBlock("echo_medium_bud",
-                    () -> new YunxianClusterBlock(3, 2,
-                            BlockBehaviour.Properties.ofFullCopy(Blocks.MEDIUM_AMETHYST_BUD),
-                            "medium_bud"
-                    ));
-
-    public static final DeferredBlock<Block> ECHO_LARGE_BUD =
-            registerBlock("echo_large_bud",
-                    () -> new YunxianClusterBlock(5, 3,
-                            BlockBehaviour.Properties.ofFullCopy(Blocks.LARGE_AMETHYST_BUD),
-                            "large_bud"
-                    ));
-
-    public static final DeferredBlock<Block> ECHO_CLUSTER =
-            registerBlock("echo_cluster",
-                    () -> new YunxianClusterBlock(7, 3,
-                            BlockBehaviour.Properties.ofFullCopy(Blocks.AMETHYST_CLUSTER)
-                                    .noOcclusion()
-                                    .isRedstoneConductor((state, level, pos) -> false)
-                                    .isSuffocating((state, level, pos) -> false)
-                                    .isViewBlocking((state, level, pos) -> false),
-                            "cluster"
-                    ));
-
-    public static final DeferredBlock<Block> ECHO_BUDDING =
-            registerBlock("echo_budding",
-                    () -> new GenericBuddingBlock(5,
-                            BlockBehaviour.Properties.ofFullCopy(Blocks.BUDDING_AMETHYST),
-                            ECHO_SMALL_BUD.get(),
-                            ECHO_MEDIUM_BUD.get(),
-                            ECHO_LARGE_BUD.get(),
-                            ECHO_CLUSTER.get()
-                    ));
-    //催生器
-    // ===== 催生器 =====
-    public static final DeferredBlock<Block> ACCELERATOR =
-            registerBlock("accelerator",
-                    () -> new AcceleratorBlock(
-                            BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK)
-                                    .noOcclusion()
-                                    .isRedstoneConductor((state, level, pos) -> false)
-                                    .isSuffocating((state, level, pos) -> false)
-                                    .isViewBlocking((state, level, pos) -> false)
-                    ));
-    //智能钻头
-    public static final DeferredBlock<Block> SMART_DRILL =
-            registerBlock("smart_drill",
-                    () -> new SmartDrillBlock(
-                            BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK)
-                                    .noOcclusion()
-                    ));
-
-
-    // 辅助方法：同时注册方块和对应的物品
     private static <T extends Block> DeferredBlock<T> registerBlock(String name, Supplier<T> blockSupplier) {
         DeferredBlock<T> block = BLOCKS.register(name, blockSupplier);
-        // 每个方块都需要一个 BlockItem 才能拿在手里
         ModItems.ITEMS.register(name, () -> new BlockItem(block.get(), new Item.Properties()));
         return block;
     }
 
-    // 这个方法会在主类中被调用
     public static void register(IEventBus modEventBus) {
         BLOCKS.register(modEventBus);
     }

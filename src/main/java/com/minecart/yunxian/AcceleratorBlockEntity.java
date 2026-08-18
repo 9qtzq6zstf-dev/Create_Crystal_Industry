@@ -13,24 +13,19 @@ import net.neoforged.neoforge.energy.IEnergyStorage;
 import org.jetbrains.annotations.Nullable;
 
 public class AcceleratorBlockEntity extends BlockEntity implements IEnergyStorage {
-
-    // ===== 能量配置 =====
-    private static final int MAX_ENERGY = 10000;
+    private static final int MAX_ENERGY = 10_000;
     private static final int MAX_RECEIVE = 100;
     private static final int ENERGY_COST_PER_OPERATION = 100;
-
-    // ===== 定时器配置 =====
     private static final int INTERVAL_TICKS = 3;
 
-    private int tickCounter = 0;
+    private int tickCounter;
     private final EnergyStorage energyStorage;
 
     public AcceleratorBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.ACCELERATOR.get(), pos, state);
-        this.energyStorage = new EnergyStorage(MAX_ENERGY, MAX_RECEIVE, MAX_ENERGY);
+        energyStorage = new EnergyStorage(MAX_ENERGY, MAX_RECEIVE, MAX_ENERGY);
     }
 
-    // ===== 核心 tick 逻辑 =====
     public void tick(Level level, BlockPos pos, BlockState state) {
         if (level.isClientSide() || !(level instanceof ServerLevel serverLevel)) {
             return;
@@ -54,17 +49,20 @@ public class AcceleratorBlockEntity extends BlockEntity implements IEnergyStorag
 
         for (Direction direction : Direction.values()) {
             BlockPos neighborPos = pos.relative(direction);
-            BlockState neighborState = level.getBlockState(neighborPos);
-            neighborState.randomTick(serverLevel, neighborPos, serverLevel.random);
+            level.getBlockState(neighborPos).randomTick(serverLevel, neighborPos, serverLevel.random);
         }
 
         energyStorage.extractEnergy(ENERGY_COST_PER_OPERATION, false);
+        setChanged();
     }
 
-    // ===== IEnergyStorage 实现 =====
     @Override
     public int receiveEnergy(int maxReceive, boolean simulate) {
-        return energyStorage.receiveEnergy(maxReceive, simulate);
+        int received = energyStorage.receiveEnergy(maxReceive, simulate);
+        if (!simulate && received > 0) {
+            setChanged();
+        }
+        return received;
     }
 
     @Override
@@ -92,7 +90,6 @@ public class AcceleratorBlockEntity extends BlockEntity implements IEnergyStorag
         return true;
     }
 
-    // ===== 数据持久化 =====
     @Override
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
@@ -103,11 +100,12 @@ public class AcceleratorBlockEntity extends BlockEntity implements IEnergyStorag
     public void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
         if (tag.contains("Energy")) {
-            energyStorage.receiveEnergy(tag.getInt("Energy"), false);
+            int stored = Math.min(tag.getInt("Energy"), energyStorage.getMaxEnergyStored());
+            energyStorage.extractEnergy(energyStorage.getEnergyStored(), false);
+            energyStorage.receiveEnergy(stored, false);
         }
     }
 
-    // ===== 获取 Capability =====
     @Nullable
     public IEnergyStorage getEnergyCapability(@Nullable Direction side) {
         return this;

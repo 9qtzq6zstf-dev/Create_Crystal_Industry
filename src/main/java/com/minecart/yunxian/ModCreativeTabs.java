@@ -9,61 +9,59 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 
 import java.util.function.Supplier;
 
-public class ModCreativeTabs {
-    // 创建创造模式标签页的延迟注册器
+public final class ModCreativeTabs {
     public static final DeferredRegister<CreativeModeTab> CREATIVE_TABS =
             DeferredRegister.create(Registries.CREATIVE_MODE_TAB, Yunxian.MODID);
 
-    // 注册一个名为 "yunxian" 的标签页
-    public static final Supplier<CreativeModeTab> YUNXIAN_TAB =
-            CREATIVE_TABS.register("yunxian_tab",
-                    () -> CreativeModeTab.builder()
-                            // 设置标签页标题（翻译键：itemGroup.yunxian）
-                            .title(Component.translatable("itemGroup.yunxian"))
-                            // 设置图标（使用完整水晶簇）
-                            .icon(() -> new ItemStack(ModBlocks.ROSE_QUARTZ_CLUSTER.get()))
-                            // 添加物品到标签页
-                            .displayItems((parameters, output) -> {
-                                // 按照你希望的顺序添加
-                                output.accept(ModBlocks.ROSE_QUARTZ_BUDDING.get());
-                                output.accept(ModBlocks.ROSE_QUARTZ_SMALL_BUD.get());
-                                output.accept(ModBlocks.ROSE_QUARTZ_MEDIUM_BUD.get());
-                                output.accept(ModBlocks.ROSE_QUARTZ_LARGE_BUD.get());
-                                output.accept(ModBlocks.ROSE_QUARTZ_CLUSTER.get());
-                                output.accept(ModBlocks.RAW_IRON_BUDDING.get());
-                                output.accept(ModBlocks.RAW_IRON_SMALL_BUD.get());
-                                output.accept(ModBlocks.RAW_IRON_MEDIUM_BUD.get());
-                                output.accept(ModBlocks.RAW_IRON_LARGE_BUD.get());
-                                output.accept(ModBlocks.RAW_IRON_CLUSTER.get());
-                                output.accept(ModBlocks.RAW_GOLD_BUDDING.get());
-                                output.accept(ModBlocks.RAW_GOLD_SMALL_BUD.get());
-                                output.accept(ModBlocks.RAW_GOLD_MEDIUM_BUD.get());
-                                output.accept(ModBlocks.RAW_GOLD_LARGE_BUD.get());
-                                output.accept(ModBlocks.RAW_GOLD_CLUSTER.get());
-                                output.accept(ModBlocks.RAW_COPPER_BUDDING.get());
-                                output.accept(ModBlocks.RAW_COPPER_SMALL_BUD.get());
-                                output.accept(ModBlocks.RAW_COPPER_MEDIUM_BUD.get());
-                                output.accept(ModBlocks.RAW_COPPER_LARGE_BUD.get());
-                                output.accept(ModBlocks.RAW_COPPER_CLUSTER.get());
-                                output.accept(ModBlocks.RAW_ZINC_BUDDING.get());
-                                output.accept(ModBlocks.RAW_ZINC_SMALL_BUD.get());
-                                output.accept(ModBlocks.RAW_ZINC_MEDIUM_BUD.get());
-                                output.accept(ModBlocks.RAW_ZINC_LARGE_BUD.get());
-                                output.accept(ModBlocks.RAW_ZINC_CLUSTER.get());
-                                output.accept(ModBlocks.ECHO_BUDDING.get());
-                                output.accept(ModBlocks.ECHO_SMALL_BUD.get());
-                                output.accept(ModBlocks.ECHO_MEDIUM_BUD.get());
-                                output.accept(ModBlocks.ECHO_LARGE_BUD.get());
-                                output.accept(ModBlocks.ECHO_CLUSTER.get());
-                                output.accept(ModBlocks.ACCELERATOR.get());
-                                output.accept(ModBlocks.SMART_DRILL.get());
-                                // 如果你还有其他物品，比如独立物品，也可以添加
-                                // 但这里所有方块都已自动注册了 BlockItem
-                            })
-                            .build()
-            );
+    public static final Supplier<CreativeModeTab> YUNXIAN_TAB = CREATIVE_TABS.register("yunxian_tab",
+            () -> CreativeModeTab.builder()
+                    .title(Component.translatable("itemGroup.yunxian"))
+                    .icon(() -> new ItemStack(ModBlocks.ROSE_QUARTZ_CLUSTER.get()))
+                    .displayItems((parameters, output) -> {
+                        output.accept(ModBlocks.ROSE_QUARTZ_BUDDING.get());
+                        output.accept(ModBlocks.ROSE_QUARTZ_SMALL_BUD.get());
+                        output.accept(ModBlocks.ROSE_QUARTZ_MEDIUM_BUD.get());
+                        output.accept(ModBlocks.ROSE_QUARTZ_LARGE_BUD.get());
+                        output.accept(ModBlocks.ROSE_QUARTZ_CLUSTER.get());
 
-    // 供主类调用的注册方法
+                        output.accept(ModBlocks.RAW_IRON_BUDDING.get());
+                        output.accept(ModBlocks.RAW_IRON_SMALL_BUD.get());
+                        output.accept(ModBlocks.RAW_IRON_MEDIUM_BUD.get());
+                        output.accept(ModBlocks.RAW_IRON_LARGE_BUD.get());
+                        output.accept(ModBlocks.RAW_IRON_CLUSTER.get());
+
+                        output.accept(ModBlocks.RAW_GOLD_BUDDING.get());
+                        output.accept(ModBlocks.RAW_GOLD_SMALL_BUD.get());
+                        output.accept(ModBlocks.RAW_GOLD_MEDIUM_BUD.get());
+                        output.accept(ModBlocks.RAW_GOLD_LARGE_BUD.get());
+                        output.accept(ModBlocks.RAW_GOLD_CLUSTER.get());
+
+                        output.accept(ModBlocks.RAW_COPPER_BUDDING.get());
+                        output.accept(ModBlocks.RAW_COPPER_SMALL_BUD.get());
+                        output.accept(ModBlocks.RAW_COPPER_MEDIUM_BUD.get());
+                        output.accept(ModBlocks.RAW_COPPER_LARGE_BUD.get());
+                        output.accept(ModBlocks.RAW_COPPER_CLUSTER.get());
+
+                        output.accept(ModBlocks.RAW_ZINC_BUDDING.get());
+                        output.accept(ModBlocks.RAW_ZINC_SMALL_BUD.get());
+                        output.accept(ModBlocks.RAW_ZINC_MEDIUM_BUD.get());
+                        output.accept(ModBlocks.RAW_ZINC_LARGE_BUD.get());
+                        output.accept(ModBlocks.RAW_ZINC_CLUSTER.get());
+
+                        output.accept(ModBlocks.ECHO_BUDDING.get());
+                        output.accept(ModBlocks.ECHO_SMALL_BUD.get());
+                        output.accept(ModBlocks.ECHO_MEDIUM_BUD.get());
+                        output.accept(ModBlocks.ECHO_LARGE_BUD.get());
+                        output.accept(ModBlocks.ECHO_CLUSTER.get());
+
+                        output.accept(ModBlocks.ACCELERATOR.get());
+                        output.accept(ModBlocks.SMART_DRILL.get());
+                    })
+                    .build());
+
+    private ModCreativeTabs() {
+    }
+
     public static void register(IEventBus modEventBus) {
         CREATIVE_TABS.register(modEventBus);
     }

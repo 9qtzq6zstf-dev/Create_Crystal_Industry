@@ -12,14 +12,15 @@ import net.minecraft.world.level.material.Fluids;
 
 public class GenericBuddingBlock extends BuddingAmethystBlock {
     private static final Direction[] DIRECTIONS = Direction.values();
+
     private final int growthChance;
     private final Block smallBud;
     private final Block mediumBud;
     private final Block largeBud;
     private final Block cluster;
 
-    public GenericBuddingBlock(int growthChance, Properties properties,
-                               Block smallBud, Block mediumBud, Block largeBud, Block cluster) {
+    public GenericBuddingBlock(int growthChance, Properties properties, Block smallBud, Block mediumBud,
+                               Block largeBud, Block cluster) {
         super(properties);
         this.growthChance = growthChance;
         this.smallBud = smallBud;
@@ -30,15 +31,15 @@ public class GenericBuddingBlock extends BuddingAmethystBlock {
 
     @Override
     public void randomTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
-        if (!level.getFluidState(pos).isEmpty()) return;
-        if (random.nextInt(growthChance) != 0) return;
+        if (!level.getFluidState(pos).isEmpty() || random.nextInt(growthChance) != 0) {
+            return;
+        }
 
         Direction side = DIRECTIONS[random.nextInt(DIRECTIONS.length)];
         BlockPos neighborPos = pos.relative(side);
         BlockState neighborState = level.getBlockState(neighborPos);
 
         Block nextBlock = null;
-
         if (canGrowAt(neighborState)) {
             nextBlock = smallBud;
         } else if (neighborState.is(smallBud) && sameFacing(neighborState, side)) {
