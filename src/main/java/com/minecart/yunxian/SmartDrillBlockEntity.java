@@ -116,4 +116,11 @@ public class SmartDrillBlockEntity extends DrillBlockEntity {
             return translationKey;
         }
     }
+    /** 挖掘速度倍率：1.0 = 原版速度 */
+    private static final float BREAK_SPEED_MULTIPLIER = 2.0f;
+
+    @Override
+    protected float getBreakSpeed() {
+        return super.getBreakSpeed() * BREAK_SPEED_MULTIPLIER;
+    }
 }
