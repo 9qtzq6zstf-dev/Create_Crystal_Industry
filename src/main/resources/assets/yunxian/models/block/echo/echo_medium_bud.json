@@ -1,7 +1,0 @@
-{
-    "parent": "block/cross",
-    "render_type": "cutout",
-    "textures": {
-        "cross": "yunxian:block/echo/echo_medium_bud"
-    }
-}

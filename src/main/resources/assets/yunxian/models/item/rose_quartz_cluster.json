@@ -1,6 +1,0 @@
-{
-    "parent": "minecraft:item/generated",
-    "textures": {
-        "layer0": "yunxian:block/rose_quartz/rose_quartz_cluster"
-    }
-}

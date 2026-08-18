@@ -1,6 +1,0 @@
-{
-    "parent": "minecraft:item/generated",
-    "textures": {
-        "layer0": "yunxian:block/raw_copper/raw_copper_medium_bud"
-    }
-}

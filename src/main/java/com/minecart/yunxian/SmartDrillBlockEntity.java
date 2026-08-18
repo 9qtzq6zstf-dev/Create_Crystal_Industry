@@ -1,37 +1,36 @@
 package com.minecart.yunxian;
 
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
+import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
+import com.simibubi.create.foundation.blockEntity.behaviour.filtering.FilteringBehaviour;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.MenuProvider;
-import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.LevelEvent;
 import net.minecraft.world.level.block.state.BlockState;
-import net.neoforged.neoforge.items.ItemStackHandler;
+
+import java.util.List;
 
 public class SmartDrillBlockEntity extends KineticBlockEntity implements MenuProvider {
 
-    private final ItemStackHandler filterInventory = new ItemStackHandler(1) {
-        @Override
-        protected void onContentsChanged(int slot) {
-            setChanged();
-        }
-    };
+    private FilteringBehaviour filtering;
+    public FilteringBehaviour getFiltering() {
+        return filtering;
+    }
+
     private boolean silkTouchMode = false;
     private final SimpleContainerData data = new SimpleContainerData(1);
-
     private int breakProgress = 0;
     private BlockPos targetPos = null;
     private int totalTicks = 0;
@@ -41,8 +40,17 @@ public class SmartDrillBlockEntity extends KineticBlockEntity implements MenuPro
         super(ModBlockEntities.SMART_DRILL.get(), pos, state);
     }
 
-    public ItemStackHandler getFilterInventory() {
-        return filterInventory;
+
+    @Override
+    public void addBehaviours(List<BlockEntityBehaviour> behaviours) {
+        filtering = new FilteringBehaviour(
+                this,
+                new SmartDrillFilterSlot()
+        );
+
+        behaviours.add(filtering);
+
+        super.addBehaviours(behaviours);
     }
 
     public boolean getSilkTouchMode() {
@@ -92,13 +100,12 @@ public class SmartDrillBlockEntity extends KineticBlockEntity implements MenuPro
             return;
         }
 
-        ItemStack filter = filterInventory.getStackInSlot(0);
-        if (!filter.isEmpty()) {
-            ItemStack targetItem = targetState.getBlock().asItem().getDefaultInstance();
-            if (!ItemStack.isSameItem(filter, targetItem)) {
-                resetProgress();
-                return;
-            }
+        ItemStack targetItem =
+                targetState.getBlock().asItem().getDefaultInstance();
+
+        if (filtering != null && !filtering.test(targetItem)) {
+            resetProgress();
+            return;
         }
 
         float rpm = Math.abs(getSpeed());
@@ -136,15 +143,59 @@ public class SmartDrillBlockEntity extends KineticBlockEntity implements MenuPro
 
     private void destroyBlock(BlockState state, BlockPos pos) {
         boolean silk = getBlockState().getValue(SmartDrillBlock.SILK_TOUCH);
+
         if (silk) {
             // 精准采集：掉落自身
             level.destroyBlock(pos, false);
+
             ItemStack drop = new ItemStack(state.getBlock());
-            level.addFreshEntity(new net.minecraft.world.entity.item.ItemEntity(
-                    level, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, drop
-            ));
+
+            net.minecraft.world.entity.item.ItemEntity item =
+                    new net.minecraft.world.entity.item.ItemEntity(
+                            level,
+                            pos.getX() + 0.5,
+                            pos.getY() + 0.5,
+                            pos.getZ() + 0.5,
+                            drop
+                    );
+
+            // 精准采集掉落物：初始动量为 0
+            item.setDeltaMovement(0, 0, 0);
+
+            level.addFreshEntity(item);
+
         } else {
+            // 记录破坏前附近已有的掉落物
+            java.util.Set<net.minecraft.world.entity.item.ItemEntity> oldItems =
+                    java.util.Collections.newSetFromMap(
+                            new java.util.IdentityHashMap<>()
+                    );
+
+            net.minecraft.world.phys.AABB box =
+                    new net.minecraft.world.phys.AABB(pos).inflate(0.5);
+
+            oldItems.addAll(
+                    level.getEntitiesOfClass(
+                            net.minecraft.world.entity.item.ItemEntity.class,
+                            box
+                    )
+            );
+
+            // 正常破坏方块并生成掉落物
             level.destroyBlock(pos, true);
+
+            // 找到这次新生成的掉落物
+            for (net.minecraft.world.entity.item.ItemEntity item :
+                    level.getEntitiesOfClass(
+                            net.minecraft.world.entity.item.ItemEntity.class,
+                            box
+                    )) {
+
+                if (!oldItems.contains(item)) {
+                    // 智能钻头掉落物：初始动量为 0
+                    item.setDeltaMovement(0, 0, 0);
+                }
+            }
         }
     }
 
@@ -174,14 +225,12 @@ public class SmartDrillBlockEntity extends KineticBlockEntity implements MenuPro
     @Override
     public void write(CompoundTag compound, HolderLookup.Provider registries, boolean clientPacket) {
         super.write(compound, registries, clientPacket);
-        compound.put("FilterInventory", filterInventory.serializeNBT(registries));
         compound.putBoolean("SilkTouchMode", silkTouchMode);
     }
 
     @Override
     public void read(CompoundTag compound, HolderLookup.Provider registries, boolean clientPacket) {
         super.read(compound, registries, clientPacket);
-        filterInventory.deserializeNBT(registries, compound.getCompound("FilterInventory"));
         silkTouchMode = compound.getBoolean("SilkTouchMode");
         data.set(0, silkTouchMode ? 1 : 0);
         // 同步到方块状态（服务端）
@@ -194,21 +243,27 @@ public class SmartDrillBlockEntity extends KineticBlockEntity implements MenuPro
     }
 
     // ========== MenuProvider ==========
+
     @Override
     public Component getDisplayName() {
         return Component.translatable("block.yunxian.smart_drill");
     }
+
+
 
     @Override
     public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player) {
         return new SmartDrillMenu(id, inventory, this, data);
     }
 
-    public SimpleContainer getInventoryForDrop() {
-        SimpleContainer container = new SimpleContainer(1);
-        for (int i = 0; i < filterInventory.getSlots(); i++) {
-            container.setItem(i, filterInventory.getStackInSlot(i));
-        }
-        return container;
+
+
+
+
+
+    // 在 SmartDrillBlockEntity.java 中添加
+    public float getRenderedSpeed() {
+        // 返回当前的转速，可以乘以一个系数来调整视觉效果
+        return this.getSpeed();
     }
 }

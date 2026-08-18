@@ -1,0 +1,5 @@
+{
+    "variants": {
+        "": { "model": "create_crystal_industry:block/rose_quartz/rose_quartz_budding" }
+    }
+}

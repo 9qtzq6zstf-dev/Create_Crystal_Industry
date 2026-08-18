@@ -1,10 +1,10 @@
 {
     "replace": false,
     "values": [
-        "yunxian:raw_copper_budding",
-        "yunxian:raw_copper_small_bud",
-        "yunxian:raw_copper_medium_bud",
-        "yunxian:raw_copper_large_bud",
-        "yunxian:raw_copper_cluster"
+        "create_crystal_industry:raw_copper_budding",
+        "create_crystal_industry:raw_copper_small_bud",
+        "create_crystal_industry:raw_copper_medium_bud",
+        "create_crystal_industry:raw_copper_large_bud",
+        "create_crystal_industry:raw_copper_cluster"
     ]
 }

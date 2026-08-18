@@ -7,7 +7,7 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 
 public record SilkTouchModePacket(BlockPos pos, boolean mode) implements CustomPacketPayload {
-    public static final Type<SilkTouchModePacket> TYPE = new Type<>(ResourceLocation.parse("yunxian:silk_touch_mode"));
+    public static final Type<SilkTouchModePacket> TYPE = new Type<>(ResourceLocation.parse("create_crystal_industry:silk_touch_mode"));
 
     public static final StreamCodec<FriendlyByteBuf, SilkTouchModePacket> STREAM_CODEC = new StreamCodec<>() {
         @Override

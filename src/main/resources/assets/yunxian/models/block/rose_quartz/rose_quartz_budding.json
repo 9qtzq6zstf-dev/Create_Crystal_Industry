@@ -1,6 +1,0 @@
-{
-    "parent": "block/cube_all",
-    "textures": {
-        "all": "yunxian:block/rose_quartz/rose_quartz_budding"
-    }
-}

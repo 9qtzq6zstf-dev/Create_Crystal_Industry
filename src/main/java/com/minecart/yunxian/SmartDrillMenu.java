@@ -8,35 +8,74 @@ import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.items.IItemHandler;
-import net.neoforged.neoforge.items.SlotItemHandler;
 
 public class SmartDrillMenu extends AbstractContainerMenu {
-    private final IItemHandler filterHandler;
-    private final ContainerData data;
+
     private final BlockPos blockPos;
+    private final ContainerData data;
 
-    public SmartDrillMenu(int id, Inventory playerInv, SmartDrillBlockEntity be, ContainerData data) {
+    // 服务端创建
+    public SmartDrillMenu(
+            int id,
+            Inventory playerInv,
+            SmartDrillBlockEntity be,
+            ContainerData data
+    ) {
         super(ModMenus.SMART_DRILL.get(), id);
-        this.filterHandler = be != null ? be.getFilterInventory() : null;
+
+        this.blockPos = be.getBlockPos();
         this.data = data;
-        this.blockPos = be != null ? be.getBlockPos() : BlockPos.ZERO;
 
-        if (this.filterHandler != null) {
-            addSlot(new SlotItemHandler(filterHandler, 0, 80, 35));
-        }
-
-        // 玩家物品栏
-        for (int row = 0; row < 3; row++) {
-            for (int col = 0; col < 9; col++) {
-                addSlot(new Slot(playerInv, col + row * 9 + 9, 8 + col * 18, 84 + row * 18));
-            }
-        }
-        for (int col = 0; col < 9; col++) {
-            addSlot(new Slot(playerInv, col, 8 + col * 18, 142));
-        }
+        addPlayerInventory(playerInv);
 
         addDataSlots(data);
+    }
+
+    // 客户端创建
+    public SmartDrillMenu(
+            int id,
+            Inventory playerInv,
+            BlockPos blockPos
+    ) {
+        super(ModMenus.SMART_DRILL.get(), id);
+
+        this.blockPos = blockPos;
+        this.data = new SimpleContainerData(1);
+
+        addPlayerInventory(playerInv);
+
+        addDataSlots(data);
+    }
+
+    private void addPlayerInventory(Inventory playerInv) {
+
+        // 玩家背包
+        for (int row = 0; row < 3; row++) {
+            for (int col = 0; col < 9; col++) {
+
+                addSlot(
+                        new Slot(
+                                playerInv,
+                                col + row * 9 + 9,
+                                8 + col * 18,
+                                84 + row * 18
+                        )
+                );
+            }
+        }
+
+        // 快捷栏
+        for (int col = 0; col < 9; col++) {
+
+            addSlot(
+                    new Slot(
+                            playerInv,
+                            col,
+                            8 + col * 18,
+                            142
+                    )
+            );
+        }
     }
 
     public BlockPos getBlockPos() {
@@ -48,12 +87,20 @@ public class SmartDrillMenu extends AbstractContainerMenu {
     }
 
     @Override
-    public ItemStack quickMoveStack(Player player, int index) {
+    public ItemStack quickMoveStack(
+            Player player,
+            int index
+    ) {
         return ItemStack.EMPTY;
     }
 
     @Override
     public boolean stillValid(Player player) {
-        return true;
+
+        return player.distanceToSqr(
+                blockPos.getX() + 0.5,
+                blockPos.getY() + 0.5,
+                blockPos.getZ() + 0.5
+        ) < 64;
     }
 }

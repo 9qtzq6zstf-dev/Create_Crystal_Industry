@@ -1,6 +1,8 @@
 package com.minecart.yunxian;
 
 import com.simibubi.create.AllItems;
+import com.simibubi.create.AllShapes;
+import com.simibubi.create.content.equipment.wrench.IWrenchable;
 import com.simibubi.create.content.kinetics.base.DirectionalKineticBlock;
 import com.simibubi.create.foundation.block.IBE;
 import com.simibubi.create.foundation.damageTypes.CreateDamageSources;
@@ -14,6 +16,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.LevelReader;
@@ -31,8 +34,14 @@ import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.VoxelShape;
 
-public class SmartDrillBlock extends DirectionalKineticBlock implements IBE<SmartDrillBlockEntity>, SimpleWaterloggedBlock {
+public class SmartDrillBlock
+        extends DirectionalKineticBlock
+        implements IBE<SmartDrillBlockEntity>,
+        SimpleWaterloggedBlock,
+        IWrenchable {
 
     public static final DirectionProperty FACING = BlockStateProperties.FACING;
     public static final BooleanProperty SILK_TOUCH = BooleanProperty.create("silk_touch");
@@ -119,21 +128,38 @@ public class SmartDrillBlock extends DirectionalKineticBlock implements IBE<Smar
     }
 
     // ========== 交互 ==========
-    // 不加 @Override，避免签名不匹配
-    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-        // 如果手持扳手，让滚轮逻辑接管，不打开 GUI
+
+    public InteractionResult use(
+            BlockState state,
+            Level level,
+            BlockPos pos,
+            Player player,
+            InteractionHand hand,
+            BlockHitResult hit
+    ) {
+        // 扳手交给 Create
         if (player.getItemInHand(hand).is(AllItems.WRENCH)) {
-            return InteractionResult.SUCCESS;
+            return InteractionResult.PASS;
         }
 
-        // 否则打开 GUI
-        if (!level.isClientSide) {
-            BlockEntity be = level.getBlockEntity(pos);
-            if (be instanceof SmartDrillBlockEntity drill) {
-                player.openMenu(drill, pos);
+        // 服务端打开菜单
+        if (!level.isClientSide
+                && player instanceof net.minecraft.server.level.ServerPlayer serverPlayer) {
+
+            BlockEntity blockEntity = level.getBlockEntity(pos);
+
+            if (blockEntity instanceof SmartDrillBlockEntity drill) {
+
+                serverPlayer.openMenu(
+                        drill,
+                        buffer -> buffer.writeBlockPos(pos)
+                );
+
+                return InteractionResult.CONSUME;
             }
         }
-        return InteractionResult.SUCCESS;
+
+        return InteractionResult.sidedSuccess(level.isClientSide);
     }
 
     // ========== 动力接入 ==========
@@ -145,5 +171,16 @@ public class SmartDrillBlock extends DirectionalKineticBlock implements IBE<Smar
     // 不加 @Override
     public boolean hasShaftTowards(LevelReader world, BlockPos pos, BlockState state, Direction face) {
         return face == state.getValue(FACING).getOpposite();
+    }
+    @Override
+    public VoxelShape getShape(
+            BlockState state,
+            BlockGetter level,
+            BlockPos pos,
+            CollisionContext context
+    ) {
+        return AllShapes.CASING_12PX.get(
+                state.getValue(FACING)
+        );
     }
 }

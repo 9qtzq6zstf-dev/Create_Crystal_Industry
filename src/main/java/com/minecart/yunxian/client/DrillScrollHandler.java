@@ -17,7 +17,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.InputEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 
-@EventBusSubscriber(modid = "yunxian", value = Dist.CLIENT)
+@EventBusSubscriber(modid = "create_crystal_industry", value = Dist.CLIENT)
 public class DrillScrollHandler {
 
     @SubscribeEvent

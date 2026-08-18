@@ -1,6 +1,7 @@
 package com.minecart.yunxian;
 
 import com.mojang.serialization.MapCodec;
+import com.simibubi.create.content.equipment.wrench.IWrenchable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
@@ -17,7 +18,7 @@ import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import org.jetbrains.annotations.Nullable;
 
-public class AcceleratorBlock extends BaseEntityBlock {
+public class AcceleratorBlock extends BaseEntityBlock implements IWrenchable {
     public static final MapCodec<AcceleratorBlock> CODEC = simpleCodec(AcceleratorBlock::new);
     public static final DirectionProperty FACING = BlockStateProperties.FACING;
     public static final BooleanProperty POWERED = BooleanProperty.create("powered");
