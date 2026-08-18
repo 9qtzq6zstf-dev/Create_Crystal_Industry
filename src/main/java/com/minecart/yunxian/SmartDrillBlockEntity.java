@@ -9,8 +9,10 @@ import com.simibubi.create.foundation.gui.AllIcons;
 import com.simibubi.create.foundation.utility.BlockHelper;
 import net.createmod.catnip.math.VecHelper;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
@@ -38,12 +40,12 @@ public class SmartDrillBlockEntity extends DrillBlockEntity {
                 this,
                 new SmartDrillValueBoxTransform(SmartDrillValueBoxTransform.Slot.FILTER)
         ).withCallback(stack -> destroyNextTick());
-        filtering.setLabel(Component.translatable("yunxian.smart_drill.filter"));
+        filtering.setLabel(Component.translatable("create_crystal_industry.smart_drill.filter"));
         behaviours.add(filtering);
 
         mode = new ScrollOptionBehaviour<>(
                 DrillMode.class,
-                Component.translatable("yunxian.smart_drill.mode"),
+                Component.translatable("create_crystal_industry.smart_drill.mode"),
                 this,
                 new SmartDrillValueBoxTransform(SmartDrillValueBoxTransform.Slot.MODE)
         );
@@ -106,8 +108,8 @@ public class SmartDrillBlockEntity extends DrillBlockEntity {
     }
 
     public enum DrillMode implements INamedIconOptions {
-        NORMAL(AllIcons.I_TOOL_DEPLOY, "yunxian.smart_drill.mode.normal"),
-        PRECISE(AllIcons.I_RESPECT_NBT, "yunxian.smart_drill.mode.precise");
+        NORMAL(AllIcons.I_TOOL_DEPLOY, "create_crystal_industry.smart_drill.mode.normal"),
+        PRECISE(AllIcons.I_RESPECT_NBT, "create_crystal_industry.smart_drill.mode.precise");
 
         private final AllIcons icon;
         private final String translationKey;

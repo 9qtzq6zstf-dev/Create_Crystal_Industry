@@ -37,7 +37,7 @@ public class ModRenderers {
                                     SmartDrillRenderer.HEAD
                             )
                     )
-                    .skipVanillaRender(be -> true)
+                    .skipVanillaRender(be -> false)
                     .apply();
         });
     }
