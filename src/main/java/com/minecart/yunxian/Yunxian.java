@@ -1,7 +1,9 @@
 package com.minecart.yunxian;
 
 import com.minecart.yunxian.client.ModRenderers;
+import com.simibubi.create.api.behaviour.movement.MovementBehaviour;
 import com.simibubi.create.api.stress.BlockStressValues;
+import com.simibubi.create.content.kinetics.drill.DrillMovementBehaviour;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
@@ -22,7 +24,12 @@ public class Yunxian {
     }
 
     private static void commonSetup(FMLCommonSetupEvent event) {
-        event.enqueueWork(() ->
-                BlockStressValues.IMPACTS.register(ModBlocks.SMART_DRILL.get(), () -> 4.0));
+        event.enqueueWork(() -> {
+            BlockStressValues.IMPACTS.register(ModBlocks.SMART_DRILL.get(), () -> 4.0);
+            MovementBehaviour.REGISTRY.register(
+                    ModBlocks.SMART_DRILL.get(),
+                    new SmartDrillMovementBehaviour()   // ← 不是 new DrillMovementBehaviour()！
+            );
+        });
     }
 }
