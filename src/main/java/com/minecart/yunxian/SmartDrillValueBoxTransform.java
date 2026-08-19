@@ -13,10 +13,10 @@ public class SmartDrillValueBoxTransform extends ValueBoxTransform.Sided {
 
     // 基准模型(facing=up)时，4 个侧面上的槽位位置（体素坐标）
     private static final Vec3[] SLOT_POSITIONS = {
-            VecHelper.voxelSpace(8, 4.5, 15.5),   // 南面
-            VecHelper.voxelSpace(8, 4.5, 0.5),    // 北面
-            VecHelper.voxelSpace(15.5, 4.5, 8),   // 东面
-            VecHelper.voxelSpace(0.5, 4.5, 8),    // 西面
+            VecHelper.voxelSpace(8, 5, 15.5),   // 南面
+            VecHelper.voxelSpace(8, 5, 0.5),    // 北面
+            VecHelper.voxelSpace(15.5, 5, 8),   // 东面
+            VecHelper.voxelSpace(0.5, 5, 8),    // 西面
     };
     // 对应 4 个侧面的法线
     private static final Vec3[] SLOT_NORMALS = {

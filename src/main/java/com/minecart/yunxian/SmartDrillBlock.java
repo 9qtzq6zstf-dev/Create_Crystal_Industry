@@ -30,6 +30,7 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.level.material.PushReaction;
@@ -49,9 +50,14 @@ public class SmartDrillBlock extends DirectionalKineticBlock
         implements IBE<SmartDrillBlockEntity>, SimpleWaterloggedBlock {
     private static final int PLACEMENT_HELPER_ID = PlacementHelpers.register(new PlacementHelper());
 
+    /** 红石锁：true = 收到红石信号，停转停挖 */
+    public static final BooleanProperty POWERED = BooleanProperty.create("powered");
+
     public SmartDrillBlock(Properties properties) {
         super(properties);
-        registerDefaultState(super.defaultBlockState().setValue(BlockStateProperties.WATERLOGGED, false));
+        registerDefaultState(super.defaultBlockState()
+                .setValue(BlockStateProperties.WATERLOGGED, false)
+                .setValue(POWERED, false));
     }
 
     @Override
@@ -74,6 +80,11 @@ public class SmartDrillBlock extends DirectionalKineticBlock
     @Override
     public void neighborChanged(BlockState state, Level level, BlockPos pos, Block block, BlockPos fromPos,
                                 boolean isMoving) {
+        // 红石锁：同步信号状态，仅在变化时更新，避免递归
+        boolean powered = level.hasNeighborSignal(pos);
+        if (state.getValue(POWERED) != powered) {
+            level.setBlock(pos, state.setValue(POWERED, powered), 2);
+        }
         withBlockEntityDo(level, pos, SmartDrillBlockEntity::destroyNextTick);
     }
 
@@ -106,7 +117,7 @@ public class SmartDrillBlock extends DirectionalKineticBlock
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(BlockStateProperties.WATERLOGGED);
+        builder.add(BlockStateProperties.WATERLOGGED, POWERED);
         super.createBlockStateDefinition(builder);
     }
 
@@ -122,8 +133,11 @@ public class SmartDrillBlock extends DirectionalKineticBlock
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
         FluidState fluidState = context.getLevel().getFluidState(context.getClickedPos());
+        // 放置时若旁边已有红石信号，直接进入锁定状态
+        boolean powered = context.getLevel().hasNeighborSignal(context.getClickedPos());
         return super.getStateForPlacement(context)
-                .setValue(BlockStateProperties.WATERLOGGED, fluidState.getType() == Fluids.WATER);
+                .setValue(BlockStateProperties.WATERLOGGED, fluidState.getType() == Fluids.WATER)
+                .setValue(POWERED, powered);
     }
 
     public static double getDamage(float speed) {
@@ -146,7 +160,7 @@ public class SmartDrillBlock extends DirectionalKineticBlock
 
     @Override
     protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos,
-                                               Player player, InteractionHand hand, BlockHitResult hitResult) {
+                                              Player player, InteractionHand hand, BlockHitResult hitResult) {
         IPlacementHelper placementHelper = PlacementHelpers.get(PLACEMENT_HELPER_ID);
         if (!player.isShiftKeyDown() && player.mayBuild() && placementHelper.matchesItem(stack)) {
             placementHelper.getOffset(player, level, state, pos, hitResult)
