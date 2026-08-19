@@ -1,5 +1,12 @@
 {
-    "variants": {
-        "": { "model": "create_crystal_industry:block/accelerator/accelerator" }
-    }
+    "multipart": [
+        {
+            "when": {"powered": "false"},
+            "apply": {"model": "create_crystal_industry:block/accelerator/accelerator"}
+        },
+        {
+            "when": {"powered": "true"},
+            "apply": {"model": "create_crystal_industry:block/accelerator/accelerator_powered"}
+        }
+    ]
 }

@@ -34,20 +34,34 @@ public class AcceleratorBlockEntity extends BlockEntity implements IEnergyStorag
             return;
         }
 
-        transmitToNeighbors();   // ← 新增：相邻催生器互传电力
+        transmitToNeighbors();   // 相邻催生器互传电力
 
         tickCounter++;
         if (tickCounter % INTERVAL_TICKS != 0) {
             return;
         }
 
-        if (energyStorage.getEnergyStored() < ENERGY_COST_PER_OPERATION) {
+        int stored = energyStorage.getEnergyStored();
+
+        // 完全没有能量：关闭并返回
+        if (stored <= 0) {
             if (state.getValue(AcceleratorBlock.POWERED)) {
                 level.setBlock(pos, state.setValue(AcceleratorBlock.POWERED, false), 3);
             }
             return;
         }
 
+        // 残电不足一次操作：直接扣光到 0，不执行催生
+        if (stored < ENERGY_COST_PER_OPERATION) {
+            energyStorage.extractEnergy(stored, false);
+            if (state.getValue(AcceleratorBlock.POWERED)) {
+                level.setBlock(pos, state.setValue(AcceleratorBlock.POWERED, false), 3);
+            }
+            setChanged();
+            return;
+        }
+
+        // 足额：正常消耗并催生
         if (!state.getValue(AcceleratorBlock.POWERED)) {
             level.setBlock(pos, state.setValue(AcceleratorBlock.POWERED, true), 3);
         }
@@ -60,6 +74,7 @@ public class AcceleratorBlockEntity extends BlockEntity implements IEnergyStorag
         energyStorage.extractEnergy(ENERGY_COST_PER_OPERATION, false);
         setChanged();
     }
+
     private void transmitToNeighbors() {
         if (level == null || level.isClientSide)
             return;
