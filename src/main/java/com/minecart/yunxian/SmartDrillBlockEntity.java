@@ -128,4 +128,45 @@ public class SmartDrillBlockEntity extends DrillBlockEntity {
             return base * NORMAL_SPEED_MULTIPLIER;
         return base * PRECISE_SPEED_MULTIPLIER;
     }
+
+    /**
+     * 判断钻头当前目标是否处于“无法挖掘”的停转状态。
+     * 空气/液体视为待机目标，不停转；其余按 canBreak 判断（含过滤拦截、基岩等）。
+     */
+    public boolean isBreakingBlocked() {
+        if (level == null || filtering == null)
+            return false;
+
+        BlockPos targetPos = getBreakingPos();
+        BlockState target = level.getBlockState(targetPos);
+        if (target.isAir() || target.liquid())
+            return false;
+
+        return !canBreak(target, target.getDestroySpeed(level, targetPos));
+    }
+
+    private boolean isRedstoneLocked() {
+        return getBlockState().getValue(SmartDrillBlock.POWERED);
+    }
+    /**
+     * 参考 ClutchBlockEntity 的脱开机制：
+     * 无法挖掘时把转速汇报为 0，客户端冻结旋转动画，服务端跳过挖掘逻辑。
+     */
+    @Override
+    public float getSpeed() {
+        if (isRedstoneLocked() || isBreakingBlocked())
+            return 0;
+        return super.getSpeed();
+    }
+    @Override
+    public void tick() {
+        super.tick();
+
+        if (level == null || level.isClientSide)
+            return;
+        if ((isBreakingBlocked() || isRedstoneLocked()) && destroyProgress != 0) {
+            destroyProgress = 0;
+            level.destroyBlockProgress(breakerId, breakingPos, -1);
+        }
+    }
 }
