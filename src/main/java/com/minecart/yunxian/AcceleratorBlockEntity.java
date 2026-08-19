@@ -18,6 +18,9 @@ public class AcceleratorBlockEntity extends BlockEntity implements IEnergyStorag
     private static final int ENERGY_COST_PER_OPERATION = 100;
     private static final int INTERVAL_TICKS = 3;
 
+    /** 相邻催生器之间每 tick 的最大传输量 */
+    private static final int MAX_TRANSFER_PER_TICK = 500;
+
     private int tickCounter;
     private final EnergyStorage energyStorage;
 
@@ -30,6 +33,8 @@ public class AcceleratorBlockEntity extends BlockEntity implements IEnergyStorag
         if (level.isClientSide() || !(level instanceof ServerLevel serverLevel)) {
             return;
         }
+
+        transmitToNeighbors();   // ← 新增：相邻催生器互传电力
 
         tickCounter++;
         if (tickCounter % INTERVAL_TICKS != 0) {
@@ -54,6 +59,55 @@ public class AcceleratorBlockEntity extends BlockEntity implements IEnergyStorag
 
         energyStorage.extractEnergy(ENERGY_COST_PER_OPERATION, false);
         setChanged();
+    }
+    private void transmitToNeighbors() {
+        if (level == null || level.isClientSide)
+            return;
+
+        for (Direction dir : Direction.values()) {
+            BlockPos neighborPos = worldPosition.relative(dir);
+            BlockEntity neighbor = level.getBlockEntity(neighborPos);
+            if (!(neighbor instanceof AcceleratorBlockEntity other))
+                continue;
+            if (other.isRemoved())
+                continue;
+
+            int myStored = energyStorage.getEnergyStored();
+            int otherStored = other.getEnergyStored();
+
+            // 只由能量多的一端向少的一端推；
+            // 同一时刻一对里不可能两端都“更多”，因此每 tick 每对至多发生一次传输
+            if (myStored <= otherStored)
+                continue;
+
+            int deficit = other.getMaxEnergyStored() - otherStored;
+            if (deficit <= 0)
+                continue;
+
+            // 传输量 = min(邻居缺口, 我的存量, 每tick上限, 差值一半)
+            // 差值一半防止单次过冲导致两边角色互换、来回震荡
+            int remaining = Math.min(
+                    Math.min(deficit, Math.min(myStored, MAX_TRANSFER_PER_TICK)),
+                    (myStored - otherStored) / 2
+            );
+            if (remaining <= 0)
+                continue;
+
+            // 循环调用 receiveEnergy，应对邻居 maxReceive=100 的单次上限
+            int acceptedTotal = 0;
+            while (remaining > 0) {
+                int accepted = other.receiveEnergy(remaining, false);
+                if (accepted <= 0)
+                    break;
+                acceptedTotal += accepted;
+                remaining -= accepted;
+            }
+
+            if (acceptedTotal > 0) {
+                energyStorage.extractEnergy(acceptedTotal, false);
+                setChanged();
+            }
+        }
     }
 
     @Override
