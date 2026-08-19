@@ -23,12 +23,6 @@ public class ModRenderers {
 
         event.enqueueWork(() -> {
 
-            // 普通 BlockEntity Renderer
-            BlockEntityRenderers.register(
-                    ModBlockEntities.SMART_DRILL.get(),
-                    SmartDrillRenderer::new
-            );
-
             // Flywheel / Create Visual
             SimpleBlockEntityVisualizer
                     .builder(ModBlockEntities.SMART_DRILL.get())
