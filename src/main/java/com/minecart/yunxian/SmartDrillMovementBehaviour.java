@@ -106,4 +106,16 @@ public class SmartDrillMovementBehaviour extends DrillMovementBehaviour {
                                     MovementContext movementContext) {
         return new SmartDrillActorVisual(visualizationContext, simulationWorld, movementContext);
     }
+
+    private static final float NORMAL_SPEED_MULTIPLIER = 2.0f;
+    private static final float PRECISE_SPEED_MULTIPLIER = 1.0f;
+
+    @Override
+    protected float getBlockBreakingSpeed(MovementContext context) {
+        float base = super.getBlockBreakingSpeed(context);
+        float multiplier = getMode(context) == SmartDrillBlockEntity.DrillMode.PRECISE
+                ? PRECISE_SPEED_MULTIPLIER
+                : NORMAL_SPEED_MULTIPLIER;
+        return base * multiplier;
+    }
 }
