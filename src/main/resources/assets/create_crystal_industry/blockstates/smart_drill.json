@@ -1,54 +1,54 @@
 {
     "variants": {
-        "facing=down,waterlogged=false": {
+        "facing=down,powered=false": {
             "model": "create_crystal_industry:block/smart_drill/block",
             "x": 180
         },
-        "facing=down,waterlogged=true": {
-            "model": "create_crystal_industry:block/smart_drill/block",
+        "facing=down,powered=true": {
+            "model": "create_crystal_industry:block/smart_drill/block_powered",
             "x": 180
         },
-        "facing=east,waterlogged=false": {
+        "facing=east,powered=false": {
             "model": "create_crystal_industry:block/smart_drill/block",
             "x": 90,
             "y": 90
         },
-        "facing=east,waterlogged=true": {
-            "model": "create_crystal_industry:block/smart_drill/block",
+        "facing=east,powered=true": {
+            "model": "create_crystal_industry:block/smart_drill/block_powered",
             "x": 90,
             "y": 90
         },
-        "facing=north,waterlogged=false": {
+        "facing=north,powered=false": {
             "model": "create_crystal_industry:block/smart_drill/block",
             "x": 90
         },
-        "facing=north,waterlogged=true": {
-            "model": "create_crystal_industry:block/smart_drill/block",
+        "facing=north,powered=true": {
+            "model": "create_crystal_industry:block/smart_drill/block_powered",
             "x": 90
         },
-        "facing=south,waterlogged=false": {
+        "facing=south,powered=false": {
             "model": "create_crystal_industry:block/smart_drill/block",
             "x": 90,
             "y": 180
         },
-        "facing=south,waterlogged=true": {
-            "model": "create_crystal_industry:block/smart_drill/block",
+        "facing=south,powered=true": {
+            "model": "create_crystal_industry:block/smart_drill/block_powered",
             "x": 90,
             "y": 180
         },
-        "facing=up,waterlogged=false": {
+        "facing=up,powered=false": {
             "model": "create_crystal_industry:block/smart_drill/block"
         },
-        "facing=up,waterlogged=true": {
-            "model": "create_crystal_industry:block/smart_drill/block"
+        "facing=up,powered=true": {
+            "model": "create_crystal_industry:block/smart_drill/block_powered"
         },
-        "facing=west,waterlogged=false": {
+        "facing=west,powered=false": {
             "model": "create_crystal_industry:block/smart_drill/block",
             "x": 90,
             "y": 270
         },
-        "facing=west,waterlogged=true": {
-            "model": "create_crystal_industry:block/smart_drill/block",
+        "facing=west,powered=true": {
+            "model": "create_crystal_industry:block/smart_drill/block_powered",
             "x": 90,
             "y": 270
         }
