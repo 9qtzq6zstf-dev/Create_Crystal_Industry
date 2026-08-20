@@ -16,7 +16,7 @@ public class AcceleratorBlockEntity extends BlockEntity implements IEnergyStorag
     private static final int MAX_ENERGY = 10_000;
     private static final int MAX_RECEIVE = 100;
     private static final int ENERGY_COST_PER_OPERATION = 100;
-    private static final int INTERVAL_TICKS = 3;
+    private static final int INTERVAL_TICKS = 1;
 
     /** 相邻催生器之间每 tick 的最大传输量 */
     private static final int MAX_TRANSFER_PER_TICK = 500;

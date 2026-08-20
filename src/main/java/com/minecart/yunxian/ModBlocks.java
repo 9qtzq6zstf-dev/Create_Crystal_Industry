@@ -33,7 +33,8 @@ public final class ModBlocks {
     public static final DeferredBlock<Block> RAW_IRON_CLUSTER = cluster("raw_iron_cluster");
     public static final DeferredBlock<Block> RAW_IRON_BUDDING = oreBudding(
             "raw_iron_budding", RAW_IRON_SMALL_BUD, RAW_IRON_MEDIUM_BUD, RAW_IRON_LARGE_BUD,
-            RAW_IRON_CLUSTER, Blocks.IRON_ORE, Blocks.DEEPSLATE_IRON_ORE);
+            RAW_IRON_CLUSTER,
+            () -> Blocks.IRON_ORE, () -> Blocks.DEEPSLATE_IRON_ORE, () -> Blocks.RAW_IRON_BLOCK);
 
     // Raw gold
     public static final DeferredBlock<Block> RAW_GOLD_SMALL_BUD = bud("raw_gold_small_bud", Blocks.SMALL_AMETHYST_BUD, 1, 1, "small_bud");
@@ -42,7 +43,8 @@ public final class ModBlocks {
     public static final DeferredBlock<Block> RAW_GOLD_CLUSTER = cluster("raw_gold_cluster");
     public static final DeferredBlock<Block> RAW_GOLD_BUDDING = oreBudding(
             "raw_gold_budding", RAW_GOLD_SMALL_BUD, RAW_GOLD_MEDIUM_BUD, RAW_GOLD_LARGE_BUD,
-            RAW_GOLD_CLUSTER, Blocks.GOLD_ORE, Blocks.DEEPSLATE_GOLD_ORE);
+            RAW_GOLD_CLUSTER,
+            () -> Blocks.GOLD_ORE, () -> Blocks.DEEPSLATE_GOLD_ORE, () -> Blocks.RAW_GOLD_BLOCK);
 
     // Raw copper
     public static final DeferredBlock<Block> RAW_COPPER_SMALL_BUD = bud("raw_copper_small_bud", Blocks.SMALL_AMETHYST_BUD, 1, 1, "small_bud");
@@ -51,7 +53,8 @@ public final class ModBlocks {
     public static final DeferredBlock<Block> RAW_COPPER_CLUSTER = cluster("raw_copper_cluster");
     public static final DeferredBlock<Block> RAW_COPPER_BUDDING = oreBudding(
             "raw_copper_budding", RAW_COPPER_SMALL_BUD, RAW_COPPER_MEDIUM_BUD, RAW_COPPER_LARGE_BUD,
-            RAW_COPPER_CLUSTER, Blocks.COPPER_ORE, Blocks.DEEPSLATE_COPPER_ORE);
+            RAW_COPPER_CLUSTER,
+            () -> Blocks.COPPER_ORE, () -> Blocks.DEEPSLATE_COPPER_ORE, () -> Blocks.RAW_COPPER_BLOCK);
 
     // Raw zinc (Create)
     public static final DeferredBlock<Block> RAW_ZINC_SMALL_BUD = bud("raw_zinc_small_bud", Blocks.SMALL_AMETHYST_BUD, 1, 1, "small_bud");
@@ -61,8 +64,9 @@ public final class ModBlocks {
     public static final DeferredBlock<Block> RAW_ZINC_BUDDING = oreBudding(
             "raw_zinc_budding", RAW_ZINC_SMALL_BUD, RAW_ZINC_MEDIUM_BUD, RAW_ZINC_LARGE_BUD,
             RAW_ZINC_CLUSTER,
-            BuiltInRegistries.BLOCK.get(ResourceLocation.parse("create:zinc_ore")),
-            BuiltInRegistries.BLOCK.get(ResourceLocation.parse("create:deepslate_zinc_ore")));
+            () -> BuiltInRegistries.BLOCK.get(ResourceLocation.parse("create:zinc_ore")),
+            () -> BuiltInRegistries.BLOCK.get(ResourceLocation.parse("create:deepslate_zinc_ore")),
+            () -> BuiltInRegistries.BLOCK.get(ResourceLocation.parse("create:raw_zinc_block")));
 
     // Echo
     public static final DeferredBlock<Block> ECHO_SMALL_BUD = bud("echo_small_bud", Blocks.SMALL_AMETHYST_BUD, 1, 1, "small_bud");
@@ -105,16 +109,18 @@ public final class ModBlocks {
     }
 
     private static DeferredBlock<Block> oreBudding(String name,
-                                                    DeferredBlock<Block> small,
-                                                    DeferredBlock<Block> medium,
-                                                    DeferredBlock<Block> large,
-                                                    DeferredBlock<Block> cluster,
-                                                    Block stoneOre,
-                                                    Block deepslateOre) {
+                                                   DeferredBlock<Block> small,
+                                                   DeferredBlock<Block> medium,
+                                                   DeferredBlock<Block> large,
+                                                   DeferredBlock<Block> cluster,
+                                                   Supplier<Block> stoneOre,
+                                                   Supplier<Block> deepslateOre,
+                                                   Supplier<Block> rawOreBlock) {
         return registerBlock(name, () -> new OreConvertingBuddingBlock(
                 5,
                 BlockBehaviour.Properties.ofFullCopy(Blocks.BUDDING_AMETHYST),
-                small.get(), medium.get(), large.get(), cluster.get(), stoneOre, deepslateOre
+                small.get(), medium.get(), large.get(), cluster.get(),
+                stoneOre, deepslateOre, rawOreBlock
         ));
     }
 
