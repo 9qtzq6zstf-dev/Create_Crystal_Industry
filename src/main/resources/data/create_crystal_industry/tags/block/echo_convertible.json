@@ -1,0 +1,17 @@
+{
+    "replace": false,
+    "values": [
+        "#minecraft:dirt",
+        "minecraft:gravel",
+        "minecraft:clay",
+        "minecraft:sand",
+        "minecraft:red_sand",
+        "minecraft:stone",
+        "minecraft:deepslate",
+        "minecraft:granite",
+        "minecraft:diorite",
+        "minecraft:andesite",
+        "minecraft:tuff",
+        "minecraft:calcite"
+    ]
+}

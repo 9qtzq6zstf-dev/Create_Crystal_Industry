@@ -70,7 +70,7 @@ public final class ModBlocks {
     public static final DeferredBlock<Block> ECHO_LARGE_BUD = bud("echo_large_bud", Blocks.LARGE_AMETHYST_BUD, 5, 3, "large_bud");
     public static final DeferredBlock<Block> ECHO_CLUSTER = cluster("echo_cluster");
     public static final DeferredBlock<Block> ECHO_BUDDING = registerBlock("echo_budding",
-            () -> new GenericBuddingBlock(5, BlockBehaviour.Properties.ofFullCopy(Blocks.BUDDING_AMETHYST),
+            () -> new EchoConvertingBuddingBlock(5, BlockBehaviour.Properties.ofFullCopy(Blocks.BUDDING_AMETHYST),
                     ECHO_SMALL_BUD.get(), ECHO_MEDIUM_BUD.get(), ECHO_LARGE_BUD.get(), ECHO_CLUSTER.get()));
 
     public static final DeferredBlock<Block> ACCELERATOR = registerBlock("accelerator",
