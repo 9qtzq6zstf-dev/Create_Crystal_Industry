@@ -77,10 +77,13 @@ public class SmartDrillRenderer extends KineticBlockEntityRenderer<SmartDrillBlo
     /** 传动杆：始终按真实网络转速旋转 */
     private void renderShaft(SmartDrillBlockEntity be, BlockState state, PoseStack ms,
                              VertexConsumer vc, int light) {
-
-        SuperByteBuffer shaft = CachedBuffers.partialFacing(SHAFT, state);
-        if (shaft == null)
+        SuperByteBuffer shaft;
+        try {
+            shaft = CachedBuffers.partialFacing(SHAFT, state);
+        } catch (Exception e) {
+            // 模型资源缺失时静默跳过，不让一个方块崩掉整个游戏
             return;
+        }
 
         Axis axis = getRotationAxisOf(be);
         float time = AnimationTickHolder.getRenderTime(be.getLevel());

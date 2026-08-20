@@ -3,6 +3,8 @@ package com.minecart.yunxian;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
@@ -40,6 +42,31 @@ public class AcceleratorBlock extends BaseEntityBlock {
         builder.add(FACING, POWERED);
     }
 
+    /**
+     * 催生状态下的粒子效果（仅客户端调用）。
+     * 随机选一个面，在表面外侧生成粒子并向外飘散。
+     */
+    @Override
+    public void animateTick(BlockState state, Level level, BlockPos pos, RandomSource random) {
+        if (!state.getValue(POWERED)) {
+            return;
+        }
+
+        Direction face = Direction.getRandom(random);
+
+        // 粒子位置：面中心外侧 0.75（原 0.55），带 ±0.25 的随机散布
+        double x = pos.getX() + 0.5 + face.getStepX() * 0.75 + (random.nextDouble() - 0.5) * 0.5;
+        double y = pos.getY() + 0.5 + face.getStepY() * 0.75 + (random.nextDouble() - 0.5) * 0.5;
+        double z = pos.getZ() + 0.5 + face.getStepZ() * 0.75 + (random.nextDouble() - 0.5) * 0.5;
+
+        // 速度：沿面的法线向外飘，带轻微上升
+        double vx = face.getStepX() * 0.01;
+        double vy = face.getStepY() * 0.01 + 0.02;
+        double vz = face.getStepZ() * 0.01;
+
+        level.addParticle(ParticleTypes.ELECTRIC_SPARK, x, y, z, vx, vy, vz);
+    }
+
     @Nullable
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
@@ -49,7 +76,7 @@ public class AcceleratorBlock extends BaseEntityBlock {
     @Nullable
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state,
-                                                                   BlockEntityType<T> type) {
+                                                                  BlockEntityType<T> type) {
         if (level.isClientSide() || type != ModBlockEntities.ACCELERATOR.get()) {
             return null;
         }
