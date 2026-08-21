@@ -33,7 +33,7 @@ public class SmartDrillActorVisual extends ActorVisual {
 
         // 唯一与 DrillerActorVisual 不同的地方：用你自己的 HEAD 模型
         drillHead = instancerProvider
-                .instancer(InstanceTypes.TRANSFORMED, Models.partial(SmartDrillRenderer.HEAD))
+                .instancer(InstanceTypes.TRANSFORMED, Models.partial(SmartDrillRenderer.HEAD_FULL))
                 .createInstance();
     }
 

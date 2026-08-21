@@ -13,9 +13,9 @@ public final class ModCreativeTabs {
     public static final DeferredRegister<CreativeModeTab> CREATIVE_TABS =
             DeferredRegister.create(Registries.CREATIVE_MODE_TAB, Yunxian.MODID);
 
-    public static final Supplier<CreativeModeTab> YUNXIAN_TAB = CREATIVE_TABS.register("yunxian_tab",
+    public static final Supplier<CreativeModeTab> YUNXIAN_TAB = CREATIVE_TABS.register("create_crystal_industry_tab",
             () -> CreativeModeTab.builder()
-                    .title(Component.translatable("itemGroup.yunxian"))
+                    .title(Component.translatable("itemGroup.create_crystal_industry"))
                     .icon(() -> new ItemStack(ModBlocks.ROSE_QUARTZ_CLUSTER.get()))
                     .displayItems((parameters, output) -> {
                         output.accept(ModBlocks.ROSE_QUARTZ_BUDDING.get());
@@ -53,6 +53,12 @@ public final class ModCreativeTabs {
                         output.accept(ModBlocks.ECHO_MEDIUM_BUD.get());
                         output.accept(ModBlocks.ECHO_LARGE_BUD.get());
                         output.accept(ModBlocks.ECHO_CLUSTER.get());
+
+                        output.accept(ModBlocks.QUARTZ_BUDDING.get());
+                        output.accept(ModBlocks.QUARTZ_SMALL_BUD.get());
+                        output.accept(ModBlocks.QUARTZ_MEDIUM_BUD.get());
+                        output.accept(ModBlocks.QUARTZ_LARGE_BUD.get());
+                        output.accept(ModBlocks.QUARTZ_CLUSTER.get());
 
                         output.accept(ModBlocks.ACCELERATOR.get());
                         output.accept(ModBlocks.SMART_DRILL.get());

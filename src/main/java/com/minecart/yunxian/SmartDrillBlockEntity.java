@@ -17,6 +17,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.Enchantments;
+import net.minecraft.world.level.block.BuddingAmethystBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
@@ -74,32 +75,44 @@ public class SmartDrillBlockEntity extends DrillBlockEntity {
         }
 
         BlockPos target = breakingPos != null ? breakingPos : getBreakingPos();
+
+        // 母岩不遵循原版掉落表（原版精准采集也挖不掉）：精准模式下先真正破坏方块，再手动掉落母岩
+        if (stateToBreak.getBlock() instanceof BuddingAmethystBlock) {
+            level.destroyBlock(target, false);                            // 真正移除方块（不产生掉落）
+            dropItem(target, new ItemStack(stateToBreak.getBlock()));     // 补发母岩掉落物
+            return;
+        }
+
         ItemStack silkTouchTool = new ItemStack(Items.NETHERITE_PICKAXE);
         Registry<Enchantment> enchantmentRegistry =
                 level.registryAccess().registryOrThrow(Registries.ENCHANTMENT);
         silkTouchTool.enchant(enchantmentRegistry.getHolderOrThrow(Enchantments.SILK_TOUCH), 1);
 
-        Vec3 dropPosition = VecHelper.offsetRandomly(
-                VecHelper.getCenterOf(target),
-                level.random,
-                .125f
-        );
-
         BlockHelper.destroyBlockAs(level, target, null, silkTouchTool, 1f, stack -> {
             if (stack.isEmpty()) {
                 return;
             }
-            ItemEntity itemEntity = new ItemEntity(
-                    level,
-                    dropPosition.x,
-                    dropPosition.y,
-                    dropPosition.z,
-                    stack
-            );
-            itemEntity.setDefaultPickUpDelay();
-            itemEntity.setDeltaMovement(Vec3.ZERO);
-            level.addFreshEntity(itemEntity);
+            dropItem(target, stack);
         });
+    }
+
+    /** 在目标位置生成一个无初速、正常拾取延迟的掉落物 */
+    private void dropItem(BlockPos pos, ItemStack stack) {
+        Vec3 dropPosition = VecHelper.offsetRandomly(
+                VecHelper.getCenterOf(pos),
+                level.random,
+                .125f
+        );
+        ItemEntity itemEntity = new ItemEntity(
+                level,
+                dropPosition.x,
+                dropPosition.y,
+                dropPosition.z,
+                stack
+        );
+        itemEntity.setDefaultPickUpDelay();
+        itemEntity.setDeltaMovement(Vec3.ZERO);
+        level.addFreshEntity(itemEntity);
     }
 
     public enum DrillMode implements INamedIconOptions {

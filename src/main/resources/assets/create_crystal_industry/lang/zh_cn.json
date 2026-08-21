@@ -35,5 +35,10 @@
     "create_crystal_industry.smart_drill.filter": "挖掘过滤",
     "create.create_crystal_industry.smart_drill.mode": "采集模式切换",
     "create_crystal_industry.smart_drill.mode.normal": "普通采集",
-    "create_crystal_industry.smart_drill.mode.precise": "精准采集"
+    "create_crystal_industry.smart_drill.mode.precise": "精准采集",
+    "block.create_crystal_industry.quartz_budding": "石英母岩",
+    "block.create_crystal_industry.quartz_small_bud": "小型石英芽",
+    "block.create_crystal_industry.quartz_medium_bud": "中型石英芽",
+    "block.create_crystal_industry.quartz_large_bud": "大型石英芽",
+    "block.create_crystal_industry.quartz_cluster": "石英簇"
 }

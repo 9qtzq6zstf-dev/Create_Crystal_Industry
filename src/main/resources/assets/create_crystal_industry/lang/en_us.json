@@ -35,6 +35,11 @@
     "create_crystal_industry.smart_drill.filter": "Mining Filter",
     "create.create_crystal_industry.smart_drill.mode": "Harvesting Mode",
     "create_crystal_industry.smart_drill.mode.normal": "Normal Harvesting",
-    "create_crystal_industry.smart_drill.mode.precise": "Silk Touch Harvesting"
+    "create_crystal_industry.smart_drill.mode.precise": "Silk Touch Harvesting",
+    "block.create_crystal_industry.quartz_budding": "Budding Quartz",
+    "block.create_crystal_industry.quartz_small_bud": "Small Quartz Bud",
+    "block.create_crystal_industry.quartz_medium_bud": "Medium Quartz Bud",
+    "block.create_crystal_industry.quartz_large_bud": "Large Quartz Bud",
+    "block.create_crystal_industry.quartz_cluster": "Quartz Cluster"
 }
 

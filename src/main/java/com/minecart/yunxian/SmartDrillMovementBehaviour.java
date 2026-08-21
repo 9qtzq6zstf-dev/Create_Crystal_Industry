@@ -12,6 +12,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.BuddingAmethystBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -76,17 +77,30 @@ public class SmartDrillMovementBehaviour extends DrillMovementBehaviour {
 
     @Override
     protected void destroyBlock(MovementContext context, BlockPos breakingPos) {
-        if (getMode(context) == SmartDrillBlockEntity.DrillMode.PRECISE) {
-            ItemStack silkTouchTool = new ItemStack(Items.NETHERITE_PICKAXE);
-            Registry<Enchantment> enchantments =
-                    context.world.registryAccess().registryOrThrow(Registries.ENCHANTMENT);
-            silkTouchTool.enchant(enchantments.getHolderOrThrow(Enchantments.SILK_TOUCH), 1);
-
-            BlockHelper.destroyBlockAs(context.world, breakingPos, null, silkTouchTool, 1f,
-                    stack -> this.collectOrDropItem(context, stack));
-        } else {
+        if (getMode(context) != SmartDrillBlockEntity.DrillMode.PRECISE) {
             super.destroyBlock(context, breakingPos);
+            return;
         }
+
+        BlockState state = context.world.getBlockState(breakingPos);
+
+        // 母岩不遵循原版掉落表：精准模式下直接掉落母岩方块本身
+        if (state.getBlock() instanceof BuddingAmethystBlock) {
+            BlockHelper.destroyBlock(context.world, breakingPos, 1f, stack -> {
+                if (!stack.isEmpty())
+                    collectOrDropItem(context, stack);
+            });
+            collectOrDropItem(context, new ItemStack(state.getBlock()));
+            return;
+        }
+
+        ItemStack silkTouchTool = new ItemStack(Items.NETHERITE_PICKAXE);
+        Registry<Enchantment> enchantments =
+                context.world.registryAccess().registryOrThrow(Registries.ENCHANTMENT);
+        silkTouchTool.enchant(enchantments.getHolderOrThrow(Enchantments.SILK_TOUCH), 1);
+
+        BlockHelper.destroyBlockAs(context.world, breakingPos, null, silkTouchTool, 1f,
+                stack -> this.collectOrDropItem(context, stack));
     }
 
     private static SmartDrillBlockEntity.DrillMode getMode(MovementContext context) {
