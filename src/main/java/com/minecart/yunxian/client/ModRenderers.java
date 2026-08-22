@@ -21,6 +21,7 @@ public class ModRenderers {
         if (FMLEnvironment.dist.isClient()) {
             EchoHighlightRenderer.register();
         }
+        EchoSculkOverlay.register();   // ← 新增
     }
 
     private static void onClientSetup(FMLClientSetupEvent event) {

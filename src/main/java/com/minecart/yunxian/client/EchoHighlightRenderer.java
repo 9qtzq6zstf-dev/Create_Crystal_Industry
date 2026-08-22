@@ -28,7 +28,7 @@ public final class EchoHighlightRenderer {
     private static final Logger LOGGER = LogUtils.getLogger();
 
     /** 线宽（屏幕像素），所有平台生效 */
-    private static final double EDGE_WIDTH_PIXELS = 3.0;
+    private static final double EDGE_WIDTH_PIXELS = 5.0;
 
     /** 垂直 FOV 默认 70° 的换算常数 */
     private static final double TAN_HALF_FOV = Math.tan(Math.toRadians(35.0));
