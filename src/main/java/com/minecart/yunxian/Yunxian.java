@@ -19,6 +19,7 @@ public class Yunxian {
 
         ModBlocks.register(modEventBus);
         ModItems.register(modEventBus);
+        ModMenus.register(modEventBus);      // ← 新增
         ModBlockEntities.register(modEventBus);
         ModCapabilities.register(modEventBus);
         ModCreativeTabs.register(modEventBus);

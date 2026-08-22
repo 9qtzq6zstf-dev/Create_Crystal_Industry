@@ -40,5 +40,8 @@
     "block.create_crystal_industry.quartz_small_bud": "小型石英芽",
     "block.create_crystal_industry.quartz_medium_bud": "中型石英芽",
     "block.create_crystal_industry.quartz_large_bud": "大型石英芽",
-    "block.create_crystal_industry.quartz_cluster": "石英簇"
+    "block.create_crystal_industry.quartz_cluster": "石英簇",
+    "container.create_crystal_industry.echo_spyglass_filter": "回响望远镜 · 过滤",
+    "item.create_crystal_industry.echo_spyglass.filter_tip": "过滤：%s",
+    "item.create_crystal_industry.echo_spyglass.filter_tip_none": "过滤：无（按 echo_reveals 标签）"
 }

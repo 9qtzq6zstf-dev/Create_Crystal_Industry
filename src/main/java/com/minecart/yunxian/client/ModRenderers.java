@@ -12,11 +12,15 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 
 import com.simibubi.create.content.kinetics.base.OrientedRotatingVisual;
+import net.neoforged.fml.loading.FMLEnvironment;
 
 public class ModRenderers {
 
     public static void register(IEventBus modEventBus) {
         modEventBus.addListener(ModRenderers::onClientSetup);
+        if (FMLEnvironment.dist.isClient()) {
+            EchoHighlightRenderer.register();
+        }
     }
 
     private static void onClientSetup(FMLClientSetupEvent event) {
@@ -35,4 +39,5 @@ public class ModRenderers {
                     .apply();
         });
     }
+
 }

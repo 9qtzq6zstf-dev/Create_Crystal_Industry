@@ -9,8 +9,6 @@ import java.util.OptionalDouble;
 
 public final class ModRenderTypes extends RenderType {
 
-    // 显式关闭深度测试：不依赖任何原版 lines()/lineStrip() 的默认深度语义，
-    // 无论构建如何，这个 RenderType 一定穿墙。
     public static final RenderType ECHO_ORE_OVERLAY = create(
             "echo_ore_overlay",
             DefaultVertexFormat.POSITION_COLOR_NORMAL,
@@ -24,7 +22,7 @@ public final class ModRenderTypes extends RenderType {
                     .setTransparencyState(RenderStateShard.TRANSLUCENT_TRANSPARENCY)
                     .setOutputState(RenderStateShard.ITEM_ENTITY_TARGET)
                     .setWriteMaskState(RenderStateShard.COLOR_WRITE)
-                    .setDepthTestState(RenderStateShard.NO_DEPTH_TEST)   // ← 关键
+                    .setDepthTestState(RenderStateShard.NO_DEPTH_TEST)
                     .setCullState(RenderStateShard.NO_CULL)
                     .createCompositeState(false)
     );

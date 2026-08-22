@@ -1,19 +1,31 @@
 package com.minecart.yunxian.item;
 
 import com.minecart.yunxian.config.EchoConfig;
+import com.minecart.yunxian.menu.EchoSpyglassFilterMenu;
 import com.minecart.yunxian.network.EchoRevealPayload;
+import com.simibubi.create.content.logistics.filter.FilterItem;
+import com.simibubi.create.content.logistics.filter.FilterItemStack;
+import net.minecraft.ChatFormatting;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.UseAnim;
+import net.minecraft.world.item.component.ItemContainerContents;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.network.PacketDistributor;
+
+import java.util.List;
 
 public class EchoSpyglassItem extends Item {
 
@@ -23,7 +35,13 @@ public class EchoSpyglassItem extends Item {
         super(properties);
     }
 
-    // 只要原版的持镜动作，不继承 SpyglassItem，因此没有缩放
+    @Override
+    public ItemStack getDefaultInstance() {
+        ItemStack stack = super.getDefaultInstance();
+        stack.set(DataComponents.CONTAINER, ItemContainerContents.fromItems(List.of(ItemStack.EMPTY)));
+        return stack;
+    }
+
     @Override
     public UseAnim getUseAnimation(ItemStack stack) {
         return UseAnim.SPYGLASS;
@@ -37,11 +55,19 @@ public class EchoSpyglassItem extends Item {
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
+
+        if (player.isShiftKeyDown()) {
+            if (!level.isClientSide && player instanceof ServerPlayer serverPlayer) {
+                openFilterMenu(serverPlayer, hand);
+            }
+            return InteractionResultHolder.success(stack);
+        }
+
         player.startUsingItem(hand);
         player.playSound(SoundEvents.SPYGLASS_USE, 1.0F, 1.0F);
 
         if (!level.isClientSide && player instanceof ServerPlayer serverPlayer) {
-            scanAndSend(level, serverPlayer);   // 立即先扫一次，反馈更快
+            scanAndSend(level, serverPlayer, stack);
         }
         return InteractionResultHolder.consume(stack);
     }
@@ -51,11 +77,10 @@ public class EchoSpyglassItem extends Item {
         if (level.isClientSide || !(entity instanceof ServerPlayer serverPlayer)) {
             return;
         }
-
         int usedTicks = USE_DURATION_TICKS - remainingUseDuration;
         int interval = EchoConfig.SCAN_INTERVAL_TICKS.get();
         if (usedTicks > 0 && usedTicks % interval == 0) {
-            scanAndSend(level, serverPlayer);
+            scanAndSend(level, serverPlayer, stack);
         }
     }
 
@@ -75,11 +100,54 @@ public class EchoSpyglassItem extends Item {
         return stack;
     }
 
-    private void scanAndSend(Level level, ServerPlayer player) {
+    @Override
+    public void appendHoverText(ItemStack stack, Item.TooltipContext context,
+                                List<Component> tooltip, TooltipFlag flag) {
+        super.appendHoverText(stack, context, tooltip, flag);
+        ItemStack filter = getFilterStack(stack);
+        if (filter.isEmpty()) {
+            tooltip.add(Component.translatable("item.create_crystal_industry.echo_spyglass.filter_tip_none")
+                    .withStyle(ChatFormatting.DARK_GRAY));
+        } else {
+            tooltip.add(Component.translatable("item.create_crystal_industry.echo_spyglass.filter_tip",
+                            filter.getHoverName())
+                    .withStyle(ChatFormatting.GRAY));
+        }
+    }
+
+    private void scanAndSend(Level level, ServerPlayer player, ItemStack heldStack) {
         if (level instanceof ServerLevel serverLevel) {
+            ItemStack filter = getFilterStack(heldStack);
             PacketDistributor.sendToPlayer(player,
                     new EchoRevealPayload(serverLevel.dimension(),
-                            EchoScanner.findOres(serverLevel, player.blockPosition(), EchoConfig.SCAN_RADIUS.get())));
+                            EchoScanner.findOres(serverLevel, player.blockPosition(),
+                                    EchoConfig.SCAN_RADIUS.get(), filter)));
         }
+    }
+
+    private static void openFilterMenu(ServerPlayer player, InteractionHand hand) {
+        player.openMenu(
+                new SimpleMenuProvider(
+                        (containerId, inventory, p) -> new EchoSpyglassFilterMenu(containerId, inventory, hand),
+                        Component.translatable("container.create_crystal_industry.echo_spyglass_filter")),
+                buf -> buf.writeEnum(hand));
+    }
+
+    /** 取出望远镜内保存的过滤物品（第一格）；没有则为 ItemStack.EMPTY */
+    public static ItemStack getFilterStack(ItemStack spyglass) {
+        ItemContainerContents contents = spyglass.getOrDefault(DataComponents.CONTAINER, ItemContainerContents.EMPTY);
+        return contents.stream().findFirst().orElse(ItemStack.EMPTY);
+    }
+
+    /** 允许放入过滤槽：Create 的普通/数据驱动过滤器，或任意方块物品（按方块精确匹配） */
+    public static boolean canBeFilter(ItemStack stack) {
+        if (stack.isEmpty()
+                || stack.getItem() instanceof BlockItem
+                || stack.getItem() instanceof FilterItem) {
+            return true;
+        }
+        // Create 6 的属性过滤器是数据驱动的，没有固定物品类；
+        // 用官方公共入口 FilterItemStack.of 判断，空结果说明不是过滤器。
+        return !FilterItemStack.of(stack).isEmpty();
     }
 }

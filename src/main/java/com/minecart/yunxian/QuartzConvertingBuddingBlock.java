@@ -47,8 +47,8 @@ public class QuartzConvertingBuddingBlock extends GenericBuddingBlock {
             return;
         }
 
-        if (level.getBlockState(targetPos).is(Blocks.DIORITE)) {
-            level.setBlockAndUpdate(targetPos, Blocks.SMOOTH_QUARTZ.defaultBlockState());
+        if (level.getBlockState(targetPos).is(Blocks.NETHERRACK)) {
+            level.setBlockAndUpdate(targetPos, Blocks.NETHER_QUARTZ_ORE.defaultBlockState());
         }
     }
 

@@ -1,6 +1,5 @@
 package com.minecart.yunxian.client;
 
-import com.minecart.yunxian.Yunxian;
 import com.minecart.yunxian.item.EchoSpyglassItem;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -12,21 +11,23 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
+import net.neoforged.neoforge.common.NeoForge;
 
 import java.util.List;
 
-@EventBusSubscriber(modid = Yunxian.MODID, bus = EventBusSubscriber.Bus.GAME, value = Dist.CLIENT)
 public final class EchoHighlightRenderer {
 
     private EchoHighlightRenderer() {
     }
 
-    @SubscribeEvent
+    /** 客户端初始化时调用一次（放在 ModRenderers.register 里） */
+    public static void register() {
+        NeoForge.EVENT_BUS.addListener(EchoHighlightRenderer::onRenderLevel);
+    }
+
     public static void onRenderLevel(RenderLevelStageEvent event) {
+        // AFTER_PARTICLES：世界空间内、且晚于所有方块与粒子的阶段
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES) {
             return;
         }
@@ -50,23 +51,28 @@ public final class EchoHighlightRenderer {
         poseStack.pushPose();
         poseStack.translate(-camera.x, -camera.y, -camera.z);
 
-        MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
-        VertexConsumer consumer = buffers.getBuffer(ModRenderTypes.ECHO_ORE_OVERLAY);
-
+        // ===== 关键：显式关闭深度测试与深度写入，强制穿墙 =====
         RenderSystem.disableDepthTest();
+        RenderSystem.depthMask(false);
+        try {
+            MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
+            VertexConsumer consumer = buffers.getBuffer(ModRenderTypes.ECHO_ORE_OVERLAY);
 
-        for (BlockPos pos : ores) {
-            AABB box = new AABB(pos);
-            if (event.getFrustum() != null && !event.getFrustum().isVisible(box)) {
-                continue;
+            for (BlockPos pos : ores) {
+                AABB box = new AABB(pos);
+                if (event.getFrustum() != null && !event.getFrustum().isVisible(box)) {
+                    continue;
+                }
+                LevelRenderer.renderLineBox(poseStack, consumer, box, 1.0F, 0.67F, 0.08F, 0.9F);
             }
-            LevelRenderer.renderLineBox(poseStack, consumer, box, 1.0F, 0.67F, 0.08F, 0.9F);
+
+            buffers.endBatch(ModRenderTypes.ECHO_ORE_OVERLAY);
+        } finally {
+            // 无论正常还是异常，都恢复深度状态，避免影响天气等后续渲染
+            RenderSystem.depthMask(true);
+            RenderSystem.enableDepthTest();
         }
 
-        buffers.endBatch(ModRenderTypes.ECHO_ORE_OVERLAY);
-        RenderSystem.enableDepthTest();
-
         poseStack.popPose();
-        buffers.endBatch(ModRenderTypes.ECHO_ORE_OVERLAY);
     }
 }
