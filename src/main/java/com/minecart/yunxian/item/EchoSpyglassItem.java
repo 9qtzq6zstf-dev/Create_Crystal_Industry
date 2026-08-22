@@ -133,21 +133,25 @@ public class EchoSpyglassItem extends Item {
                 buf -> buf.writeEnum(hand));
     }
 
+    /** 是否可以作为虚拟过滤对象：任意方块物品，或机械动力过滤器 */
+    public static boolean isGhostAllowed(ItemStack stack) {
+        return !stack.isEmpty() && (stack.getItem() instanceof BlockItem || isCreateFilter(stack));
+    }
+
+    /** 是否为机械动力过滤器（普通 Filter / 数据驱动属性过滤器） */
+    public static boolean isCreateFilter(ItemStack stack) {
+        if (stack.isEmpty()) {
+            return false;
+        }
+        if (stack.getItem() instanceof FilterItem) {
+            return true;
+        }
+        return !FilterItemStack.of(stack).isEmpty();
+    }
+
     /** 取出望远镜内保存的过滤物品（第一格）；没有则为 ItemStack.EMPTY */
     public static ItemStack getFilterStack(ItemStack spyglass) {
         ItemContainerContents contents = spyglass.getOrDefault(DataComponents.CONTAINER, ItemContainerContents.EMPTY);
         return contents.stream().findFirst().orElse(ItemStack.EMPTY);
-    }
-
-    /** 允许放入过滤槽：Create 的普通/数据驱动过滤器，或任意方块物品（按方块精确匹配） */
-    public static boolean canBeFilter(ItemStack stack) {
-        if (stack.isEmpty()
-                || stack.getItem() instanceof BlockItem
-                || stack.getItem() instanceof FilterItem) {
-            return true;
-        }
-        // Create 6 的属性过滤器是数据驱动的，没有固定物品类；
-        // 用官方公共入口 FilterItemStack.of 判断，空结果说明不是过滤器。
-        return !FilterItemStack.of(stack).isEmpty();
     }
 }
