@@ -20,5 +20,10 @@ public final class ModNetwork {
                 EchoRevealPayload.STREAM_CODEC,
                 EchoRevealPayload::handle
         );
+        registrar.playToServer(                                 // ← 新增
+                SetFilterPayload.TYPE,
+                SetFilterPayload.STREAM_CODEC,
+                SetFilterPayload::handle
+        );
     }
 }

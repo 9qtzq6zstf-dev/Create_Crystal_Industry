@@ -5,20 +5,18 @@ import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.client.renderer.RenderStateShard;
 import net.minecraft.client.renderer.RenderType;
 
-import java.util.OptionalDouble;
-
 public final class ModRenderTypes extends RenderType {
 
-    public static final RenderType ECHO_ORE_OVERLAY = create(
-            "echo_ore_overlay",
-            DefaultVertexFormat.POSITION_COLOR_NORMAL,
-            VertexFormat.Mode.LINES,
-            1536,
+    // 四边形版本：每条棱 = 1 个朝向相机的矩形，线宽在所有平台上都生效
+    public static final RenderType ECHO_ORE_OVERLAY_QUADS = create(
+            "echo_ore_overlay_quads",
+            DefaultVertexFormat.POSITION_COLOR,
+            VertexFormat.Mode.QUADS,
+            4096,
             false,
             false,
             CompositeState.builder()
-                    .setShaderState(RenderStateShard.RENDERTYPE_LINES_SHADER)
-                    .setLineState(new RenderStateShard.LineStateShard(OptionalDouble.empty()))
+                    .setShaderState(RenderStateShard.POSITION_COLOR_SHADER)
                     .setTransparencyState(RenderStateShard.TRANSLUCENT_TRANSPARENCY)
                     .setOutputState(RenderStateShard.ITEM_ENTITY_TARGET)
                     .setWriteMaskState(RenderStateShard.COLOR_WRITE)
