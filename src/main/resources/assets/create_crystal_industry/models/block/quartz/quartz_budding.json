@@ -1,6 +1,7 @@
 {
-    "parent": "minecraft:block/cube_all",
-    "textures": {
-        "all": "create_crystal_industry:block/quartz/quartz_budding"
-    }
+  "parent": "minecraft:block/cube_column",
+  "textures": {
+    "end": "create_crystal_industry:block/quartz/quartz_budding_top",
+    "side": "create_crystal_industry:block/quartz/quartz_budding_side"
+  }
 }
