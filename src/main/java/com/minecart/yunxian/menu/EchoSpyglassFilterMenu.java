@@ -19,6 +19,9 @@ import java.util.List;
 
 public class EchoSpyglassFilterMenu extends AbstractContainerMenu {
 
+    // 玩家槽位整体下移偏移量（已保留，不影响过滤槽）
+    private static final int PLAYER_SLOTS_Y_OFFSET = 22;
+
     private final InteractionHand hand;
     private final Inventory playerInventory;
     private final SimpleContainer filterContainer;
@@ -36,9 +39,8 @@ public class EchoSpyglassFilterMenu extends AbstractContainerMenu {
         this.filterContainer = loadFilter(playerInventory.player.getItemInHand(hand));
 
         // ===== 幽灵槽：mayPlace / mayPickup 全部 false =====
-        // vanilla 的一切真实放入/取出路径都被这两个 false 挡住；
-        // 槽内容只有 clicked()/quickMoveStack()/setVirtualFilter() 的显式 set() 能改变。
-        this.addSlot(new Slot(filterContainer, 0, 56, 17) {
+        // ✅ 过滤槽位置已修改为 (79, 22)（原 56, 17 → 右移23，下移5）
+        this.addSlot(new Slot(filterContainer, 0, 79, 22) {   // ← 坐标已修改
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return false;
@@ -55,15 +57,20 @@ public class EchoSpyglassFilterMenu extends AbstractContainerMenu {
             }
         });
 
-        // 主物品栏 1..27 ↔ 背包索引 9..35
+        // 主物品栏 1..27 ↔ 背包索引 9..35（已下移22像素）
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
-                this.addSlot(new Slot(playerInventory, col + row * 9 + 9, 8 + col * 18, 84 + row * 18));
+                this.addSlot(new Slot(playerInventory, col + row * 9 + 9,
+                        8 + col * 18,
+                        84 + row * 18 + PLAYER_SLOTS_Y_OFFSET));
             }
         }
-        // 快捷栏 28..36 ↔ 背包索引 0..8
+
+        // 快捷栏 28..36 ↔ 背包索引 0..8（已下移22像素）
         for (int col = 0; col < 9; col++) {
-            this.addSlot(new Slot(playerInventory, col, 8 + col * 18, 142));
+            this.addSlot(new Slot(playerInventory, col,
+                    8 + col * 18,
+                    142 + PLAYER_SLOTS_Y_OFFSET));
         }
     }
 
@@ -81,21 +88,21 @@ public class EchoSpyglassFilterMenu extends AbstractContainerMenu {
         switch (clickType) {
             case PICKUP -> {
                 if (cursor.isEmpty()) {
-                    filterSlot.set(ItemStack.EMPTY);                     // 空手点击：清除
+                    filterSlot.set(ItemStack.EMPTY);
                 } else if (EchoSpyglassItem.isGhostAllowed(cursor)) {
                     ItemStack copy = cursor.copy();
                     copy.setCount(1);
-                    filterSlot.set(copy);                                // 存入副本，光标分毫不动
+                    filterSlot.set(copy);
                 }
             }
-            case THROW -> filterSlot.set(ItemStack.EMPTY);               // Q：只清除，不产生掉落物
-            case QUICK_MOVE -> filterSlot.set(ItemStack.EMPTY);          // shift 点过滤槽：清除
-            case SWAP -> {                                               // 数字键 / 副手交换
+            case THROW -> filterSlot.set(ItemStack.EMPTY);
+            case QUICK_MOVE -> filterSlot.set(ItemStack.EMPTY);
+            case SWAP -> {
                 ItemStack swapSource;
                 if (button >= 0 && button < 9) {
-                    swapSource = player.getInventory().getItem(button);  // 快捷栏第 button 格
+                    swapSource = player.getInventory().getItem(button);
                 } else {
-                    swapSource = player.getOffhandItem();                // button == 40：副手
+                    swapSource = player.getOffhandItem();
                 }
 
                 if (swapSource.isEmpty()) {
@@ -103,13 +110,12 @@ public class EchoSpyglassFilterMenu extends AbstractContainerMenu {
                 } else if (EchoSpyglassItem.isGhostAllowed(swapSource)) {
                     ItemStack copy = swapSource.copy();
                     copy.setCount(1);
-                    filterSlot.set(copy);                                // 副本入槽，源物品不动
+                    filterSlot.set(copy);
                 }
             }
-            case QUICK_CRAFT, PICKUP_ALL, CLONE -> { }                   // 拖拽/双击收集/创造中键：不参与
+            case QUICK_CRAFT, PICKUP_ALL, CLONE -> { }
             default -> { }
         }
-        // 不调用 super：这个槽的一切 vanilla 操作都被短路
     }
 
     // ==================== shift 快速转移 ====================
@@ -117,7 +123,6 @@ public class EchoSpyglassFilterMenu extends AbstractContainerMenu {
     @Override
     public ItemStack quickMoveStack(Player player, int index) {
         if (index == 0) {
-            // shift 点击过滤槽：仅清除幽灵
             this.slots.get(0).set(ItemStack.EMPTY);
             return ItemStack.EMPTY;
         }
@@ -129,14 +134,12 @@ public class EchoSpyglassFilterMenu extends AbstractContainerMenu {
         ItemStack stack = slot.getItem();
 
         if (EchoSpyglassItem.isGhostAllowed(stack)) {
-            // 幽灵转移：副本写入过滤槽，源堆叠原封不动
             ItemStack copy = stack.copy();
             copy.setCount(1);
             this.slots.get(0).set(copy);
-            return ItemStack.EMPTY;   // 返回空 = 未移动任何真实物品
+            return ItemStack.EMPTY;
         }
 
-        // 不允许的物品：仅在背包内部移动（目标范围不含过滤槽）
         boolean moved = index < 28
                 ? this.moveItemStackTo(stack, 28, 37, false)
                 : this.moveItemStackTo(stack, 1, 28, false);
@@ -151,13 +154,12 @@ public class EchoSpyglassFilterMenu extends AbstractContainerMenu {
         return stack;
     }
 
-    // ==================== 幽灵写入入口（服务端，供以后 JEI 调用） ====================
+    // ==================== 幽灵写入入口 ====================
 
     public Slot getFilterSlot() {
         return this.slots.get(0);
     }
 
-    /** 服务端入口：把任意来源的物品设为虚拟过滤 */
     public void setVirtualFilter(ItemStack requested) {
         if (requested == null || requested.isEmpty()) {
             this.slots.get(0).set(ItemStack.EMPTY);
