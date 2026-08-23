@@ -7,6 +7,7 @@
         "create_crystal_industry:raw_copper_budding",
         "create_crystal_industry:raw_zinc_budding",
         "create_crystal_industry:echo_budding",
-        "create_crystal_industry:quartz_budding"
+        "create_crystal_industry:quartz_budding",
+        "create_crystal_industry:redstone_budding"
     ]
 }

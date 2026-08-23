@@ -37,6 +37,18 @@
         "create_crystal_industry:echo_large_bud",
         "create_crystal_industry:echo_cluster",
         
+        "create_crystal_industry:quartz_budding",
+        "create_crystal_industry:quartz_small_bud",
+        "create_crystal_industry:quartz_medium_bud",
+        "create_crystal_industry:quartz_large_bud",
+        "create_crystal_industry:quartz_cluster",
+        
+        "create_crystal_industry:redstone_budding",
+        "create_crystal_industry:redstone_small_bud",
+        "create_crystal_industry:redstone_medium_bud",
+        "create_crystal_industry:redstone_large_bud",
+        "create_crystal_industry:redstone_cluster",
+        
         "create_crystal_industry:accelerator",
         "create_crystal_industry:smart_drill"
     ]
