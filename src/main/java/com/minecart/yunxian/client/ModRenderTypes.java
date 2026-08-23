@@ -4,10 +4,13 @@ import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.client.renderer.RenderStateShard;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.texture.TextureAtlas;
+
+import java.util.OptionalDouble;
 
 public final class ModRenderTypes extends RenderType {
 
-    // 四边形版本：每条棱 = 1 个朝向相机的矩形，线宽在所有平台上都生效
+    // 矿石线框（四边形粗线）：不变
     public static final RenderType ECHO_ORE_OVERLAY_QUADS = create(
             "echo_ore_overlay_quads",
             DefaultVertexFormat.POSITION_COLOR,
@@ -19,6 +22,26 @@ public final class ModRenderTypes extends RenderType {
                     .setShaderState(RenderStateShard.POSITION_COLOR_SHADER)
                     .setTransparencyState(RenderStateShard.TRANSLUCENT_TRANSPARENCY)
                     .setOutputState(RenderStateShard.ITEM_ENTITY_TARGET)
+                    .setWriteMaskState(RenderStateShard.COLOR_WRITE)
+                    .setDepthTestState(RenderStateShard.NO_DEPTH_TEST)
+                    .setCullState(RenderStateShard.NO_CULL)
+                    .createCompositeState(false)
+    );
+
+    // 幽匿全屏覆盖层：方块图集纹理 + POSITION_TEX（透明度由全局 shaderColor 控制）
+    public static final RenderType SCULK_OVERLAY = create(
+            "sculk_overlay",
+            DefaultVertexFormat.POSITION_TEX,
+            VertexFormat.Mode.QUADS,
+            16384,
+            false,
+            false,
+            CompositeState.builder()
+                    .setShaderState(RenderStateShard.POSITION_TEX_SHADER)
+                    // ← 修复：纹理绑定走 setTextureState，不再用 setTexturingState
+                    .setTextureState(new RenderStateShard.TextureStateShard(
+                            TextureAtlas.LOCATION_BLOCKS, false, false))
+                    .setTransparencyState(RenderStateShard.TRANSLUCENT_TRANSPARENCY)
                     .setWriteMaskState(RenderStateShard.COLOR_WRITE)
                     .setDepthTestState(RenderStateShard.NO_DEPTH_TEST)
                     .setCullState(RenderStateShard.NO_CULL)
