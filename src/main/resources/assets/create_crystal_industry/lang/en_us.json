@@ -42,7 +42,7 @@
     "block.create_crystal_industry.quartz_large_bud": "Large Quartz Bud",
     "block.create_crystal_industry.quartz_cluster": "Quartz Cluster",
     "item.create_crystal_industry.echo_spyglass": "Echo Spyglass",
-    "container.create_crystal_industry.echo_spyglass_filter": "Echo Spyglass · Filter",
+    "container.create_crystal_industry.echo_spyglass_filter": "Place Item to Detect",
     "item.create_crystal_industry.echo_spyglass.filter_tip": "Filter: %s",
     "item.create_crystal_industry.echo_spyglass.filter_tip_none": "Filter: None (echo_reveals tag)"
 }
