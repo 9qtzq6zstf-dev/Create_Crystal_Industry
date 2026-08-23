@@ -16,13 +16,13 @@ import org.joml.Matrix4f;
 public final class EchoSculkOverlay {
 
     /** 幽匿贴图达到的最大透明度，0~1 */
-    private static final float MAX_ALPHA = 0.20F;
+    private static final float MAX_ALPHA = 0.40F;
 
     /** 淡入速度：每秒增加的 alpha */
-    private static final float FADE_IN_SPEED = 0.8F;
+    private static final float FADE_IN_SPEED = 1.0F;
 
     /** 淡出速度：每秒减少的 alpha */
-    private static final float FADE_OUT_SPEED = 0.4F;
+    private static final float FADE_OUT_SPEED = 0.8F;
 
     /** 单个贴图平铺的尺寸（GUI 缩放后的像素） */
     private static final int TILE_SIZE = 32;

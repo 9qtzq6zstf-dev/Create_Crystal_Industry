@@ -225,10 +225,10 @@ public final class EchoHighlightRenderer {
             consumer.addVertex(pose, (float) p3.x, (float) p3.y, (float) p3.z).setColor(255, 0, 0, 255);
         } else {
             int colorAlpha = (int) (alpha * 255.0F);
-            consumer.addVertex(pose, (float) p0.x, (float) p0.y, (float) p0.z).setColor(255, 255, 255, colorAlpha);
-            consumer.addVertex(pose, (float) p1.x, (float) p1.y, (float) p1.z).setColor(255, 255, 255, colorAlpha);
-            consumer.addVertex(pose, (float) p2.x, (float) p2.y, (float) p2.z).setColor(255, 255, 255, colorAlpha);
-            consumer.addVertex(pose, (float) p3.x, (float) p3.y, (float) p3.z).setColor(255, 255, 255, colorAlpha);
+            consumer.addVertex(pose, (float) p0.x, (float) p0.y, (float) p0.z).setColor(0, 220, 200, colorAlpha);
+            consumer.addVertex(pose, (float) p1.x, (float) p1.y, (float) p1.z).setColor(0, 220, 200, colorAlpha);
+            consumer.addVertex(pose, (float) p2.x, (float) p2.y, (float) p2.z).setColor(0, 220, 200, colorAlpha);
+            consumer.addVertex(pose, (float) p3.x, (float) p3.y, (float) p3.z).setColor(0, 220, 200, colorAlpha);
         }
     }
 

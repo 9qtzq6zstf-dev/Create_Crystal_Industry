@@ -17,7 +17,6 @@ public final class ModItems {
                     () -> new EchoSpyglassItem(new Item.Properties()
                             .stacksTo(1)
                             .rarity(Rarity.RARE)
-                            // 没有这一行，幽灵副本永远存不进物品，一切都会"看起来没生效"
                             .component(DataComponents.CONTAINER, ItemContainerContents.EMPTY)));
 
     private ModItems() {

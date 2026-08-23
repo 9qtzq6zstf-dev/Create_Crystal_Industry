@@ -60,6 +60,12 @@ public final class ModCreativeTabs {
                         output.accept(ModBlocks.QUARTZ_LARGE_BUD.get());
                         output.accept(ModBlocks.QUARTZ_CLUSTER.get());
 
+                        output.accept(ModBlocks.REDSTONE_BUDDING.get());
+                        output.accept(ModBlocks.REDSTONE_SMALL_BUD.get());
+                        output.accept(ModBlocks.REDSTONE_MEDIUM_BUD.get());
+                        output.accept(ModBlocks.REDSTONE_LARGE_BUD.get());
+                        output.accept(ModBlocks.REDSTONE_CLUSTER.get());
+
                         output.accept(ModBlocks.ACCELERATOR.get());
                         output.accept(ModBlocks.SMART_DRILL.get());
                         output.accept(ModItems.ECHO_SPYGLASS.get());

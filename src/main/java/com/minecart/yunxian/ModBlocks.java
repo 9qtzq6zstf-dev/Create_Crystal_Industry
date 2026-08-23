@@ -86,6 +86,16 @@ public final class ModBlocks {
             () -> new QuartzConvertingBuddingBlock(5, BlockBehaviour.Properties.ofFullCopy(Blocks.BUDDING_AMETHYST),
                     QUARTZ_SMALL_BUD.get(), QUARTZ_MEDIUM_BUD.get(), QUARTZ_LARGE_BUD.get(), QUARTZ_CLUSTER.get()));
 
+    // Redstone
+    public static final DeferredBlock<Block> REDSTONE_SMALL_BUD = bud("redstone_small_bud", Blocks.SMALL_AMETHYST_BUD, 1, 1, "small_bud");
+    public static final DeferredBlock<Block> REDSTONE_MEDIUM_BUD = bud("redstone_medium_bud", Blocks.MEDIUM_AMETHYST_BUD, 3, 2, "medium_bud");
+    public static final DeferredBlock<Block> REDSTONE_LARGE_BUD = bud("redstone_large_bud", Blocks.LARGE_AMETHYST_BUD, 5, 3, "large_bud");
+    public static final DeferredBlock<Block> REDSTONE_CLUSTER = cluster("redstone_cluster");
+    public static final DeferredBlock<Block> REDSTONE_BUDDING = oreBudding(
+            "redstone_budding", REDSTONE_SMALL_BUD, REDSTONE_MEDIUM_BUD, REDSTONE_LARGE_BUD,
+            REDSTONE_CLUSTER,
+            () -> Blocks.REDSTONE_ORE, () -> Blocks.DEEPSLATE_REDSTONE_ORE, () -> Blocks.REDSTONE_BLOCK);
+
     public static final DeferredBlock<Block> ACCELERATOR = registerBlock("accelerator",
             () -> new AcceleratorBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK)
                     .noOcclusion()

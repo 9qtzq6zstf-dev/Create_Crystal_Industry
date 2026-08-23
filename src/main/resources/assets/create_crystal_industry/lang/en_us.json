@@ -44,6 +44,11 @@
     "item.create_crystal_industry.echo_spyglass": "Echo Spyglass",
     "container.create_crystal_industry.echo_spyglass_filter": "Place Item to Detect",
     "item.create_crystal_industry.echo_spyglass.filter_tip": "Filter: %s",
-    "item.create_crystal_industry.echo_spyglass.filter_tip_none": "Filter: None (echo_reveals tag)"
+    "item.create_crystal_industry.echo_spyglass.filter_tip_none": "Filter: None (echo_reveals tag)",
+    "block.create_crystal_industry.redstone_budding": "红石母岩",
+    "block.create_crystal_industry.redstone_small_bud": "小型红石晶芽",
+    "block.create_crystal_industry.redstone_medium_bud": "中型红石晶芽",
+    "block.create_crystal_industry.redstone_large_bud": "大型红石晶芽",
+    "block.create_crystal_industry.redstone_cluster": "红石晶簇"
 }
 

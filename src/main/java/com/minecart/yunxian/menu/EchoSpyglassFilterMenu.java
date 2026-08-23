@@ -39,7 +39,7 @@ public class EchoSpyglassFilterMenu extends AbstractContainerMenu {
         this.filterContainer = loadFilter(playerInventory.player.getItemInHand(hand));
 
         // ===== 幽灵槽：mayPlace / mayPickup 全部 false =====
-        // ✅ 过滤槽位置已修改为 (79, 22)（原 56, 17 → 右移23，下移5）
+        //过滤槽位置已修改为 (79, 22)（原 56, 17 → 右移23，下移5）
         this.addSlot(new Slot(filterContainer, 0, 79, 22) {   // ← 坐标已修改
             @Override
             public boolean mayPlace(ItemStack stack) {

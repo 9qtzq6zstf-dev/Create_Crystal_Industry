@@ -44,5 +44,10 @@
     "item.create_crystal_industry.echo_spyglass": "回响望远镜",
     "container.create_crystal_industry.echo_spyglass_filter": "放置要探测的物品",
     "item.create_crystal_industry.echo_spyglass.filter_tip": "过滤：%s",
-    "item.create_crystal_industry.echo_spyglass.filter_tip_none": "过滤：无（按 echo_reveals 标签）"
+    "item.create_crystal_industry.echo_spyglass.filter_tip_none": "过滤：无（按 echo_reveals 标签）",
+    "block.create_crystal_industry.redstone_budding": "红石母岩",
+    "block.create_crystal_industry.redstone_small_bud": "小型红石晶芽",
+    "block.create_crystal_industry.redstone_medium_bud": "中型红石晶芽",
+    "block.create_crystal_industry.redstone_large_bud": "大型红石晶芽",
+    "block.create_crystal_industry.redstone_cluster": "红石晶簇"
 }
