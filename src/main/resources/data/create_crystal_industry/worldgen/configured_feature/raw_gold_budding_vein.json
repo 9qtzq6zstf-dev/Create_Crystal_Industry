@@ -1,0 +1,18 @@
+{
+    "type": "create_crystal_industry:ore_budding_vein",
+    "config": {
+        "budding_state": { "Name": "create_crystal_industry:raw_gold_budding" },
+        "hosts": [
+            { "predicate_type": "minecraft:tag_match", "tag": "minecraft:stone_ore_replaceables" },
+            { "predicate_type": "minecraft:tag_match", "tag": "minecraft:deepslate_ore_replaceables" }
+        ],
+        "ores": [
+            { "target": { "predicate_type": "minecraft:tag_match", "tag": "minecraft:stone_ore_replaceables" }, "state": { "Name": "minecraft:gold_ore" } },
+            { "target": { "predicate_type": "minecraft:tag_match", "tag": "minecraft:deepslate_ore_replaceables" }, "state": { "Name": "minecraft:deepslate_gold_ore" } }
+        ],
+        "extra_block_state": { "Name": "minecraft:raw_gold_block" },
+        "ore_count": 4,
+        "extra_count": 1,
+        "radius": 3
+    }
+}

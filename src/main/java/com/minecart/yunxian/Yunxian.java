@@ -19,12 +19,14 @@ public class Yunxian {
 
         ModBlocks.register(modEventBus);
         ModItems.register(modEventBus);
-        ModMenus.register(modEventBus);      // ← 新增
+        EchoAttachments.ATTACHMENT_TYPES.register(modEventBus);   // ← 新增
+        ModMenus.register(modEventBus);
         ModBlockEntities.register(modEventBus);
         ModCapabilities.register(modEventBus);
         ModCreativeTabs.register(modEventBus);
         modEventBus.addListener(Yunxian::commonSetup);
         ModRenderers.register(modEventBus);
+        ModFeatures.register(modEventBus);
     }
 
     private static void commonSetup(FMLCommonSetupEvent event) {

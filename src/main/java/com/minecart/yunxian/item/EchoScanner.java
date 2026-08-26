@@ -1,6 +1,7 @@
 package com.minecart.yunxian.item;
 
 import com.minecart.yunxian.ModTags;
+import com.minecart.yunxian.config.EchoConfig;
 import com.simibubi.create.content.logistics.filter.FilterItemStack;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -11,9 +12,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public final class EchoScanner {
-
-    /** 单次扫描结果上限，防止宽过滤（如"石头"）产生超大网络包 */
-    private static final int MAX_RESULTS = 4096;
 
     private EchoScanner() {
     }
@@ -39,6 +37,9 @@ public final class EchoScanner {
             }
         }
 
+        // 从配置读取结果上限（只读一次，不在循环里重复调 get()）
+        int maxResults = EchoConfig.MAX_RESULTS.get();
+
         List<BlockPos> found = new ArrayList<>();
         BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
         int radiusSq = radius * radius;
@@ -47,7 +48,7 @@ public final class EchoScanner {
         for (int dx = -radius; dx <= radius; dx++) {
             for (int dy = -radius; dy <= radius; dy++) {
                 for (int dz = -radius; dz <= radius; dz++) {
-                    if (found.size() >= MAX_RESULTS) {
+                    if (found.size() >= maxResults) {
                         break outer;
                     }
                     if (dx * dx + dy * dy + dz * dz > radiusSq) {

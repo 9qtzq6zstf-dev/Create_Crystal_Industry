@@ -1,0 +1,17 @@
+{
+    "feature": "create_crystal_industry:raw_zinc_budding_vein",
+    "placement": [
+        { "type": "minecraft:rarity_filter", "chance": 16 },
+        { "type": "minecraft:count", "count": 1 },
+        { "type": "minecraft:in_square" },
+        {
+            "type": "minecraft:height_range",
+            "height": {
+                "type": "minecraft:uniform",
+                "min_inclusive": { "absolute": -63 },
+                "max_inclusive": { "absolute": 70 }
+            }
+        },
+        { "type": "create:config_filter" }
+    ]
+}

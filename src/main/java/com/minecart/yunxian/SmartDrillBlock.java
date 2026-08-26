@@ -80,8 +80,8 @@ public class SmartDrillBlock extends DirectionalKineticBlock
     @Override
     public void neighborChanged(BlockState state, Level level, BlockPos pos, Block block, BlockPos fromPos,
                                 boolean isMoving) {
-        // 红石锁：同步信号状态，仅在变化时更新，避免递归
-        boolean powered = level.hasNeighborSignal(pos);
+        // 红石锁：同步信号状态，仅在变化时更新，避免递归（忽略前方信号）
+        boolean powered = hasLockingSignal(level, pos, state);
         if (state.getValue(POWERED) != powered) {
             level.setBlock(pos, state.setValue(POWERED, powered), 2);
         }
@@ -133,11 +133,28 @@ public class SmartDrillBlock extends DirectionalKineticBlock
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
         FluidState fluidState = context.getLevel().getFluidState(context.getClickedPos());
-        // 放置时若旁边已有红石信号，直接进入锁定状态
-        boolean powered = context.getLevel().hasNeighborSignal(context.getClickedPos());
-        return super.getStateForPlacement(context)
+        // 放置时若旁边已有红石信号，直接进入锁定状态（忽略前方信号）
+        BlockState state = super.getStateForPlacement(context);
+        boolean powered = hasLockingSignal(context.getLevel(), context.getClickedPos(), state);
+        return state
                 .setValue(BlockStateProperties.WATERLOGGED, fluidState.getType() == Fluids.WATER)
                 .setValue(POWERED, powered);
+    }
+    /**
+     * 红石锁判定：忽略钻头头部方向（FACING）的红石信号，只统计其余 5 个方向。
+     * 与 level.hasNeighborSignal 等价，仅排除前方邻居。
+     */
+    private boolean hasLockingSignal(Level level, BlockPos pos, BlockState state) {
+        Direction facing = state.getValue(FACING);
+        for (Direction side : Direction.values()) {
+            if (side == facing) {
+                continue;
+            }
+            if (level.getSignal(pos.relative(side), side) > 0) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public static double getDamage(float speed) {

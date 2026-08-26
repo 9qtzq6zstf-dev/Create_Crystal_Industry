@@ -48,6 +48,9 @@ public final class EchoHighlightRenderer {
     }
 
     public static void onRenderLevel(RenderLevelStageEvent event) {
+        if (!CameraSync.isFirstPerson()) {
+            return;
+        }
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES) {
             return;
         }

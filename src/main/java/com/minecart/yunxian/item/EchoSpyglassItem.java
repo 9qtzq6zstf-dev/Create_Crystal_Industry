@@ -1,5 +1,6 @@
 package com.minecart.yunxian.item;
 
+import com.minecart.yunxian.EchoAttachments;
 import com.minecart.yunxian.config.EchoConfig;
 import com.minecart.yunxian.menu.EchoSpyglassFilterMenu;
 import com.minecart.yunxian.network.EchoRevealPayload;
@@ -66,7 +67,8 @@ public class EchoSpyglassItem extends Item {
         player.startUsingItem(hand);
         player.playSound(SoundEvents.SPYGLASS_USE, 1.0F, 1.0F);
 
-        if (!level.isClientSide && player instanceof ServerPlayer serverPlayer) {
+        if (!level.isClientSide && player instanceof ServerPlayer serverPlayer
+                && serverPlayer.getData(EchoAttachments.FIRST_PERSON.get())) {
             scanAndSend(level, serverPlayer, stack);
         }
         return InteractionResultHolder.consume(stack);
@@ -76,6 +78,9 @@ public class EchoSpyglassItem extends Item {
     public void onUseTick(Level level, LivingEntity entity, ItemStack stack, int remainingUseDuration) {
         if (level.isClientSide || !(entity instanceof ServerPlayer serverPlayer)) {
             return;
+        }
+        if (!serverPlayer.getData(EchoAttachments.FIRST_PERSON.get())) {
+            return;   // 第三人称：只播放举起动画，不扫描
         }
         int usedTicks = USE_DURATION_TICKS - remainingUseDuration;
         int interval = EchoConfig.SCAN_INTERVAL_TICKS.get();

@@ -1,6 +1,9 @@
 {
-    "parent": "minecraft:item/spyglass",
-    "textures": {
-        "layer0": "create_crystal_industry:item/echo_spyglass"
-    }
+    "parent": "create_crystal_industry:item/echo_spyglass_in_hand",
+    "overrides": [
+        {
+            "predicate": { "create_crystal_industry:using": 1.0 },
+            "model": "create_crystal_industry:item/echo_spyglass_in_hand_hidden"
+        }
+    ]
 }

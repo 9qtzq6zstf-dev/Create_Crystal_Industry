@@ -1,0 +1,18 @@
+{
+    "type": "create_crystal_industry:ore_budding_vein",
+    "config": {
+        "budding_state": { "Name": "create_crystal_industry:raw_copper_budding" },
+        "hosts": [
+            { "predicate_type": "minecraft:tag_match", "tag": "minecraft:stone_ore_replaceables" },
+            { "predicate_type": "minecraft:tag_match", "tag": "minecraft:deepslate_ore_replaceables" }
+        ],
+        "ores": [
+            { "target": { "predicate_type": "minecraft:tag_match", "tag": "minecraft:stone_ore_replaceables" }, "state": { "Name": "minecraft:copper_ore" } },
+            { "target": { "predicate_type": "minecraft:tag_match", "tag": "minecraft:deepslate_ore_replaceables" }, "state": { "Name": "minecraft:deepslate_copper_ore" } }
+        ],
+        "extra_block_state": { "Name": "minecraft:raw_copper_block" },
+        "ore_count": 7,
+        "extra_count": 2,
+        "radius": 3
+    }
+}

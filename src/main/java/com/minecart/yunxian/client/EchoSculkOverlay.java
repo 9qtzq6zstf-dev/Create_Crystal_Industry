@@ -40,6 +40,9 @@ public final class EchoSculkOverlay {
     }
 
     public static void onRenderLevel(RenderLevelStageEvent event) {
+        if (!CameraSync.isFirstPerson()) {
+            return;
+        }
         // 画在 AFTER_TRANSLUCENT_BLOCKS：早于矿石线框的 AFTER_PARTICLES，
         // 因此线框永远画在幽匿覆盖层之上。
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS) {

@@ -25,5 +25,6 @@ public final class ModNetwork {
                 SetFilterPayload.STREAM_CODEC,
                 SetFilterPayload::handle
         );
+        registrar.playToServer(CameraModePayload.TYPE, CameraModePayload.STREAM_CODEC, CameraModePayload::handle);
     }
 }
