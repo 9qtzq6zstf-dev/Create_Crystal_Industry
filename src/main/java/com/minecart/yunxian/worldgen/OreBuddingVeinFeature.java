@@ -1,6 +1,7 @@
 package com.minecart.yunxian.worldgen;
 
 import com.mojang.serialization.Codec;
+import com.minecart.yunxian.config.ModConfig;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.WorldGenLevel;
@@ -19,6 +20,10 @@ public class OreBuddingVeinFeature extends Feature<OreBuddingVeinConfiguration> 
 
     @Override
     public boolean place(FeaturePlaceContext<OreBuddingVeinConfiguration> context) {
+        if (!ModConfig.Common.enabled(context.config().configKey())) {
+            return false;
+        }
+
         WorldGenLevel level = context.level();
         RandomSource random = context.random();
         BlockPos origin = context.origin();

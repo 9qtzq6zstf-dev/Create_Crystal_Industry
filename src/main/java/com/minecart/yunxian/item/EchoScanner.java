@@ -1,7 +1,7 @@
 package com.minecart.yunxian.item;
 
 import com.minecart.yunxian.ModTags;
-import com.minecart.yunxian.config.EchoConfig;
+import com.minecart.yunxian.config.ModConfig;
 import com.simibubi.create.content.logistics.filter.FilterItemStack;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -38,7 +38,7 @@ public final class EchoScanner {
         }
 
         // 从配置读取结果上限（只读一次，不在循环里重复调 get()）
-        int maxResults = EchoConfig.MAX_RESULTS.get();
+        int maxResults = ModConfig.Common.MAX_RESULTS.get();
 
         List<BlockPos> found = new ArrayList<>();
         BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();

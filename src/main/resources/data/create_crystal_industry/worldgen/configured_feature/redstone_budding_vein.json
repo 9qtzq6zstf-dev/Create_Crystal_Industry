@@ -1,6 +1,7 @@
 {
     "type": "create_crystal_industry:ore_budding_vein",
     "config": {
+        "config_key": "redstone",
         "budding_state": { "Name": "create_crystal_industry:redstone_budding" },
         "hosts": [
             { "predicate_type": "minecraft:tag_match", "tag": "minecraft:stone_ore_replaceables" },

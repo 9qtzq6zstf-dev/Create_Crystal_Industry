@@ -1,8 +1,8 @@
 {
-    "type": "minecraft:ore",
+    "type": "create_crystal_industry:echo_budding_in_sculk",
     "config": {
         "discard_chance_on_air_exposure": 0.0,
-        "size": 4,
+        "size": 1,
         "targets": [
             {
                 "target": {

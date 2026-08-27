@@ -9,6 +9,7 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.RuleTest;
 import java.util.List;
 
 public record OreBuddingVeinConfiguration(
+        String configKey,
         BlockState buddingState,
         List<RuleTest> hosts,
         List<HostOre> ores,
@@ -18,6 +19,7 @@ public record OreBuddingVeinConfiguration(
         int radius) implements FeatureConfiguration {
 
     public static final Codec<OreBuddingVeinConfiguration> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+            Codec.STRING.fieldOf("config_key").forGetter(OreBuddingVeinConfiguration::configKey),
             BlockState.CODEC.fieldOf("budding_state").forGetter(OreBuddingVeinConfiguration::buddingState),
             RuleTest.CODEC.listOf().fieldOf("hosts").forGetter(OreBuddingVeinConfiguration::hosts),
             HostOre.CODEC.listOf().fieldOf("ores").forGetter(OreBuddingVeinConfiguration::ores),

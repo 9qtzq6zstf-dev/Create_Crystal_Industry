@@ -1,7 +1,7 @@
 package com.minecart.yunxian.item;
 
 import com.minecart.yunxian.EchoAttachments;
-import com.minecart.yunxian.config.EchoConfig;
+import com.minecart.yunxian.config.ModConfig;
 import com.minecart.yunxian.menu.EchoSpyglassFilterMenu;
 import com.minecart.yunxian.network.EchoRevealPayload;
 import com.simibubi.create.content.logistics.filter.FilterItem;
@@ -83,7 +83,7 @@ public class EchoSpyglassItem extends Item {
             return;   // 第三人称：只播放举起动画，不扫描
         }
         int usedTicks = USE_DURATION_TICKS - remainingUseDuration;
-        int interval = EchoConfig.SCAN_INTERVAL_TICKS.get();
+        int interval = ModConfig.Common.SCAN_INTERVAL_TICKS.get();
         if (usedTicks > 0 && usedTicks % interval == 0) {
             scanAndSend(level, serverPlayer, stack);
         }
@@ -126,7 +126,7 @@ public class EchoSpyglassItem extends Item {
             PacketDistributor.sendToPlayer(player,
                     new EchoRevealPayload(serverLevel.dimension(),
                             EchoScanner.findOres(serverLevel, player.blockPosition(),
-                                    EchoConfig.SCAN_RADIUS.get(), filter)));
+                                    ModConfig.Common.SCAN_RADIUS.get(), filter)));
         }
     }
 

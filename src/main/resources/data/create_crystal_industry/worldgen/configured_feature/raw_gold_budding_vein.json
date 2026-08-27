@@ -1,6 +1,7 @@
 {
     "type": "create_crystal_industry:ore_budding_vein",
     "config": {
+        "config_key": "raw_gold",
         "budding_state": { "Name": "create_crystal_industry:raw_gold_budding" },
         "hosts": [
             { "predicate_type": "minecraft:tag_match", "tag": "minecraft:stone_ore_replaceables" },

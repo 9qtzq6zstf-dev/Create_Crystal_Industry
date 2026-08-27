@@ -1,7 +1,6 @@
 package com.minecart.yunxian;
 
 import com.minecart.yunxian.client.ModRenderers;
-import com.minecart.yunxian.config.EchoConfig;
 import com.simibubi.create.api.behaviour.movement.MovementBehaviour;
 import com.simibubi.create.api.stress.BlockStressValues;
 import net.neoforged.bus.api.IEventBus;
@@ -15,11 +14,12 @@ public class Yunxian {
     public static final String MODID = "create_crystal_industry";
 
     public Yunxian(IEventBus modEventBus, ModContainer container) {
-        container.registerConfig(ModConfig.Type.COMMON, EchoConfig.SPEC);
+        container.registerConfig(ModConfig.Type.COMMON,
+                com.minecart.yunxian.config.ModConfig.Common.SPEC);
 
         ModBlocks.register(modEventBus);
         ModItems.register(modEventBus);
-        EchoAttachments.ATTACHMENT_TYPES.register(modEventBus);   // ← 新增
+        EchoAttachments.ATTACHMENT_TYPES.register(modEventBus);
         ModMenus.register(modEventBus);
         ModBlockEntities.register(modEventBus);
         ModCapabilities.register(modEventBus);
@@ -34,7 +34,7 @@ public class Yunxian {
             BlockStressValues.IMPACTS.register(ModBlocks.SMART_DRILL.get(), () -> 4.0);
             MovementBehaviour.REGISTRY.register(
                     ModBlocks.SMART_DRILL.get(),
-                    new SmartDrillMovementBehaviour()   // ← 不是 new DrillMovementBehaviour()！
+                    new SmartDrillMovementBehaviour()
             );
         });
     }
