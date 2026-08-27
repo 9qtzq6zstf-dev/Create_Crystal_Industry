@@ -18,6 +18,7 @@ import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 
 import com.simibubi.create.content.kinetics.base.OrientedRotatingVisual;
 import net.neoforged.fml.loading.FMLEnvironment;
+import net.neoforged.neoforge.client.event.RegisterItemDecorationsEvent;
 
 public class ModRenderers {
 
@@ -27,10 +28,10 @@ public class ModRenderers {
         if (FMLEnvironment.dist.isClient()) {
             EchoHighlightRenderer.register();
         }
-        EchoSculkOverlay.register();
         EchoSpyglassScopeOverlay.register();
         CameraSync.register();
         EchoSpyglassUseRenderer.register();
+        modEventBus.addListener(ModRenderers::onRegisterItemDecorations);
     }
 
     private static void onClientSetup(FMLClientSetupEvent event) {
@@ -58,5 +59,8 @@ public class ModRenderers {
             PlayerRenderer renderer = (PlayerRenderer) event.getSkin(skin);
             renderer.addLayer(new EchoSpyglassHeadLayer(renderer));
         }
+    }
+    private static void onRegisterItemDecorations(RegisterItemDecorationsEvent event) {
+        event.register(ModItems.ECHO_SPYGLASS.get(), new EchoSpyglassGuiDecorator());
     }
 }
