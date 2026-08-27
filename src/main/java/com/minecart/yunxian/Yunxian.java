@@ -14,8 +14,7 @@ public class Yunxian {
     public static final String MODID = "create_crystal_industry";
 
     public Yunxian(IEventBus modEventBus, ModContainer container) {
-        container.registerConfig(ModConfig.Type.COMMON,
-                com.minecart.yunxian.config.ModConfig.Common.SPEC);
+        container.registerConfig(ModConfig.Type.COMMON, com.minecart.yunxian.config.ModConfig.Common.SPEC);
 
         ModBlocks.register(modEventBus);
         ModItems.register(modEventBus);

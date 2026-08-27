@@ -1,0 +1,32 @@
+{
+    "type": "create_crystal_industry:ore_budding_vein",
+    "config": {
+        "config_key": "quartz",
+        "budding_state": {
+            "Name": "create_crystal_industry:quartz_budding"
+        },
+        "hosts": [
+            {
+                "predicate_type": "minecraft:tag_match",
+                "tag": "minecraft:base_stone_nether"
+            }
+        ],
+        "ores": [
+            {
+                "target": {
+                    "predicate_type": "minecraft:tag_match",
+                    "tag": "minecraft:base_stone_nether"
+                },
+                "state": {
+                    "Name": "minecraft:nether_quartz_ore"
+                }
+            }
+        ],
+        "extra_block_state": {
+            "Name": "minecraft:smooth_quartz"
+        },
+        "ore_count": 6,
+        "extra_count": 2,
+        "radius": 3
+    }
+}

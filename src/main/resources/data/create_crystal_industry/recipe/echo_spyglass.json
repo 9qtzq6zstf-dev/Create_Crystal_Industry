@@ -1,0 +1,19 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "pattern": [
+        "SSS",
+        "STS",
+        "SSS"
+    ],
+    "key": {
+        "S": {
+            "item": "minecraft:echo_shard"
+        },
+        "T": {
+            "item": "minecraft:spyglass"
+        }
+    },
+    "result": {
+        "id": "create_crystal_industry:echo_spyglass"
+    }
+}

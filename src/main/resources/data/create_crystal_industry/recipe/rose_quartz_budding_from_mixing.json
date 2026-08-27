@@ -1,0 +1,23 @@
+{
+    "type": "create:mixing",
+    "heat_requirement": "superheated",
+    "ingredients": [
+        {
+            "item": "create_crystal_industry:redstone_budding"
+        },
+        {
+            "item": "create_crystal_industry:redstone_budding"
+        },
+        {
+            "item": "create_crystal_industry:redstone_budding"
+        },
+        {
+            "item": "create_crystal_industry:quartz_budding"
+        }
+    ],
+    "results": [
+        {
+            "id": "create_crystal_industry:rose_quartz_budding"
+        }
+    ]
+}

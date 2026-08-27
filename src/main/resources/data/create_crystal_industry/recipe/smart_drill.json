@@ -1,0 +1,25 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "pattern": [
+        " A ",
+        "ABA",
+        "CDC"
+    ],
+    "key": {
+        "A": {
+            "item": "create:brass_ingot"
+        },
+        "B": {
+            "item": "minecraft:iron_ingot"
+        },
+        "C": {
+            "item": "create:brass_casing"
+        },
+        "D": {
+            "item": "create:electron_tube"
+        }
+    },
+    "result": {
+        "id": "create_crystal_industry:smart_drill"
+    }
+}
