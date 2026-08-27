@@ -86,7 +86,17 @@ public final class ModBlocks {
             () -> new QuartzConvertingBuddingBlock(5, BlockBehaviour.Properties.ofFullCopy(Blocks.BUDDING_AMETHYST),
                     QUARTZ_SMALL_BUD.get(), QUARTZ_MEDIUM_BUD.get(), QUARTZ_LARGE_BUD.get(), QUARTZ_CLUSTER.get()));
 
-    // Redstone
+    // Glowstone
+    public static final DeferredBlock<Block> GLOWSTONE_SMALL_BUD = bud("glowstone_small_bud", Blocks.SMALL_AMETHYST_BUD, 1, 1, "small_bud", 3);
+    public static final DeferredBlock<Block> GLOWSTONE_MEDIUM_BUD = bud("glowstone_medium_bud", Blocks.MEDIUM_AMETHYST_BUD, 3, 2, "medium_bud", 7);
+    public static final DeferredBlock<Block> GLOWSTONE_LARGE_BUD = bud("glowstone_large_bud", Blocks.LARGE_AMETHYST_BUD, 5, 3, "large_bud", 11);
+    public static final DeferredBlock<Block> GLOWSTONE_CLUSTER = cluster("glowstone_cluster", 15);
+    public static final DeferredBlock<Block> GLOWSTONE_BUDDING = registerBlock("glowstone_budding",
+            () -> new GenericBuddingBlock(5,
+                    BlockBehaviour.Properties.ofFullCopy(Blocks.BUDDING_AMETHYST).lightLevel(state -> 15),
+                    GLOWSTONE_SMALL_BUD.get(), GLOWSTONE_MEDIUM_BUD.get(),
+                    GLOWSTONE_LARGE_BUD.get(), GLOWSTONE_CLUSTER.get()));
+
     // Redstone
     public static final DeferredBlock<Block> REDSTONE_SMALL_BUD = registerBlock("redstone_small_bud",
             () -> new RedstoneClusterBlock(1, 1, BlockBehaviour.Properties.ofFullCopy(Blocks.SMALL_AMETHYST_BUD),
@@ -130,6 +140,13 @@ public final class ModBlocks {
                 stage, height, BlockBehaviour.Properties.ofFullCopy(copyFrom), stageKey));
     }
 
+    private static DeferredBlock<Block> bud(String name, Block copyFrom, int stage, int height,
+                                            String stageKey, int lightLevel) {
+        return registerBlock(name, () -> new YunxianClusterBlock(
+                stage, height, BlockBehaviour.Properties.ofFullCopy(copyFrom).lightLevel(state -> lightLevel),
+                stageKey));
+    }
+
     private static DeferredBlock<Block> cluster(String name) {
         return registerBlock(name, () -> new YunxianClusterBlock(
                 7,
@@ -139,6 +156,20 @@ public final class ModBlocks {
                         .isRedstoneConductor((state, level, pos) -> false)
                         .isSuffocating((state, level, pos) -> false)
                         .isViewBlocking((state, level, pos) -> false),
+                "cluster"
+        ));
+    }
+
+    private static DeferredBlock<Block> cluster(String name, int lightLevel) {
+        return registerBlock(name, () -> new YunxianClusterBlock(
+                7,
+                3,
+                BlockBehaviour.Properties.ofFullCopy(Blocks.AMETHYST_CLUSTER)
+                        .noOcclusion()
+                        .isRedstoneConductor((state, level, pos) -> false)
+                        .isSuffocating((state, level, pos) -> false)
+                        .isViewBlocking((state, level, pos) -> false)
+                        .lightLevel(state -> lightLevel),
                 "cluster"
         ));
     }

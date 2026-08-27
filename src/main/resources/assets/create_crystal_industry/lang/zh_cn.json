@@ -49,5 +49,10 @@
     "block.create_crystal_industry.redstone_small_bud": "小型红石晶芽",
     "block.create_crystal_industry.redstone_medium_bud": "中型红石晶芽",
     "block.create_crystal_industry.redstone_large_bud": "大型红石晶芽",
-    "block.create_crystal_industry.redstone_cluster": "红石晶簇"
+    "block.create_crystal_industry.redstone_cluster": "红石晶簇",
+    "block.create_crystal_industry.glowstone_budding": "荧石母岩",
+    "block.create_crystal_industry.glowstone_small_bud": "小型荧石晶芽",
+    "block.create_crystal_industry.glowstone_medium_bud": "中型荧石晶芽",
+    "block.create_crystal_industry.glowstone_large_bud": "大型荧石晶芽",
+    "block.create_crystal_industry.glowstone_cluster": "荧石晶簇"
 }

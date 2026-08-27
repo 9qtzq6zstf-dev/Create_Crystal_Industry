@@ -49,6 +49,12 @@
         "create_crystal_industry:redstone_large_bud",
         "create_crystal_industry:redstone_cluster",
         
+        "create_crystal_industry:glowstone_budding",
+        "create_crystal_industry:glowstone_small_bud",
+        "create_crystal_industry:glowstone_medium_bud",
+        "create_crystal_industry:glowstone_large_bud",
+        "create_crystal_industry:glowstone_cluster",
+        
         "create_crystal_industry:accelerator",
         "create_crystal_industry:smart_drill"
     ]

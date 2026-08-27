@@ -45,10 +45,15 @@
     "container.create_crystal_industry.echo_spyglass_filter": "Place Item to Detect",
     "item.create_crystal_industry.echo_spyglass.filter_tip": "Filter: %s",
     "item.create_crystal_industry.echo_spyglass.filter_tip_none": "Filter: None (echo_reveals tag)",
-    "block.create_crystal_industry.redstone_budding": "红石母岩",
-    "block.create_crystal_industry.redstone_small_bud": "小型红石晶芽",
-    "block.create_crystal_industry.redstone_medium_bud": "中型红石晶芽",
-    "block.create_crystal_industry.redstone_large_bud": "大型红石晶芽",
-    "block.create_crystal_industry.redstone_cluster": "红石晶簇"
+    "block.create_crystal_industry.redstone_budding": "Budding Redstone",
+    "block.create_crystal_industry.redstone_small_bud": "Small Redstone Bud",
+    "block.create_crystal_industry.redstone_medium_bud": "Medium Redstone Bud",
+    "block.create_crystal_industry.redstone_large_bud": "Large Redstone Bud",
+    "block.create_crystal_industry.redstone_cluster": "Redstone Cluster",
+    "block.create_crystal_industry.glowstone_budding": "Budding Glowstone",
+    "block.create_crystal_industry.glowstone_small_bud": "Small Glowstone Bud",
+    "block.create_crystal_industry.glowstone_medium_bud": "Medium Glowstone Bud",
+    "block.create_crystal_industry.glowstone_large_bud": "Large Glowstone Bud",
+    "block.create_crystal_industry.glowstone_cluster": "Glowstone Cluster"
 }
 

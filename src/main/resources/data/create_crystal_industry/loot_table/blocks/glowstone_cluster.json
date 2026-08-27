@@ -1,0 +1,73 @@
+{
+    "type": "minecraft:block",
+    "pools": [
+        {
+            "rolls": 1,
+            "conditions": [
+                {
+                    "condition": "minecraft:match_tool",
+                    "predicate": {
+                        "predicates": {
+                            "minecraft:enchantments": [
+                                {
+                                    "enchantments": "minecraft:silk_touch",
+                                    "levels": {
+                                        "min": 1
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            ],
+            "entries": [
+                {
+                    "type": "minecraft:item",
+                    "name": "create_crystal_industry:glowstone_cluster"
+                }
+            ]
+        },
+        {
+            "rolls": 4,
+            "entries": [
+                {
+                    "type": "minecraft:item",
+                    "name": "minecraft:glowstone_dust"
+                }
+            ],
+            "functions": [
+                {
+                    "function": "minecraft:apply_bonus",
+                    "enchantment": "minecraft:fortune",
+                    "formula": "minecraft:uniform_bonus_count",
+                    "parameters": {
+                        "bonusMultiplier": 1
+                    }
+                }
+            ],
+            "conditions": [
+                {
+                    "condition": "minecraft:survives_explosion"
+                },
+                {
+                    "condition": "minecraft:inverted",
+                    "term": {
+                        "condition": "minecraft:match_tool",
+                        "predicate": {
+                            "predicates": {
+                                "minecraft:enchantments": [
+                                    {
+                                        "enchantments": "minecraft:silk_touch",
+                                        "levels": {
+                                            "min": 1
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                }
+            ]
+        }
+    ]
+}
