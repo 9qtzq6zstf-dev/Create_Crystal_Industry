@@ -56,7 +56,7 @@
     "block.create_crystal_industry.glowstone_large_bud": "大型荧石晶芽",
     "block.create_crystal_industry.glowstone_cluster": "荧石晶簇",
     "key.create_crystal_industry.toggle_night_vision": "切换护目镜夜视",
-    "key.categories.create_crystal_industry": "机械动力：水晶工业",
+    "key.categories.create_crystal_industry": "机械动力：晶簇工业",
     "item.create_crystal_industry.night_vision_goggles": "夜视仪护目镜",
     "message.create_crystal_industry.night_vision.on": "夜视仪护目镜：夜视已开启",
     "message.create_crystal_industry.night_vision.off": "夜视仪护目镜：夜视已关闭",
