@@ -75,6 +75,7 @@ public final class ModCreativeTabs {
                         output.accept(ModBlocks.ACCELERATOR.get());
                         output.accept(ModBlocks.SMART_DRILL.get());
                         output.accept(ModItems.ECHO_SPYGLASS.get());
+                        output.accept(ModItems.NIGHT_VISION_GOGGLES.get());
                     })
                     .build());
 
