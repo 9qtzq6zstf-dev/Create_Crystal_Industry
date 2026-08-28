@@ -54,6 +54,12 @@
     "block.create_crystal_industry.glowstone_small_bud": "Small Glowstone Bud",
     "block.create_crystal_industry.glowstone_medium_bud": "Medium Glowstone Bud",
     "block.create_crystal_industry.glowstone_large_bud": "Large Glowstone Bud",
-    "block.create_crystal_industry.glowstone_cluster": "Glowstone Cluster"
+    "block.create_crystal_industry.glowstone_cluster": "Glowstone Cluster",
+    "key.create_crystal_industry.toggle_night_vision": "Toggle Goggles Night Vision",
+    "key.categories.create_crystal_industry": "Create: Crystal Industry",
+    "item.create_crystal_industry.night_vision_goggles": "Night Vision Goggles",
+    "message.create_crystal_industry.night_vision.on": "Night Vision Goggles: Night vision ON",
+    "message.create_crystal_industry.night_vision.off": "Night Vision Goggles: Night vision OFF",
+    "message.create_crystal_industry.goggles_not_worn": "You need to wear Night Vision Goggles"
 }
 

@@ -1,5 +1,6 @@
 package com.minecart.yunxian;
 
+import com.minecart.yunxian.item.NightVisionGogglesItem;
 import com.minecart.yunxian.item.EchoSpyglassItem;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.item.Item;
@@ -18,6 +19,11 @@ public final class ModItems {
                             .stacksTo(1)
                             .rarity(Rarity.RARE)
                             .component(DataComponents.CONTAINER, ItemContainerContents.EMPTY)));
+    public static final DeferredItem<NightVisionGogglesItem> NIGHT_VISION_GOGGLES =
+            ITEMS.register("night_vision_goggles",
+                    () -> new NightVisionGogglesItem(new Item.Properties()
+                            .stacksTo(1)
+                            .rarity(Rarity.RARE)));
 
     private ModItems() {
     }

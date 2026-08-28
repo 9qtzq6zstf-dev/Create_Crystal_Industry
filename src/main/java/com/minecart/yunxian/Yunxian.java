@@ -1,8 +1,11 @@
 package com.minecart.yunxian;
 
 import com.minecart.yunxian.client.ModRenderers;
+import com.minecart.yunxian.item.NightVisionGogglesItem;
 import com.simibubi.create.api.behaviour.movement.MovementBehaviour;
 import com.simibubi.create.api.stress.BlockStressValues;
+import com.simibubi.create.content.equipment.goggles.GogglesItem;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
@@ -35,6 +38,8 @@ public class Yunxian {
                     ModBlocks.SMART_DRILL.get(),
                     new SmartDrillMovementBehaviour()
             );
+            GogglesItem.addIsWearingPredicate(player ->
+                    player.getItemBySlot(EquipmentSlot.HEAD).getItem() instanceof NightVisionGogglesItem);
         });
     }
 }
