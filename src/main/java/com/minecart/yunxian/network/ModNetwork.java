@@ -25,6 +25,11 @@ public final class ModNetwork {
                 SetFilterPayload.STREAM_CODEC,
                 SetFilterPayload::handle
         );
+        registrar.playToServer(
+                NightVisionTogglePayload.TYPE,
+                NightVisionTogglePayload.STREAM_CODEC,
+                NightVisionTogglePayload::handle
+        );
         registrar.playToServer(CameraModePayload.TYPE, CameraModePayload.STREAM_CODEC, CameraModePayload::handle);
     }
 }

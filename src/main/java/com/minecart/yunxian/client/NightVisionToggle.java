@@ -1,7 +1,9 @@
 package com.minecart.yunxian.client;
 
+import com.minecart.yunxian.EchoAttachments;
 import com.minecart.yunxian.Yunxian;
 import com.minecart.yunxian.item.NightVisionGogglesItem;
+import com.minecart.yunxian.network.NightVisionTogglePayload;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -12,15 +14,21 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 @EventBusSubscriber(modid = Yunxian.MODID, value = Dist.CLIENT)
 public final class NightVisionToggle {
-    private static boolean enabled = false;
-
     private NightVisionToggle() {}
 
+    /** 任意玩家（本地已知实体）的夜视状态 —— 读取同步后的 attachment */
+    public static boolean isEnabled(Player player) {
+        return player != null && player.getData(EchoAttachments.NIGHT_VISION);
+    }
+
+    /** 本地玩家的夜视状态（兼容旧的无参调用，如遮罩/着色器） */
     public static boolean isEnabled() {
-        return enabled;
+        Player player = Minecraft.getInstance().player;
+        return player != null && player.getData(EchoAttachments.NIGHT_VISION);
     }
 
     @SubscribeEvent
@@ -37,19 +45,21 @@ public final class NightVisionToggle {
                         Component.translatable("message." + Yunxian.MODID + ".goggles_not_worn"), true);
                 continue;
             }
-            enabled = !enabled;
+            // 真正的翻转在服务端，改完自动同步回来；这里只发请求 + 乐观提示
+            PacketDistributor.sendToServer(new NightVisionTogglePayload());
+            boolean newState = !isEnabled(player);
             player.displayClientMessage(
-                    Component.translatable(enabled
+                    Component.translatable(newState
                             ? "message." + Yunxian.MODID + ".night_vision.on"
                             : "message." + Yunxian.MODID + ".night_vision.off"),
                     true);
         }
 
+        boolean enabled = isEnabled(player);
         boolean wearing = player.getItemBySlot(EquipmentSlot.HEAD)
                 .getItem() instanceof NightVisionGogglesItem;
         if (wearing && enabled) {
             player.addEffect(new MobEffectInstance(MobEffects.NIGHT_VISION, 210, 0, false, false, true));
-            // 免疫黑暗：开启夜视时持续移除黑暗效果
             if (player.hasEffect(MobEffects.DARKNESS)) {
                 player.removeEffect(MobEffects.DARKNESS);
             }

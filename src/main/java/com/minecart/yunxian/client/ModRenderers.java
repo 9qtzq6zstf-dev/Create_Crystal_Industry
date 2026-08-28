@@ -25,14 +25,12 @@ import com.simibubi.create.content.kinetics.base.OrientedRotatingVisual;
 
 public class ModRenderers {
 
-    // 附加 3D 模型（standalone 变体，RegisterAdditional 硬性要求）
     private static final ModelResourceLocation NIGHT_VISION_GOGGLES_3D =
             new ModelResourceLocation(
                     ResourceLocation.fromNamespaceAndPath(Yunxian.MODID, "block/night_vision_goggles/night_vision_goggles"), "standalone");
     private static final ModelResourceLocation NIGHT_VISION_GOGGLES_3D_ON =
             new ModelResourceLocation(
                     ResourceLocation.fromNamespaceAndPath(Yunxian.MODID, "block/night_vision_goggles/night_vision_goggles_on"), "standalone");
-    // 物品自身模型（inventory 变体）
     private static final ModelResourceLocation NIGHT_VISION_GOGGLES_ITEM =
             new ModelResourceLocation(
                     ResourceLocation.fromNamespaceAndPath(Yunxian.MODID, "night_vision_goggles"), "inventory");
@@ -40,8 +38,8 @@ public class ModRenderers {
     public static void register(IEventBus modEventBus) {
         modEventBus.addListener(ModRenderers::onClientSetup);
         modEventBus.addListener(ModRenderers::onAddLayers);
-        modEventBus.addListener(ModRenderers::onRegisterAdditional);   // 注册附加 3D 模型
-        modEventBus.addListener(ModRenderers::onModifyBakingResult);   // 替换为 NightVisionGogglesModel
+        modEventBus.addListener(ModRenderers::onRegisterAdditional);
+        modEventBus.addListener(ModRenderers::onModifyBakingResult);
         if (FMLEnvironment.dist.isClient()) {
             EchoHighlightRenderer.register();
         }
@@ -50,8 +48,6 @@ public class ModRenderers {
         EchoSpyglassUseRenderer.register();
         modEventBus.addListener(ModRenderers::onRegisterItemDecorations);
     }
-
-    // ---- 模型事件 ----
 
     private static void onRegisterAdditional(ModelEvent.RegisterAdditional event) {
         event.register(NIGHT_VISION_GOGGLES_3D);
@@ -67,8 +63,6 @@ public class ModRenderers {
                     new NightVisionGogglesModel(itemModel, goggles3d, goggles3dOn));
         }
     }
-
-    // ---- 原有方法（保持不变）----
 
     private static void onClientSetup(FMLClientSetupEvent event) {
         event.enqueueWork(() -> {
@@ -87,6 +81,7 @@ public class ModRenderers {
         });
     }
 
+    // ========== 恢复原样：不加也不移除任何头部渲染层 ==========
     private static void onAddLayers(EntityRenderersEvent.AddLayers event) {
         for (PlayerSkin.Model skin : event.getSkins()) {
             PlayerRenderer renderer = (PlayerRenderer) event.getSkin(skin);
