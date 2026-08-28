@@ -1,0 +1,12 @@
+{
+    "type": "minecraft:crafting_shapeless",
+    "ingredients": [
+        {
+            "item": "create_crystal_industry:flammable_ice_block"
+        }
+    ],
+    "result": {
+        "id": "create_crystal_industry:flammable_ice",
+        "count": 9
+    }
+}

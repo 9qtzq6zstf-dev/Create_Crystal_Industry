@@ -60,6 +60,13 @@
     "item.create_crystal_industry.night_vision_goggles": "Night Vision Goggles",
     "message.create_crystal_industry.night_vision.on": "Night Vision Goggles: Night vision ON",
     "message.create_crystal_industry.night_vision.off": "Night Vision Goggles: Night vision OFF",
-    "message.create_crystal_industry.goggles_not_worn": "You need to wear Night Vision Goggles"
+    "message.create_crystal_industry.goggles_not_worn": "You need to wear Night Vision Goggles",
+    "block.create_crystal_industry.flammable_ice_budding": "Flammable Ice Budding",
+    "block.create_crystal_industry.flammable_ice_small_bud": "Small Flammable Ice Bud",
+    "block.create_crystal_industry.flammable_ice_medium_bud": "Medium Flammable Ice Bud",
+    "block.create_crystal_industry.flammable_ice_large_bud": "Large Flammable Ice Bud",
+    "block.create_crystal_industry.flammable_ice_cluster": "Flammable Ice Cluster",
+    "block.create_crystal_industry.flammable_ice_block": "Flammable Ice Block",
+    "item.create_crystal_industry.flammable_ice": "Flammable Ice"
 }
 

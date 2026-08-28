@@ -13,6 +13,9 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 public final class ModItems {
     public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(Yunxian.MODID);
 
+    public static final DeferredItem<Item> FLAMMABLE_ICE =
+            ITEMS.register("flammable_ice", () -> new Item(new Item.Properties()));
+
     public static final DeferredItem<EchoSpyglassItem> ECHO_SPYGLASS =
             ITEMS.register("echo_spyglass",
                     () -> new EchoSpyglassItem(new Item.Properties()

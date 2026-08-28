@@ -1,0 +1,5 @@
+{
+    "variants": {
+        "": { "model": "create_crystal_industry:block/flammable_ice/flammable_ice_block" }
+    }
+}

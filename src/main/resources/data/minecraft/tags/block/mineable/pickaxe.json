@@ -55,6 +55,13 @@
         "create_crystal_industry:glowstone_large_bud",
         "create_crystal_industry:glowstone_cluster",
         
+        "create_crystal_industry:flammable_ice_budding",
+        "create_crystal_industry:flammable_ice_small_bud",
+        "create_crystal_industry:flammable_ice_medium_bud",
+        "create_crystal_industry:flammable_ice_large_bud",
+        "create_crystal_industry:flammable_ice_cluster",
+        "create_crystal_industry:flammable_ice_block",
+        
         "create_crystal_industry:accelerator",
         "create_crystal_industry:smart_drill"
     ]

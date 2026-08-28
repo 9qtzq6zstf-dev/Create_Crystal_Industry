@@ -72,6 +72,14 @@ public final class ModCreativeTabs {
                         output.accept(ModBlocks.GLOWSTONE_LARGE_BUD.get());
                         output.accept(ModBlocks.GLOWSTONE_CLUSTER.get());
 
+                        output.accept(ModBlocks.FLAMMABLE_ICE_BUDDING.get());
+                        output.accept(ModBlocks.FLAMMABLE_ICE_SMALL_BUD.get());
+                        output.accept(ModBlocks.FLAMMABLE_ICE_MEDIUM_BUD.get());
+                        output.accept(ModBlocks.FLAMMABLE_ICE_LARGE_BUD.get());
+                        output.accept(ModBlocks.FLAMMABLE_ICE_CLUSTER.get());
+                        output.accept(ModBlocks.FLAMMABLE_ICE_BLOCK.get());
+                        output.accept(ModItems.FLAMMABLE_ICE.get());
+
                         output.accept(ModBlocks.ACCELERATOR.get());
                         output.accept(ModBlocks.SMART_DRILL.get());
                         output.accept(ModItems.ECHO_SPYGLASS.get());

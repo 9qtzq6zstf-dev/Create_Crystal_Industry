@@ -60,6 +60,13 @@
     "item.create_crystal_industry.night_vision_goggles": "夜视仪护目镜",
     "message.create_crystal_industry.night_vision.on": "夜视仪护目镜：夜视已开启",
     "message.create_crystal_industry.night_vision.off": "夜视仪护目镜：夜视已关闭",
-    "message.create_crystal_industry.goggles_not_worn": "需要佩戴夜视仪护目镜"
+    "message.create_crystal_industry.goggles_not_worn": "需要佩戴夜视仪护目镜",
+    "block.create_crystal_industry.flammable_ice_budding": "可燃冰母岩",
+    "block.create_crystal_industry.flammable_ice_small_bud": "小型可燃冰芽",
+    "block.create_crystal_industry.flammable_ice_medium_bud": "中型可燃冰芽",
+    "block.create_crystal_industry.flammable_ice_large_bud": "大型可燃冰芽",
+    "block.create_crystal_industry.flammable_ice_cluster": "可燃冰晶簇",
+    "block.create_crystal_industry.flammable_ice_block": "可燃冰块",
+    "item.create_crystal_industry.flammable_ice": "可燃冰"
 
 }

@@ -122,6 +122,20 @@ public final class ModBlocks {
                     () -> Blocks.REDSTONE_ORE, () -> Blocks.DEEPSLATE_REDSTONE_ORE,
                     () -> Blocks.REDSTONE_BLOCK));
 
+    // Flammable ice
+    public static final DeferredBlock<Block> FLAMMABLE_ICE_SMALL_BUD = bud("flammable_ice_small_bud", Blocks.SMALL_AMETHYST_BUD, 1, 1, "small_bud");
+    public static final DeferredBlock<Block> FLAMMABLE_ICE_MEDIUM_BUD = bud("flammable_ice_medium_bud", Blocks.MEDIUM_AMETHYST_BUD, 3, 2, "medium_bud");
+    public static final DeferredBlock<Block> FLAMMABLE_ICE_LARGE_BUD = bud("flammable_ice_large_bud", Blocks.LARGE_AMETHYST_BUD, 5, 3, "large_bud");
+    public static final DeferredBlock<Block> FLAMMABLE_ICE_CLUSTER = cluster("flammable_ice_cluster");
+    // 母岩
+    public static final DeferredBlock<Block> FLAMMABLE_ICE_BUDDING = registerBlock("flammable_ice_budding",
+            () -> new GenericBuddingBlock(5, BlockBehaviour.Properties.ofFullCopy(Blocks.BUDDING_AMETHYST),
+                    FLAMMABLE_ICE_SMALL_BUD.get(), FLAMMABLE_ICE_MEDIUM_BUD.get(),
+                    FLAMMABLE_ICE_LARGE_BUD.get(), FLAMMABLE_ICE_CLUSTER.get()));
+    // 装饰方块（可燃冰合成）
+    public static final DeferredBlock<Block> FLAMMABLE_ICE_BLOCK = registerBlock("flammable_ice_block",
+            () -> new Block(BlockBehaviour.Properties.ofFullCopy(Blocks.BLUE_ICE)));
+
     public static final DeferredBlock<Block> ACCELERATOR = registerBlock("accelerator",
             () -> new AcceleratorBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK)
                     .noOcclusion()
