@@ -29,7 +29,9 @@ public class ModRenderers {
     private static final ModelResourceLocation NIGHT_VISION_GOGGLES_3D =
             new ModelResourceLocation(
                     ResourceLocation.fromNamespaceAndPath(Yunxian.MODID, "block/night_vision_goggles/night_vision_goggles"), "standalone");
-
+    private static final ModelResourceLocation NIGHT_VISION_GOGGLES_3D_ON =
+            new ModelResourceLocation(
+                    ResourceLocation.fromNamespaceAndPath(Yunxian.MODID, "block/night_vision_goggles/night_vision_goggles_on"), "standalone");
     // 物品自身模型（inventory 变体）
     private static final ModelResourceLocation NIGHT_VISION_GOGGLES_ITEM =
             new ModelResourceLocation(
@@ -53,13 +55,16 @@ public class ModRenderers {
 
     private static void onRegisterAdditional(ModelEvent.RegisterAdditional event) {
         event.register(NIGHT_VISION_GOGGLES_3D);
+        event.register(NIGHT_VISION_GOGGLES_3D_ON);
     }
 
     private static void onModifyBakingResult(ModelEvent.ModifyBakingResult event) {
         BakedModel itemModel = event.getModels().get(NIGHT_VISION_GOGGLES_ITEM);
         BakedModel goggles3d = event.getModels().get(NIGHT_VISION_GOGGLES_3D);
-        if (itemModel != null && goggles3d != null) {
-            event.getModels().put(NIGHT_VISION_GOGGLES_ITEM, new NightVisionGogglesModel(itemModel, goggles3d));
+        BakedModel goggles3dOn = event.getModels().get(NIGHT_VISION_GOGGLES_3D_ON);
+        if (itemModel != null && goggles3d != null && goggles3dOn != null) {
+            event.getModels().put(NIGHT_VISION_GOGGLES_ITEM,
+                    new NightVisionGogglesModel(itemModel, goggles3d, goggles3dOn));
         }
     }
 

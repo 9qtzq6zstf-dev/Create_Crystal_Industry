@@ -18,6 +18,7 @@ public class Yunxian {
 
     public Yunxian(IEventBus modEventBus, ModContainer container) {
         container.registerConfig(ModConfig.Type.COMMON, com.minecart.yunxian.config.ModConfig.Common.SPEC);
+        container.registerConfig(ModConfig.Type.CLIENT, com.minecart.yunxian.config.ModConfig.Client.SPEC); // ← 新增
 
         ModBlocks.register(modEventBus);
         ModItems.register(modEventBus);

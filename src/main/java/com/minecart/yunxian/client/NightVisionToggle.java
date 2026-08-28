@@ -19,13 +19,16 @@ public final class NightVisionToggle {
 
     private NightVisionToggle() {}
 
+    public static boolean isEnabled() {
+        return enabled;
+    }
+
     @SubscribeEvent
     public static void onClientTick(ClientTickEvent.Post event) {
         Minecraft mc = Minecraft.getInstance();
         Player player = mc.player;
         if (player == null) return;
 
-        // 按键：只有佩戴时才切换开关
         while (ModKeybinds.TOGGLE_NIGHT_VISION.consumeClick()) {
             boolean wearing = player.getItemBySlot(EquipmentSlot.HEAD)
                     .getItem() instanceof NightVisionGogglesItem;
@@ -35,7 +38,6 @@ public final class NightVisionToggle {
                 continue;
             }
             enabled = !enabled;
-            // 第二个参数 true = 在快捷栏上方（action bar）显示，false = 聊天栏
             player.displayClientMessage(
                     Component.translatable(enabled
                             ? "message." + Yunxian.MODID + ".night_vision.on"
@@ -47,6 +49,10 @@ public final class NightVisionToggle {
                 .getItem() instanceof NightVisionGogglesItem;
         if (wearing && enabled) {
             player.addEffect(new MobEffectInstance(MobEffects.NIGHT_VISION, 210, 0, false, false, true));
+            // 免疫黑暗：开启夜视时持续移除黑暗效果
+            if (player.hasEffect(MobEffects.DARKNESS)) {
+                player.removeEffect(MobEffects.DARKNESS);
+            }
         } else {
             removeOwnNightVision(player);
         }

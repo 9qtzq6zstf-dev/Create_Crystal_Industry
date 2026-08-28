@@ -95,4 +95,17 @@ public final class ModConfig {
 
         public static final ModConfigSpec SPEC = BUILDER.build();
     }
+
+    public static final class Client {
+        private static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
+
+        // ===== 回响护目镜 =====
+        public static final ModConfigSpec.DoubleValue GOGGLES_OVERLAY_ALPHA = BUILDER
+                .comment(
+                        "夜视护目镜屏幕遮罩的整体不透明度（0.0 = 完全透明不可见，1.0 = 完全不透明）。",
+                        "Overall opacity of the night vision goggles screen overlay (0.0 = invisible, 1.0 = fully opaque).")
+                .defineInRange("gogglesOverlayAlpha", 0.75, 0.0, 1.0);
+
+        public static final ModConfigSpec SPEC = BUILDER.build();
+    }
 }
