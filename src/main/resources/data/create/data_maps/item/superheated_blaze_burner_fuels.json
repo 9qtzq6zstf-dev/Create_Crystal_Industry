@@ -1,0 +1,25 @@
+{
+    "values": {
+        "create_crystal_industry:flammable_ice": {
+            "burn_time": 400
+        },
+        "create_crystal_industry:flammable_ice_block": {
+            "burn_time": 4000
+        },
+        "create_crystal_industry:flammable_ice_budding": {
+            "burn_time": 4000
+        },
+        "create_crystal_industry:flammable_ice_small_bud": {
+            "burn_time": 300
+        },
+        "create_crystal_industry:flammable_ice_medium_bud": {
+            "burn_time": 600
+        },
+        "create_crystal_industry:flammable_ice_large_bud": {
+            "burn_time": 900
+        },
+        "create_crystal_industry:flammable_ice_cluster": {
+            "burn_time": 1200
+        }
+    }
+}

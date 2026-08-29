@@ -1,0 +1,6 @@
+{
+    "type": "neoforge:add_features",
+    "biomes": "#create_crystal_industry:has_flammable_ice",
+    "features": "create_crystal_industry:flammable_ice",
+    "step": "surface_structures"
+}

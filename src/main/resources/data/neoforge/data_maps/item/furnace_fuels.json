@@ -1,0 +1,10 @@
+{
+    "values": {
+        "create_crystal_industry:flammable_ice_block": 4000,
+        "create_crystal_industry:flammable_ice_budding": 4000,
+        "create_crystal_industry:flammable_ice_small_bud": 300,
+        "create_crystal_industry:flammable_ice_medium_bud": 600,
+        "create_crystal_industry:flammable_ice_large_bud": 900,
+        "create_crystal_industry:flammable_ice_cluster": 1200
+    }
+}

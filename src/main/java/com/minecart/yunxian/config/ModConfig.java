@@ -26,6 +26,47 @@ public final class ModConfig {
         public static final ModConfigSpec.BooleanValue GENERATE_GLOWSTONE = budding("glowstone", true);
         public static final ModConfigSpec.BooleanValue GENERATE_QUARTZ = budding("quartz", true);
 
+        // ★ 新增：可燃冰母岩结构生成开关 ★
+        public static final ModConfigSpec.BooleanValue GENERATE_FLAMMABLE_ICE = budding("flammable_ice", true);
+
+        // ★ 新增：可燃冰母岩结构生成概率（1/N 每区块）★
+        public static final ModConfigSpec.IntValue FLAMMABLE_ICE_CHANCE = BUILDER
+                .comment(
+                        "1-in-N chance per eligible deep-ocean chunk that a flammable ice budding structure generates.",
+                        "每个符合条件的深海区块生成可燃冰母岩结构的概率为 1/N。",
+                        "Higher = rarer. 数值越大越稀有。")
+                .defineInRange("flammableIceChance", 256, 1, 10000);
+        // ★ 新增：可燃冰结构周围灵魂沙（海面冒泡）配置 ★
+        public static final ModConfigSpec.BooleanValue SOUL_SAND_GENERATE = BUILDER
+                .comment(
+                        "Whether soul sand (sea-surface bubble effect) generates around flammable ice structures.",
+                        "可燃冰结构周围是否生成灵魂沙（海面冒泡效果）。")
+                .define("soulSandGenerate", true);
+
+        public static final ModConfigSpec.IntValue SOUL_SAND_MIN = BUILDER
+                .comment(
+                        "Minimum number of soul sand blocks scattered around each flammable ice structure.",
+                        "每个可燃冰结构周围散落灵魂沙的最少数量。")
+                .defineInRange("soulSandMin", 3, 0, 64);
+
+        public static final ModConfigSpec.IntValue SOUL_SAND_MAX = BUILDER
+                .comment(
+                        "Maximum number of soul sand blocks scattered around each flammable ice structure.",
+                        "每个可燃冰结构周围散落灵魂沙的最多数量。")
+                .defineInRange("soulSandMax", 6, 0, 64);
+
+        public static final ModConfigSpec.IntValue SOUL_SAND_MARGIN = BUILDER
+                .comment(
+                        "Scatter range: how many blocks outward from the structure edge soul sand may spawn.",
+                        "灵魂沙散布范围：从结构边缘向外扩展的格数。")
+                .defineInRange("soulSandMargin", 5, 1, 32);
+
+        public static final ModConfigSpec.IntValue SOUL_SAND_SINK = BUILDER
+                .comment(
+                        "How many blocks below the seafloor surface the soul sand is buried (1 = a one-block-deep pit).",
+                        "灵魂沙埋入海床表面的格数（1 = 在海床表面下 1 格形成小坑）。")
+                .defineInRange("soulSandSink", 1, 1, 16);
+
         public static final ModConfigSpec.DoubleValue GLOWSTONE_BUDDING_CHANCE = BUILDER
                 .comment(
                         "Chance (0.0–1.0) that a naturally generated glowstone cluster gets its lowest block replaced with glowstone budding.",
@@ -69,6 +110,8 @@ public final class ModConfig {
                 case "echo" -> GENERATE_ECHO.get();
                 case "glowstone" -> GENERATE_GLOWSTONE.get();
                 case "quartz" -> GENERATE_QUARTZ.get();
+                // ★ 新增 ★
+                case "flammable_ice" -> GENERATE_FLAMMABLE_ICE.get();
                 default -> true;
             };
         }

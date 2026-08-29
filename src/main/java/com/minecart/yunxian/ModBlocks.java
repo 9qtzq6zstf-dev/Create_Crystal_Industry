@@ -129,7 +129,7 @@ public final class ModBlocks {
     public static final DeferredBlock<Block> FLAMMABLE_ICE_CLUSTER = cluster("flammable_ice_cluster");
     // 母岩
     public static final DeferredBlock<Block> FLAMMABLE_ICE_BUDDING = registerBlock("flammable_ice_budding",
-            () -> new GenericBuddingBlock(5, BlockBehaviour.Properties.ofFullCopy(Blocks.BUDDING_AMETHYST),
+            () -> new FlammableIceBuddingBlock(5, BlockBehaviour.Properties.ofFullCopy(Blocks.BUDDING_AMETHYST),
                     FLAMMABLE_ICE_SMALL_BUD.get(), FLAMMABLE_ICE_MEDIUM_BUD.get(),
                     FLAMMABLE_ICE_LARGE_BUD.get(), FLAMMABLE_ICE_CLUSTER.get()));
     // 装饰方块（可燃冰合成）

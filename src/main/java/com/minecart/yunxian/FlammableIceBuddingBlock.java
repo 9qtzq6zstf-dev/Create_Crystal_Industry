@@ -6,32 +6,20 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.AmethystClusterBlock;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.BuddingAmethystBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluids;
 
-public class GenericBuddingBlock extends BuddingAmethystBlock {
+public class FlammableIceBuddingBlock extends GenericBuddingBlock {
     private static final Direction[] DIRECTIONS = Direction.values();
 
-    protected final int growthChance;
-    protected final Block smallBud;    // ★ private → protected
-    protected final Block mediumBud;   // ★ private → protected
-    protected final Block largeBud;    // ★ private → protected
-    protected final Block cluster;
-
-    public GenericBuddingBlock(int growthChance, Properties properties, Block smallBud, Block mediumBud,
-                               Block largeBud, Block cluster) {
-        super(properties);
-        this.growthChance = growthChance;
-        this.smallBud = smallBud;
-        this.mediumBud = mediumBud;
-        this.largeBud = largeBud;
-        this.cluster = cluster;
+    public FlammableIceBuddingBlock(int growthChance, Properties properties, Block smallBud, Block mediumBud,
+                                    Block largeBud, Block cluster) {
+        super(growthChance, properties, smallBud, mediumBud, largeBud, cluster);
     }
 
     @Override
     public void randomTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
-        if (!level.getFluidState(pos).isEmpty() || random.nextInt(growthChance) != 0) {
+        if (random.nextInt(growthChance) != 0) {
             return;
         }
 
@@ -59,8 +47,12 @@ public class GenericBuddingBlock extends BuddingAmethystBlock {
         }
     }
 
+    // ★ 修复：必须是"空位"且是水源方块才算可长新芽
+    // 这样 waterlogged 的芽/簇不会误判为新芽位置，能正常进阶
     private static boolean canGrowAt(BlockState state) {
-        return state.isAir() || state.canBeReplaced();
+        return (state.isAir() || state.canBeReplaced())
+                && state.getFluidState().getType() == Fluids.WATER
+                && state.getFluidState().isSource();
     }
 
     private static boolean sameFacing(BlockState state, Direction side) {

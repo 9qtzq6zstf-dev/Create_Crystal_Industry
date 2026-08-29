@@ -1,0 +1,12 @@
+{
+    "feature": "create_crystal_industry:flammable_ice",
+    "placement": [
+        {
+            "type": "minecraft:heightmap",
+            "heightmap": "OCEAN_FLOOR_WG"
+        },
+        {
+            "type": "minecraft:biome"
+        }
+    ]
+}

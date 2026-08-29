@@ -24,6 +24,9 @@ public final class ModFeatures {
     public static final DeferredHolder<Feature<?>, GlowstoneBuddingBlobFeature> GLOWSTONE_BUDDING_BLOB =
             FEATURES.register("glowstone_budding_blob",
                     () -> new GlowstoneBuddingBlobFeature(NoneFeatureConfiguration.CODEC));
+    public static final DeferredHolder<Feature<?>, FlammableIceFeature> FLAMMABLE_ICE =
+            FEATURES.register("flammable_ice",
+                    () -> new FlammableIceFeature(NoneFeatureConfiguration.CODEC));
 
     private ModFeatures() {
     }
