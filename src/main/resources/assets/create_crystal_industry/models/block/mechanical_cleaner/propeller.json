@@ -4,8 +4,8 @@
 	"parent": "block/block",
 	"textures": {
 		"3": "create_crystal_industry:block/mechanical_cleaner/fan_blades",
-		"4": "create_crystal_industry:block/mechanical_cleaner/axis_top",
-		"5": "create_crystal_industry:block/mechanical_cleaner/axis"
+		"4": "create_crystal_industry:block/common/axis_top",
+		"5": "create_crystal_industry:block/common/axis"
 	},
 	"elements": [
 		{
