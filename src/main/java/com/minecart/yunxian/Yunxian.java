@@ -40,7 +40,7 @@ public class Yunxian {
                     new SmartDrillMovementBehaviour()
             );
             GogglesItem.addIsWearingPredicate(player ->
-                    player.getItemBySlot(EquipmentSlot.HEAD).getItem() instanceof NightVisionGogglesItem);
+                    NightVisionWearHelper.isWearingGoggles(player));
         });
     }
 }

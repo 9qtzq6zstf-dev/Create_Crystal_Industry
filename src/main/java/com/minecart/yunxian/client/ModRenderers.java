@@ -5,6 +5,7 @@ import com.minecart.yunxian.ModItems;
 import com.minecart.yunxian.Yunxian;
 import com.minecart.yunxian.client.model.NightVisionGogglesModel;
 
+import com.minecart.yunxian.integration.curios.CuriosClientIntegration;
 import dev.engine_room.flywheel.lib.visualization.SimpleBlockEntityVisualizer;
 
 import net.minecraft.client.renderer.entity.player.PlayerRenderer;
@@ -15,6 +16,7 @@ import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.resources.ResourceLocation;
 
 import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.ModList;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
@@ -78,6 +80,10 @@ public class ModRenderers {
                     (stack, level, entity, seed) ->
                             entity != null && entity.isUsingItem() && entity.getUseItem() == stack
                                     ? 1.0F : 0.0F);
+            // ★ 软依赖门控：客户端 + Curios 已加载才注册首饰栏渲染器
+            if (ModList.get().isLoaded("curios")) {
+                CuriosClientIntegration.registerRenderers();
+            }
         });
     }
 

@@ -1,6 +1,7 @@
 package com.minecart.yunxian.network;
 
 import com.minecart.yunxian.EchoAttachments;
+import com.minecart.yunxian.NightVisionWearHelper;
 import com.minecart.yunxian.Yunxian;
 import com.minecart.yunxian.item.NightVisionGogglesItem;
 import net.minecraft.network.FriendlyByteBuf;
@@ -26,8 +27,8 @@ public record NightVisionTogglePayload() implements CustomPacketPayload {
     public static void handle(NightVisionTogglePayload payload, IPayloadContext ctx) {
         ctx.enqueueWork(() -> {
             if (ctx.player() == null) return;
-            // 服务端也校验穿戴，防作弊
-            if (!(ctx.player().getItemBySlot(EquipmentSlot.HEAD).getItem() instanceof NightVisionGogglesItem)) {
+            // 服务端校验：头盔槽 或 首饰栏 都算穿戴（防作弊 + 支持首饰栏）
+            if (!NightVisionWearHelper.isWearingGoggles(ctx.player())) {
                 return;
             }
             ctx.player().setData(EchoAttachments.NIGHT_VISION,

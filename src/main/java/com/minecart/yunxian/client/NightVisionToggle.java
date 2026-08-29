@@ -1,6 +1,7 @@
 package com.minecart.yunxian.client;
 
 import com.minecart.yunxian.EchoAttachments;
+import com.minecart.yunxian.NightVisionWearHelper;
 import com.minecart.yunxian.Yunxian;
 import com.minecart.yunxian.item.NightVisionGogglesItem;
 import com.minecart.yunxian.network.NightVisionTogglePayload;
@@ -38,8 +39,7 @@ public final class NightVisionToggle {
         if (player == null) return;
 
         while (ModKeybinds.TOGGLE_NIGHT_VISION.consumeClick()) {
-            boolean wearing = player.getItemBySlot(EquipmentSlot.HEAD)
-                    .getItem() instanceof NightVisionGogglesItem;
+            boolean wearing = NightVisionWearHelper.isWearingGoggles(player);
             if (!wearing) {
                 player.displayClientMessage(
                         Component.translatable("message." + Yunxian.MODID + ".goggles_not_worn"), true);
@@ -56,8 +56,7 @@ public final class NightVisionToggle {
         }
 
         boolean enabled = isEnabled(player);
-        boolean wearing = player.getItemBySlot(EquipmentSlot.HEAD)
-                .getItem() instanceof NightVisionGogglesItem;
+        boolean wearing = NightVisionWearHelper.isWearingGoggles(player);
         if (wearing && enabled) {
             player.addEffect(new MobEffectInstance(MobEffects.NIGHT_VISION, 210, 0, false, false, true));
             if (player.hasEffect(MobEffects.DARKNESS)) {

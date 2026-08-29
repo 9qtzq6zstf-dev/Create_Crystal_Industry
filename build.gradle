@@ -32,6 +32,10 @@ repositories {
         name = "BlameJared"
         url = uri("https://maven.blamejared.com/")
     }
+    maven {
+        name = "Illusive Soulworks"
+        url = "https://maven.theillusivec4.top/"
+    }
     // 5. Minecraft 官方库（通常在国内有镜像，但可以保留）
     mavenCentral()
 }
@@ -129,6 +133,7 @@ dependencies {
     runtimeOnly "dev.engine-room.flywheel:flywheel-neoforge-${minecraft_version}:${flywheel_version}"
     implementation "com.tterrag.registrate:Registrate:${registrate_version}"
     compileOnly "mezz.jei:jei-1.21.1-neoforge-api:19.27.0.343"
+    compileOnly "top.theillusivec4.curios:curios-neoforge:${curios_version}+${minecraft_version}:api"
 }
 
 // This block of code expands all declared replace properties in the specified resource targets.

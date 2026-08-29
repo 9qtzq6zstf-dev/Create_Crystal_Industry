@@ -1,8 +1,8 @@
 package com.minecart.yunxian.client;
 
+import com.minecart.yunxian.NightVisionWearHelper;
 import com.minecart.yunxian.Yunxian;
 import com.minecart.yunxian.config.ModConfig;
-import com.minecart.yunxian.item.NightVisionGogglesItem;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.BufferUploader;
@@ -12,7 +12,6 @@ import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.EquipmentSlot;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -32,7 +31,8 @@ public final class NightVisionOverlayRenderer {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null) return;
         if (!NightVisionToggle.isEnabled()) return;
-        if (!(mc.player.getItemBySlot(EquipmentSlot.HEAD).getItem() instanceof NightVisionGogglesItem)) return;
+        // ★ 修复：改成公共 helper，同时覆盖头盔槽 + 首饰栏
+        if (!NightVisionWearHelper.isWearingGoggles(mc.player)) return;
 
         int screenWidth = event.getGuiGraphics().guiWidth();
         int screenHeight = event.getGuiGraphics().guiHeight();

@@ -1,6 +1,8 @@
 package com.minecart.yunxian;
 
+import com.minecart.yunxian.integration.curios.CuriosIntegration;
 import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.ModList;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 
@@ -18,5 +20,10 @@ public final class ModCapabilities {
                 ModBlockEntities.ACCELERATOR.get(),
                 (blockEntity, side) -> blockEntity.getEnergyCapability(side)
         );
+
+        // ★ 软依赖门控：只有 Curios 已加载才触碰 Curios 类
+        if (ModList.get().isLoaded("curios")) {
+            CuriosIntegration.registerCapabilities();
+        }
     }
 }
