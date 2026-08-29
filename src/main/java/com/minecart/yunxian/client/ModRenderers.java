@@ -74,6 +74,12 @@ public class ModRenderers {
                     .skipVanillaRender(be -> false)
                     .apply();
 
+            SimpleBlockEntityVisualizer
+                    .builder(ModBlockEntities.MECHANICAL_ACCELERATOR.get())
+                    .factory(OrientedRotatingVisual.of(MechanicalAcceleratorRenderer.SHAFT))
+                    .skipVanillaRender(be -> true)
+                    .apply();
+
             ItemProperties.register(
                     ModItems.ECHO_SPYGLASS.get(),
                     ResourceLocation.fromNamespaceAndPath(Yunxian.MODID, "using"),

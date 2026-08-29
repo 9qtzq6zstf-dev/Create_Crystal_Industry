@@ -34,7 +34,8 @@ public class Yunxian {
 
     private static void commonSetup(FMLCommonSetupEvent event) {
         event.enqueueWork(() -> {
-            BlockStressValues.IMPACTS.register(ModBlocks.SMART_DRILL.get(), () -> 4.0);
+            BlockStressValues.IMPACTS.register(ModBlocks.SMART_DRILL.get(), () -> 8.0);
+            BlockStressValues.IMPACTS.register(ModBlocks.MECHANICAL_ACCELERATOR.get(), () -> 128.0); // ← 新增
             MovementBehaviour.REGISTRY.register(
                     ModBlocks.SMART_DRILL.get(),
                     new SmartDrillMovementBehaviour()

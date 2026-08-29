@@ -23,6 +23,13 @@ public final class ModBlockEntities {
                     ModBlocks.SMART_DRILL.get()
             ).build(null));
 
+    // 动力催生器
+    public static final Supplier<BlockEntityType<MechanicalAcceleratorBlockEntity>> MECHANICAL_ACCELERATOR =
+            BLOCK_ENTITIES.register("mechanical_accelerator", () -> BlockEntityType.Builder.of(
+                    MechanicalAcceleratorBlockEntity::new,
+                    ModBlocks.MECHANICAL_ACCELERATOR.get()
+            ).build(null));
+
     private ModBlockEntities() {
     }
 

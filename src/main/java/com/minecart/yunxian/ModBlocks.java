@@ -146,6 +146,10 @@ public final class ModBlocks {
     public static final DeferredBlock<Block> SMART_DRILL = registerBlock("smart_drill",
             () -> new SmartDrillBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK).noOcclusion()));
 
+    // 动力催生器
+    public static final DeferredBlock<Block> MECHANICAL_ACCELERATOR = registerBlock("mechanical_accelerator",
+            () -> new MechanicalAcceleratorBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK).noOcclusion()));
+
     private ModBlocks() {
     }
 

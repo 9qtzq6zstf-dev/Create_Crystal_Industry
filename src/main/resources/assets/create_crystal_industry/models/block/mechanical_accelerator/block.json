@@ -2,6 +2,7 @@
 	"format_version": "1.9.0",
 	"credit": "Made with Blockbench",
 	"parent": "create:block/block",
+	"render_type": "cutout",
 	"textures": {
 		"0": "create_crystal_industry:block/mechanical_accelerator/accelerator_top",
 		"1": "create_crystal_industry:block/mechanical_accelerator/accelerator_side",

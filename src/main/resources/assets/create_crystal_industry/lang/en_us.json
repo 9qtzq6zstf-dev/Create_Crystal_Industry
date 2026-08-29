@@ -67,6 +67,7 @@
     "block.create_crystal_industry.flammable_ice_large_bud": "Large Flammable Ice Bud",
     "block.create_crystal_industry.flammable_ice_cluster": "Flammable Ice Cluster",
     "block.create_crystal_industry.flammable_ice_block": "Flammable Ice Block",
-    "item.create_crystal_industry.flammable_ice": "Flammable Ice"
+    "item.create_crystal_industry.flammable_ice": "Flammable Ice",
+    "block.create_crystal_industry.mechanical_accelerator": "Mechanical Accelerator"
 }
 
