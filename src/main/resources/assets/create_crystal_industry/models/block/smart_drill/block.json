@@ -5,8 +5,8 @@
 	"textures": {
 		"4": "create_crystal_industry:block/smart_drill/mechanical_drill_top",
 		"10": "create_crystal_industry:block/smart_drill/brass_casing_very_short",
-		"particle": "create_crystal_industry:block/smart_drill/brass_gearbox",
-		"gearbox": "create_crystal_industry:block/smart_drill/brass_gearbox"
+		"particle": "create_crystal_industry:block/common/brass_gearbox",
+		"gearbox": "create_crystal_industry:block/common/brass_gearbox"
 	},
 	"elements": [
 		{

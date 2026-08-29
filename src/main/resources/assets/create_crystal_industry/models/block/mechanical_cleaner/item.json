@@ -5,10 +5,10 @@
 	"textures": {
 		"0": "create_crystal_industry:block/mechanical_cleaner/mechanical_cleaner_side",
 		"1": "create_crystal_industry:block/mechanical_cleaner/mechanical_cleaner",
-		"2": "create_crystal_industry:block/mechanical_cleaner/brass_gearbox",
+		"2": "create_crystal_industry:block/common/brass_gearbox",
 		"3": "create_crystal_industry:block/mechanical_cleaner/fan_blades",
-		"4": "create_crystal_industry:block/mechanical_cleaner/axis_top",
-		"5": "create_crystal_industry:block/mechanical_cleaner/axis",
+		"4": "create_crystal_industry:block/common/axis_top",
+		"5": "create_crystal_industry:block/common/axis",
 		"particle": "create_crystal_industry:block/mechanical_cleaner/mechanical_cleaner_side"
 	},
 	"elements": [

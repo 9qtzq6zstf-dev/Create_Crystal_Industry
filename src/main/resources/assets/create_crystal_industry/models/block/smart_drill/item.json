@@ -3,13 +3,13 @@
 	"credit": "Made with Blockbench",
 	"parent": "create:block/block",
 	"textures": {
-		"0": "create_crystal_industry:block/smart_drill/axis_top",
-		"1": "create_crystal_industry:block/smart_drill/axis",
+		"0": "create_crystal_industry:block/common/axis_top",
+		"1": "create_crystal_industry:block/common/axis",
 		"2": "create_crystal_industry:block/smart_drill/anvil",
 		"8": "create_crystal_industry:block/smart_drill/mechanical_drill_top",
 		"10": "create_crystal_industry:block/smart_drill/brass_casing_very_short",
 		"particle": "create_crystal_industry:block/smart_drill/brass_casing_very_short",
-		"gearbox": "create_crystal_industry:block/smart_drill/brass_gearbox"
+		"gearbox": "create_crystal_industry:block/common/brass_gearbox"
 	},
 	"elements": [
 		{
