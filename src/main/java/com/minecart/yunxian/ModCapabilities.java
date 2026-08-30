@@ -23,7 +23,7 @@ public final class ModCapabilities {
         event.registerBlockEntity(
                 Capabilities.ItemHandler.BLOCK,
                 ModBlockEntities.MECHANICAL_CLEANER.get(),
-                (blockEntity, side) -> blockEntity.getInventory()
+                (be, context) -> be.getInventory()
         );
 
         // ★ 软依赖门控：只有 Curios 已加载才触碰 Curios 类

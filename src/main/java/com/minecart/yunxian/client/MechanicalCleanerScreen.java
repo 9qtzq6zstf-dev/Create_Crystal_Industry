@@ -1,5 +1,6 @@
 package com.minecart.yunxian.client;
 
+import com.minecart.yunxian.MechanicalCleanerBlockEntity;
 import com.minecart.yunxian.MechanicalCleanerMenu;
 import com.minecart.yunxian.Yunxian;
 import com.simibubi.create.foundation.gui.AllIcons;
@@ -83,9 +84,9 @@ public class MechanicalCleanerScreen extends AbstractContainerScreen<MechanicalC
     private static final int RANGE_INPUT_WIDTH = 50;
     private static final int RANGE_INPUT_HEIGHT = 18;
 
-    /** 吸取距离范围：1~8（withRange 的 max 排他，故写 9） */
+    /** 吸取距离范围：1~20（withRange 的 max 排他，故写 21；上限与鼓风机 256 转速最大距离一致） */
     private static final int RANGE_MIN = 1;
-    private static final int RANGE_MAX_EXCLUSIVE = 9;
+    private static final int RANGE_MAX_EXCLUSIVE = MechanicalCleanerBlockEntity.SUCK_RANGE_MAX + 1; // 21
 
     // ==================== 吸取距离数值标签（配置栏上方） ====================
 

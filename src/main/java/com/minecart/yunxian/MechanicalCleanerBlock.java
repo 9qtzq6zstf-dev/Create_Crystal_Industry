@@ -22,7 +22,7 @@ import net.minecraft.world.phys.BlockHitResult;
 public class MechanicalCleanerBlock extends DirectionalKineticBlock
         implements IBE<MechanicalCleanerBlockEntity> {
 
-    /** 红石锁：true = 收到红石信号，扇叶停转 */
+    /** 红石锁：true = 收到红石信号，停转无风 */
     public static final BooleanProperty POWERED = BooleanProperty.create("powered");
 
     public MechanicalCleanerBlock(Properties properties) {
@@ -48,6 +48,13 @@ public class MechanicalCleanerBlock extends DirectionalKineticBlock
     }
 
     @Override
+    public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
+        super.onPlace(state, level, pos, oldState, isMoving);
+        // 放置后重建气流
+        withBlockEntityDo(level, pos, MechanicalCleanerBlockEntity::blockInFrontChanged);
+    }
+
+    @Override
     public void neighborChanged(BlockState state, Level level, BlockPos pos, Block block, BlockPos fromPos,
                                 boolean isMoving) {
         // 红石锁：同步信号状态，仅在变化时更新，避免递归
@@ -55,6 +62,8 @@ public class MechanicalCleanerBlock extends DirectionalKineticBlock
         if (state.getValue(POWERED) != powered) {
             level.setBlock(pos, state.setValue(POWERED, powered), 2);
         }
+        // 前方方块变化 → 重建气流（阻挡判定会变）
+        withBlockEntityDo(level, pos, MechanicalCleanerBlockEntity::blockInFrontChanged);
     }
 
     @Override
@@ -72,8 +81,6 @@ public class MechanicalCleanerBlock extends DirectionalKineticBlock
         }
 
         // 命中配置槽（4 个侧面）：交给基类行为系统处理
-        // - 手持物品右键侧面 → 设置过滤
-        // - 空手长按侧面 → 切换扇叶方向（值设置面板）
         if (isConfigSlotSide(state, hitResult.getDirection())) {
             return super.useItemOn(stack, state, level, pos, player, hand, hitResult);
         }
@@ -81,7 +88,7 @@ public class MechanicalCleanerBlock extends DirectionalKineticBlock
         // 其余位置：空手打开容器
         if (stack.isEmpty()) {
             if (level.getBlockEntity(pos) instanceof MechanicalCleanerBlockEntity blockEntity) {
-                // 网络包里写入方块位置 + 当前吸取距离，客户端工厂据此构造菜单
+                // 网络包里写入方块位置 + 当前气流长度，客户端工厂据此构造菜单
                 player.openMenu(blockEntity, buf -> {
                     buf.writeBlockPos(pos);
                     buf.writeInt(blockEntity.getSuckRange());
@@ -97,10 +104,7 @@ public class MechanicalCleanerBlock extends DirectionalKineticBlock
         return side.getAxis() != state.getValue(FACING).getAxis();
     }
 
-    /**
-     * 红石锁判定：忽略扇叶朝向（FACING）的红石信号，只统计其余 5 个方向。
-     * 与智能钻头 hasLockingSignal 完全一致。
-     */
+    /** 红石锁判定：忽略扇叶朝向（FACING）的红石信号，只统计其余 5 个方向 */
     private boolean hasLockingSignal(Level level, BlockPos pos, BlockState state) {
         Direction facing = state.getValue(FACING);
         for (Direction side : Direction.values()) {

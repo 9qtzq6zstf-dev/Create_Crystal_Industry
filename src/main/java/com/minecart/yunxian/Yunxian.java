@@ -30,6 +30,7 @@ public class Yunxian {
         modEventBus.addListener(Yunxian::commonSetup);
         ModRenderers.register(modEventBus);
         ModFeatures.register(modEventBus);
+        ModArmInteractionPointTypes.register(modEventBus);
     }
 
     private static void commonSetup(FMLCommonSetupEvent event) {

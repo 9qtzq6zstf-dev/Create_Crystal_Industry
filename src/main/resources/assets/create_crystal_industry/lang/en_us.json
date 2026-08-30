@@ -75,7 +75,7 @@
     "create_crystal_industry.mechanical_cleaner.direction": "Rotation Direction",
     "create_crystal_industry.mechanical_cleaner.direction.normal": "Normal Rotation",
     "create_crystal_industry.mechanical_cleaner.direction.reversed": "Reversed Rotation",
-    "create_crystal_industry.mechanical_cleaner.range": "Suction Range",
+    "create_crystal_industry.mechanical_cleaner.range": "Airflow Length",
     "create_crystal_industry.mechanical_cleaner.range.value": "%s blocks"
 }
 
