@@ -49,6 +49,7 @@ public class ModRenderers {
         CameraSync.register();
         EchoSpyglassUseRenderer.register();
         modEventBus.addListener(ModRenderers::onRegisterItemDecorations);
+        modEventBus.addListener(ModRenderers::onRegisterRenderers);
     }
 
     private static void onRegisterAdditional(ModelEvent.RegisterAdditional event) {
@@ -80,6 +81,13 @@ public class ModRenderers {
                     .skipVanillaRender(be -> true)
                     .apply();
 
+            SimpleBlockEntityVisualizer
+                    .builder(ModBlockEntities.MECHANICAL_CLEANER.get())
+                    .factory(OrientedRotatingVisual.of(MechanicalCleanerRenderer.SHAFT))
+                    .factory(OrientedRotatingVisual.of(MechanicalCleanerRenderer.PROPELLER))
+                    .skipVanillaRender(be -> false)
+                    .apply();
+
             ItemProperties.register(
                     ModItems.ECHO_SPYGLASS.get(),
                     ResourceLocation.fromNamespaceAndPath(Yunxian.MODID, "using"),
@@ -103,5 +111,11 @@ public class ModRenderers {
 
     private static void onRegisterItemDecorations(RegisterItemDecorationsEvent event) {
         event.register(ModItems.ECHO_SPYGLASS.get(), new EchoSpyglassGuiDecorator());
+    }
+
+    private static void onRegisterRenderers(EntityRenderersEvent.RegisterRenderers event) {
+        event.registerBlockEntityRenderer(
+                ModBlockEntities.MECHANICAL_CLEANER.get(),
+                MechanicalCleanerRenderer::new);
     }
 }

@@ -36,6 +36,7 @@ public class Yunxian {
         event.enqueueWork(() -> {
             BlockStressValues.IMPACTS.register(ModBlocks.SMART_DRILL.get(), () -> 8.0);
             BlockStressValues.IMPACTS.register(ModBlocks.MECHANICAL_ACCELERATOR.get(), () -> 128.0); // ← 新增
+            BlockStressValues.IMPACTS.register(ModBlocks.MECHANICAL_CLEANER.get(), () -> 4.0);
             MovementBehaviour.REGISTRY.register(
                     ModBlocks.SMART_DRILL.get(),
                     new SmartDrillMovementBehaviour()

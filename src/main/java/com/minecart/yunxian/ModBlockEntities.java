@@ -30,6 +30,13 @@ public final class ModBlockEntities {
                     ModBlocks.MECHANICAL_ACCELERATOR.get()
             ).build(null));
 
+    // 动力吸尘器
+    public static final Supplier<BlockEntityType<MechanicalCleanerBlockEntity>> MECHANICAL_CLEANER =
+            BLOCK_ENTITIES.register("mechanical_cleaner", () -> BlockEntityType.Builder.of(
+                    MechanicalCleanerBlockEntity::new,
+                    ModBlocks.MECHANICAL_CLEANER.get()
+            ).build(null));
+
     private ModBlockEntities() {
     }
 

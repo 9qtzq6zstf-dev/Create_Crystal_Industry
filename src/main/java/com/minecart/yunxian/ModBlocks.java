@@ -136,6 +136,7 @@ public final class ModBlocks {
     public static final DeferredBlock<Block> FLAMMABLE_ICE_BLOCK = registerBlock("flammable_ice_block",
             () -> new Block(BlockBehaviour.Properties.ofFullCopy(Blocks.BLUE_ICE)));
 
+    //催生器
     public static final DeferredBlock<Block> ACCELERATOR = registerBlock("accelerator",
             () -> new AcceleratorBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK)
                     .noOcclusion()
@@ -143,12 +144,17 @@ public final class ModBlocks {
                     .isSuffocating((state, level, pos) -> false)
                     .isViewBlocking((state, level, pos) -> false)));
 
+    //智能钻头
     public static final DeferredBlock<Block> SMART_DRILL = registerBlock("smart_drill",
             () -> new SmartDrillBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK).noOcclusion()));
 
     // 动力催生器
     public static final DeferredBlock<Block> MECHANICAL_ACCELERATOR = registerBlock("mechanical_accelerator",
             () -> new MechanicalAcceleratorBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK).noOcclusion()));
+
+    // 动力吸尘器
+    public static final DeferredBlock<Block> MECHANICAL_CLEANER = registerBlock("mechanical_cleaner",
+            () -> new MechanicalCleanerBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK).noOcclusion()));
 
     private ModBlocks() {
     }
