@@ -16,5 +16,6 @@ public final class ModMenuScreens {
     @SubscribeEvent
     public static void registerScreens(RegisterMenuScreensEvent event) {
         event.register(ModMenus.ECHO_FILTER_MENU.get(), EchoSpyglassFilterScreen::new);
+        event.register(ModMenus.MECHANICAL_CLEANER.get(), MechanicalCleanerScreen::new);
     }
 }

@@ -68,6 +68,8 @@
     "block.create_crystal_industry.flammable_ice_cluster": "Flammable Ice Cluster",
     "block.create_crystal_industry.flammable_ice_block": "Flammable Ice Block",
     "item.create_crystal_industry.flammable_ice": "Flammable Ice",
-    "block.create_crystal_industry.mechanical_accelerator": "Mechanical Accelerator"
+    "block.create_crystal_industry.mechanical_accelerator": "Mechanical Accelerator",
+    "block.create_crystal_industry.mechanical_cleaner": "Mechanical Cleaner",
+    "container.create_crystal_industry.mechanical_cleaner": "Mechanical Cleaner"
 }
 

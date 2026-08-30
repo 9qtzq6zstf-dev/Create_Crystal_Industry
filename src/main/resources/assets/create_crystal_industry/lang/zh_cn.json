@@ -68,6 +68,7 @@
     "block.create_crystal_industry.flammable_ice_cluster": "可燃冰晶簇",
     "block.create_crystal_industry.flammable_ice_block": "可燃冰块",
     "item.create_crystal_industry.flammable_ice": "可燃冰",
-    "block.create_crystal_industry.mechanical_accelerator": "动力催生器"
-
+    "block.create_crystal_industry.mechanical_accelerator": "动力催生器",
+    "block.create_crystal_industry.mechanical_cleaner": "动力吸尘器",
+    "container.create_crystal_industry.mechanical_cleaner": "动力吸尘器"
 }

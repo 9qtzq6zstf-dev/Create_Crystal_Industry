@@ -4,6 +4,11 @@ import com.simibubi.create.content.kinetics.base.DirectionalKineticBlock;
 import com.simibubi.create.foundation.block.IBE;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.MenuProvider;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelReader;
@@ -12,6 +17,7 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.world.phys.BlockHitResult;
 
 public class MechanicalCleanerBlock extends DirectionalKineticBlock
         implements IBE<MechanicalCleanerBlockEntity> {
@@ -56,6 +62,18 @@ public class MechanicalCleanerBlock extends DirectionalKineticBlock
         BlockState state = super.getStateForPlacement(context);
         boolean powered = hasLockingSignal(context.getLevel(), context.getClickedPos(), state);
         return state.setValue(POWERED, powered);
+    }
+    @Override
+    protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos,
+                                              Player player, InteractionHand hand, BlockHitResult hitResult) {
+        if (level.isClientSide) {
+            return ItemInteractionResult.SUCCESS;
+        }
+        if (level.getBlockEntity(pos) instanceof MechanicalCleanerBlockEntity blockEntity) {
+            // 关键：把 BlockPos 写进打开菜单的网络包，客户端工厂才能 readBlockPos()
+            player.openMenu(blockEntity, buf -> buf.writeBlockPos(pos));
+        }
+        return ItemInteractionResult.SUCCESS;
     }
 
     /**

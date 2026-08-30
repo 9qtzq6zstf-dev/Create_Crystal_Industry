@@ -2,23 +2,69 @@ package com.minecart.yunxian;
 
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.MenuProvider;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.level.block.state.BlockState;
+import net.neoforged.neoforge.items.ItemStackHandler;
 
-public class MechanicalCleanerBlockEntity extends KineticBlockEntity {
+public class MechanicalCleanerBlockEntity extends KineticBlockEntity implements MenuProvider {
+
+    public static final int INVENTORY_SIZE = 27;
+
+    private final ItemStackHandler inventory = new ItemStackHandler(INVENTORY_SIZE);
 
     public MechanicalCleanerBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.MECHANICAL_CLEANER.get(), pos, state);
     }
 
+    public ItemStackHandler getInventory() {
+        return inventory;
+    }
+
+    // ===== 容器 UI =====
+
+    @Override
+    public Component getDisplayName() {
+        return Component.translatable("container.create_crystal_industry.mechanical_cleaner");
+    }
+
+    @Override
+    public AbstractContainerMenu createMenu(int id, Inventory playerInventory, Player player) {
+        return new MechanicalCleanerMenu(id, playerInventory, inventory, worldPosition);
+    }
+
+    // ===== NBT 持久化（Create 的 write/read，saveAdditional 是 final 不能覆写） =====
+
+    @Override
+    public void write(CompoundTag tag, HolderLookup.Provider registries, boolean clientPacket) {
+        super.write(tag, registries, clientPacket);
+        if (!clientPacket) {
+            tag.put("Inventory", inventory.serializeNBT(registries));
+        }
+    }
+
+    @Override
+    protected void read(CompoundTag tag, HolderLookup.Provider registries, boolean clientPacket) {
+        super.read(tag, registries, clientPacket);
+        if (clientPacket) {
+            return;
+        }
+        if (tag.contains("Inventory")) {
+            inventory.deserializeNBT(registries, tag.getCompound("Inventory"));
+        }
+    }
+
+    // ===== 红石锁（保持不变） =====
+
     private boolean isRedstoneLocked() {
         return getBlockState().getValue(MechanicalCleanerBlock.POWERED);
     }
 
-    /**
-     * 参考智能钻头的脱开机制：
-     * 红石锁定时向客户端汇报 0 转速，扇叶冻结。
-     * POWERED 是方块状态，setBlock(flag=2) 会同步到客户端，客户端 getSpeed() 同样生效。
-     */
     @Override
     public float getSpeed() {
         if (isRedstoneLocked())
@@ -26,7 +72,6 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity {
         return super.getSpeed();
     }
 
-    /** 真实网络转速：不受红石锁影响，供传动杆渲染使用（与智能钻头 getTrueSpeed 一致） */
     public float getTrueSpeed() {
         return super.getSpeed();
     }

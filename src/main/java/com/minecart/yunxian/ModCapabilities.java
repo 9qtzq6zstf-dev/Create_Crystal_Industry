@@ -20,6 +20,11 @@ public final class ModCapabilities {
                 ModBlockEntities.ACCELERATOR.get(),
                 (blockEntity, side) -> blockEntity.getEnergyCapability(side)
         );
+        event.registerBlockEntity(
+                Capabilities.ItemHandler.BLOCK,
+                ModBlockEntities.MECHANICAL_CLEANER.get(),
+                (blockEntity, side) -> blockEntity.getInventory()
+        );
 
         // ★ 软依赖门控：只有 Curios 已加载才触碰 Curios 类
         if (ModList.get().isLoaded("curios")) {

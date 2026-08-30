@@ -15,6 +15,9 @@ public final class ModMenus {
     public static final DeferredHolder<MenuType<?>, MenuType<EchoSpyglassFilterMenu>> ECHO_FILTER_MENU =
             MENUS.register("echo_spyglass_filter",
                     () -> IMenuTypeExtension.create(EchoSpyglassFilterMenu::new));
+    public static final DeferredHolder<MenuType<?>, MenuType<MechanicalCleanerMenu>> MECHANICAL_CLEANER =
+            MENUS.register("mechanical_cleaner",
+                    () -> IMenuTypeExtension.create(MechanicalCleanerMenu::new));
 
     private ModMenus() {
     }
