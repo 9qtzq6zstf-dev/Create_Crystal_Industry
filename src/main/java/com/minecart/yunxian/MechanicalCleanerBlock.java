@@ -63,17 +63,38 @@ public class MechanicalCleanerBlock extends DirectionalKineticBlock
         boolean powered = hasLockingSignal(context.getLevel(), context.getClickedPos(), state);
         return state.setValue(POWERED, powered);
     }
+
     @Override
     protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos,
                                               Player player, InteractionHand hand, BlockHitResult hitResult) {
         if (level.isClientSide) {
             return ItemInteractionResult.SUCCESS;
         }
-        if (level.getBlockEntity(pos) instanceof MechanicalCleanerBlockEntity blockEntity) {
-            // 关键：把 BlockPos 写进打开菜单的网络包，客户端工厂才能 readBlockPos()
-            player.openMenu(blockEntity, buf -> buf.writeBlockPos(pos));
+
+        // 命中配置槽（4 个侧面）：交给基类行为系统处理
+        // - 手持物品右键侧面 → 设置过滤
+        // - 空手长按侧面 → 切换扇叶方向（值设置面板）
+        if (isConfigSlotSide(state, hitResult.getDirection())) {
+            return super.useItemOn(stack, state, level, pos, player, hand, hitResult);
         }
-        return ItemInteractionResult.SUCCESS;
+
+        // 其余位置：空手打开容器
+        if (stack.isEmpty()) {
+            if (level.getBlockEntity(pos) instanceof MechanicalCleanerBlockEntity blockEntity) {
+                // 网络包里写入方块位置 + 当前吸取距离，客户端工厂据此构造菜单
+                player.openMenu(blockEntity, buf -> {
+                    buf.writeBlockPos(pos);
+                    buf.writeInt(blockEntity.getSuckRange());
+                });
+            }
+            return ItemInteractionResult.SUCCESS;
+        }
+        return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+    }
+
+    /** 配置槽只在垂直于朝向的 4 个侧面（与 ValueBoxTransform.isSideActive 一致） */
+    private boolean isConfigSlotSide(BlockState state, Direction side) {
+        return side.getAxis() != state.getValue(FACING).getAxis();
     }
 
     /**

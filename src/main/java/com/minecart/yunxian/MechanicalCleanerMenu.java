@@ -53,20 +53,41 @@ public class MechanicalCleanerMenu extends AbstractContainerMenu {
     /** 吸尘器库存（服务端为真实库存，客户端为占位空容器） */
     private final ItemStackHandler inventory;
 
-    /** 方块位置：用于 stillValid 的距离校验 */
+    /** 方块位置：用于 stillValid 与按钮包回写 */
     private final BlockPos pos;
 
-    // ---- 服务端：由方块实体 createMenu 调用，携带真实库存 ----
-    public MechanicalCleanerMenu(int id, Inventory playerInventory, ItemStackHandler inventory, BlockPos pos) {
+    /** 当前吸取距离（格数）：1~8 */
+    private final int suckRange;
+
+    // ---- 服务端：由方块实体 createMenu 调用，携带真实库存与吸取距离 ----
+    public MechanicalCleanerMenu(int id, Inventory playerInventory, ItemStackHandler inventory, BlockPos pos, int suckRange) {
         super(ModMenus.MECHANICAL_CLEANER.get(), id);
         this.inventory = inventory;
         this.pos = pos;
+        this.suckRange = suckRange;
         addSlots(playerInventory);
     }
 
-    // ---- 客户端：由网络包工厂调用，从 RegistryFriendlyByteBuf 读出方块位置 ----
+    // ---- 客户端：由网络包工厂调用，从 RegistryFriendlyByteBuf 读出方块位置与吸取距离 ----
     public MechanicalCleanerMenu(int id, Inventory playerInventory, RegistryFriendlyByteBuf extraData) {
-        this(id, playerInventory, new ItemStackHandler(SLOTS), extraData.readBlockPos());
+        this(id, playerInventory, new ItemStackHandler(SLOTS), extraData.readBlockPos(), extraData.readInt());
+    }
+
+    public int getSuckRange() {
+        return suckRange;
+    }
+
+    /**
+     * 滚轮配置回调：客户端点击包到达服务端后，
+     * 以按钮 id 作为新的吸取距离写回方块实体。
+     */
+    @Override
+    public boolean clickMenuButton(Player player, int id) {
+        if (player.level().getBlockEntity(pos) instanceof MechanicalCleanerBlockEntity be) {
+            be.setSuckRange(id);
+            return true;
+        }
+        return false;
     }
 
     /**

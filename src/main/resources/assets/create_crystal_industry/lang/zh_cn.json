@@ -70,5 +70,11 @@
     "item.create_crystal_industry.flammable_ice": "可燃冰",
     "block.create_crystal_industry.mechanical_accelerator": "动力催生器",
     "block.create_crystal_industry.mechanical_cleaner": "动力吸尘器",
-    "container.create_crystal_industry.mechanical_cleaner": "动力吸尘器"
+    "container.create_crystal_industry.mechanical_cleaner": "动力吸尘器",
+    "create_crystal_industry.mechanical_cleaner.filter": "吸取过滤",
+    "create_crystal_industry.mechanical_cleaner.direction": "旋转方向",
+    "create_crystal_industry.mechanical_cleaner.direction.normal": "正向旋转",
+    "create_crystal_industry.mechanical_cleaner.direction.reversed": "反向旋转",
+    "create_crystal_industry.mechanical_cleaner.range": "吸取距离",
+    "create_crystal_industry.mechanical_cleaner.range.value": "%s格"
 }

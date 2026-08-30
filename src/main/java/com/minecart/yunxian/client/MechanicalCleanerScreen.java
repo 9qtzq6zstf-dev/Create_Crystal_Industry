@@ -4,6 +4,8 @@ import com.minecart.yunxian.MechanicalCleanerMenu;
 import com.minecart.yunxian.Yunxian;
 import com.simibubi.create.foundation.gui.AllIcons;
 import com.simibubi.create.foundation.gui.widget.IconButton;
+import com.simibubi.create.foundation.gui.widget.Label;
+import com.simibubi.create.foundation.gui.widget.ScrollInput;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
@@ -73,6 +75,31 @@ public class MechanicalCleanerScreen extends AbstractContainerScreen<MechanicalC
     /** 按钮相对 GUI 顶部的 Y：容器贴图内 y=92，减去容器面板上移量 10 → 92 - 10 = 82 */
     private static final int BUTTON_Y = 81;
 
+    // ==================== 吸取距离配置栏（确认键左方） ====================
+
+    /** 滚轮配置栏：位于确认键左方，与确认键同高 */
+    private static final int RANGE_INPUT_X = 130;
+    private static final int RANGE_INPUT_Y = 82;
+    private static final int RANGE_INPUT_WIDTH = 50;
+    private static final int RANGE_INPUT_HEIGHT = 18;
+
+    /** 吸取距离范围：1~8（withRange 的 max 排他，故写 9） */
+    private static final int RANGE_MIN = 1;
+    private static final int RANGE_MAX_EXCLUSIVE = 9;
+
+    // ==================== 吸取距离数值标签（配置栏上方） ====================
+
+    /** 数值标签相对 GUI 左边缘的 X：与配置栏左对齐 */
+    private static final int RANGE_LABEL_X = RANGE_INPUT_X;
+
+    /** 数值标签相对 GUI 顶部的 Y：位于配置栏上方 12px */
+    private static final int RANGE_LABEL_Y = RANGE_INPUT_Y;
+
+    /** 数值标签文本颜色：与标题一致 */
+    private static final int RANGE_LABEL_COLOR = 0x404040;
+
+    private ScrollInput rangeInput;
+
     public MechanicalCleanerScreen(MechanicalCleanerMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
         this.imageWidth = GUI_WIDTH;
@@ -82,21 +109,48 @@ public class MechanicalCleanerScreen extends AbstractContainerScreen<MechanicalC
     @Override
     protected void init() {
         super.init();
+
         // 标题水平居中于 GUI；垂直方向随容器面板上移（TITLE_LABEL_Y）
         this.titleLabelY = TITLE_LABEL_Y;
         this.titleLabelX = (this.imageWidth - this.font.width(this.title)) / 2;
 
-        // ---- 确认按钮（仿照回响望远镜的确定键）----
+        // ---- 确认按钮 ----
         IconButton confirmButton = new IconButton(
                 this.leftPos + BUTTON_X,
                 this.topPos + BUTTON_Y,
                 AllIcons.I_CONFIRM
         );
-        confirmButton.withCallback(() -> {
-            // 确认逻辑：当前无额外配置需要保存，直接关闭界面
-            this.onClose();
-        });
+        confirmButton.withCallback(this::onClose);
         this.addRenderableWidget(confirmButton);
+
+        // ---- 吸取距离数值标签：显示当前"X格"，随滚轮自动更新 ----
+        Label rangeLabel = new Label(
+                this.leftPos + RANGE_LABEL_X,
+                this.topPos + RANGE_LABEL_Y,
+                Component.empty())
+                .colored(RANGE_LABEL_COLOR)
+                .withShadow();
+        this.addRenderableWidget(rangeLabel);
+
+        // ---- 吸取距离滚轮配置（确认键左方） ----
+        rangeInput = new ScrollInput(
+                this.leftPos + RANGE_INPUT_X,
+                this.topPos + RANGE_INPUT_Y,
+                RANGE_INPUT_WIDTH,
+                RANGE_INPUT_HEIGHT)
+                .withRange(RANGE_MIN, RANGE_MAX_EXCLUSIVE)
+                .titled(Component.translatable("create_crystal_industry.mechanical_cleaner.range"))
+                .format(value -> Component.translatable(
+                        "create_crystal_industry.mechanical_cleaner.range.value", value))
+                .writingTo(rangeLabel)   // 标签跟随滚轮显示当前值
+                .calling(value -> {
+                    // 发 vanilla 按钮包：服务端 AbstractContainerMenu.clickMenuButton(player, value) 收到
+                    if (this.minecraft != null && this.minecraft.player != null) {
+                        this.minecraft.gameMode.handleInventoryButtonClick(this.menu.containerId, value);
+                    }
+                });
+        rangeInput.setState(this.menu.getSuckRange());
+        this.addRenderableWidget(rangeInput);
     }
 
     @Override

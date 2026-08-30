@@ -70,6 +70,12 @@
     "item.create_crystal_industry.flammable_ice": "Flammable Ice",
     "block.create_crystal_industry.mechanical_accelerator": "Mechanical Accelerator",
     "block.create_crystal_industry.mechanical_cleaner": "Mechanical Cleaner",
-    "container.create_crystal_industry.mechanical_cleaner": "Mechanical Cleaner"
+    "container.create_crystal_industry.mechanical_cleaner": "Mechanical Cleaner",
+    "create_crystal_industry.mechanical_cleaner.filter": "Suction Filter",
+    "create_crystal_industry.mechanical_cleaner.direction": "Rotation Direction",
+    "create_crystal_industry.mechanical_cleaner.direction.normal": "Normal Rotation",
+    "create_crystal_industry.mechanical_cleaner.direction.reversed": "Reversed Rotation",
+    "create_crystal_industry.mechanical_cleaner.range": "Suction Range",
+    "create_crystal_industry.mechanical_cleaner.range.value": "%s blocks"
 }
 

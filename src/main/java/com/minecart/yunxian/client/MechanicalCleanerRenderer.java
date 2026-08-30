@@ -2,6 +2,7 @@ package com.minecart.yunxian.client;
 
 import com.minecart.yunxian.MechanicalCleanerBlockEntity;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntityRenderer;
+import com.simibubi.create.foundation.blockEntity.behaviour.filtering.FilteringRenderer;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import dev.engine_room.flywheel.api.visualization.VisualizationManager;
@@ -43,6 +44,9 @@ public class MechanicalCleanerRenderer extends KineticBlockEntityRenderer<Mechan
     @Override
     protected void renderSafe(MechanicalCleanerBlockEntity be, float partialTicks, PoseStack ms,
                               MultiBufferSource buffer, int light, int overlay) {
+        // 过滤物品渲染（与 Flywheel 无关，始终执行）：画出侧面过滤槽里的物品模型
+        FilteringRenderer.renderOnBlockEntity(be, partialTicks, ms, buffer, light, overlay);
+
         BlockState state = getRenderedBlockState(be);
         RenderType type = getRenderType(be, state);
         VertexConsumer vc = buffer.getBuffer(type);
@@ -76,7 +80,7 @@ public class MechanicalCleanerRenderer extends KineticBlockEntityRenderer<Mechan
         Axis axis = getRotationAxisOf(be);
         float time = AnimationTickHolder.getRenderTime(be.getLevel());
         float offset = getRotationOffsetForPosition(be, be.getBlockPos(), axis);
-        float angle = ((time * be.getTrueSpeed() * 3f / 10 + offset) % 360) / 180 * (float) Math.PI;  // ← 修正：be.getTrueSpeed()
+        float angle = ((time * be.getTrueSpeed() * 3f / 10 + offset) % 360) / 180 * (float) Math.PI;
         shaft.light(light);
         shaft.rotateCentered(angle, Direction.get(AxisDirection.POSITIVE, axis));
         shaft.renderInto(ms, vc);
