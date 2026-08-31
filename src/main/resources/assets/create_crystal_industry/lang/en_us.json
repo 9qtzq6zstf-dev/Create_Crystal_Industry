@@ -73,11 +73,12 @@
     "container.create_crystal_industry.mechanical_cleaner": "Mechanical Cleaner",
     "create_crystal_industry.mechanical_cleaner.filter": "Suction Filter",
     "create_crystal_industry.mechanical_cleaner.direction": "Rotation Direction",
-    "create_crystal_industry.mechanical_cleaner.direction.normal": "Normal Rotation",
-    "create_crystal_industry.mechanical_cleaner.direction.reversed": "Reversed Rotation",
-    "create_crystal_industry.mechanical_cleaner.range": "Airflow Length",
-    "create_crystal_industry.mechanical_cleaner.range.value": "%s blocks",
-    "create_crystal_industry.mechanical_cleaner.amount": "Eject Amount",
-    "create_crystal_industry.mechanical_cleaner.amount.value": "%s pcs"
+    "create_crystal_industry.mechanical_cleaner.range": "风力格数",
+    "create_crystal_industry.mechanical_cleaner.range.value": "%s格",
+    "create_crystal_industry.mechanical_cleaner.amount": "吹出数量",
+    "create_crystal_industry.mechanical_cleaner.amount.value": "%s个",
+    "create_crystal_industry.mechanical_cleaner.direction.normal": "吹出",
+    "create_crystal_industry.mechanical_cleaner.direction.reversed": "吸入",
+    "create_crystal_industry.mechanical_cleaner.range.unit": "单位: 格"
 }
 

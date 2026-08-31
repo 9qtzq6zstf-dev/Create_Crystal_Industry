@@ -9,34 +9,17 @@ version = mod_version
 group = mod_group_id
 
 repositories {
-    // 1. 阿里云 Maven 镜像（包含大多数公共库）
+    maven { url = "https://maven.aliyun.com/repository/public" }
+    maven { url = "https://maven.aliyun.com/repository/gradle-plugin" }
+    maven { url = "https://maven.neoforged.net/releases" }
+    maven { url = "https://maven.createmod.net" }
+    maven { url = "https://maven.ithundxr.dev/snapshots" }
+    maven { name = "BlameJared"; url = uri("https://maven.blamejared.com/") }
+    maven { name = "Illusive Soulworks"; url = "https://maven.theillusivec4.top/" }
     maven {
-        url = "https://maven.aliyun.com/repository/public"
+        name = "ParchmentMC"
+        url = "https://maven.parchmentmc.org"
     }
-    // 2. 阿里云 Gradle 插件镜像
-    maven {
-        url = "https://maven.aliyun.com/repository/gradle-plugin"
-    }
-    // 3. NeoForge 官方仓库（可保留但可能仍被限）
-    maven {
-        url = "https://maven.neoforged.net/releases"
-    }
-    // 4. 机械动力官方仓库
-    maven {
-        url = "https://maven.createmod.net"
-    }
-    maven {
-        url = "https://maven.ithundxr.dev/snapshots"
-    }
-    maven {
-        name = "BlameJared"
-        url = uri("https://maven.blamejared.com/")
-    }
-    maven {
-        name = "Illusive Soulworks"
-        url = "https://maven.theillusivec4.top/"
-    }
-    // 5. Minecraft 官方库（通常在国内有镜像，但可以保留）
     mavenCentral()
 }
 

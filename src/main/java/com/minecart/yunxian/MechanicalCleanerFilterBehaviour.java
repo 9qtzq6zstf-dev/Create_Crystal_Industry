@@ -2,22 +2,15 @@ package com.minecart.yunxian;
 
 import com.simibubi.create.foundation.blockEntity.SmartBlockEntity;
 import com.simibubi.create.foundation.blockEntity.behaviour.ValueBoxTransform;
-import com.simibubi.create.foundation.blockEntity.behaviour.ValueSettingsBehaviour.ValueSettings;
-import com.simibubi.create.foundation.blockEntity.behaviour.ValueSettingsBoard;
-import com.simibubi.create.foundation.blockEntity.behaviour.ValueSettingsFormatter;
 import com.simibubi.create.foundation.blockEntity.behaviour.filtering.FilteringBehaviour;
-import com.simibubi.create.foundation.gui.AllIcons;
 import com.simibubi.create.foundation.blockEntity.behaviour.scrollValue.INamedIconOptions;
-import com.simibubi.create.foundation.utility.CreateLang;
+import com.simibubi.create.foundation.gui.AllIcons;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.phys.BlockHitResult;
 
-import java.util.List;
 import java.util.function.Consumer;
 
 public class MechanicalCleanerFilterBehaviour extends FilteringBehaviour {
@@ -45,44 +38,23 @@ public class MechanicalCleanerFilterBehaviour extends FilteringBehaviour {
         return direction;
     }
 
-    // ===== 长按打开方向选择板 =====
-
-    @Override
-    public boolean acceptsValueSettings() {
-        return true;
+    /** GUI 风向按钮调用：切换一次方向 */
+    public void toggleDirection() {
+        setDirection(direction == RotationDirection.NORMAL ? RotationDirection.REVERSED : RotationDirection.NORMAL);
     }
 
-    @Override
-    public ValueSettingsBoard createBoard(Player player, BlockHitResult hitResult) {
-        RotationDirection[] directions = RotationDirection.values();
-        return new ValueSettingsBoard(
-                Component.translatable("create_crystal_industry.mechanical_cleaner.direction"),
-                directions.length - 1,
-                1,
-                List.of(Component.empty()),   // 撑出行数用，iconMode 下不显示
-                new ValueSettingsFormatter.ScrollOptionSettingsFormatter(directions)
-        );
+    public void setDirection(RotationDirection newDirection) {
+        if (newDirection == direction)
+            return;
+        direction = newDirection;
+        directionCallback.accept(direction);
+        blockEntity.setChanged();
+        blockEntity.sendData();
+        playFeedbackSound(this);
     }
 
-    @Override
-    public ValueSettings getValueSettings() {
-        return new ValueSettings(0, direction.ordinal());
-    }
-
-    @Override
-    public void setValueSettings(Player player, ValueSettings settings, boolean ctrlDown) {
-        RotationDirection[] directions = RotationDirection.values();
-        RotationDirection newDirection = directions[settings.value() % directions.length];
-        if (newDirection != direction) {
-            direction = newDirection;
-            directionCallback.accept(direction);
-            blockEntity.setChanged();
-            blockEntity.sendData();
-            playFeedbackSound(this);
-        }
-    }
-
-    // ===== 数据持久化（过滤物品 + 方向） =====
+    // ===== 数据持久化（过滤物品 + 数量 + 模式由父类 FilteringBehaviour 负责） =====
+    // 这里只需额外持久化方向
 
     @Override
     public void write(CompoundTag nbt, HolderLookup.Provider registries, boolean clientPacket) {

@@ -4,6 +4,8 @@
     "package": "com.minecart.yunxian.mixin",
     "compatibilityLevel": "JAVA_21",
     "mixins": [
+        "AirCurrentMixin",
+        "NozzleBlockEntityMixin"
     ],
     "client": [
     ],

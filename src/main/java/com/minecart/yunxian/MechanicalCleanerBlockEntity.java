@@ -47,22 +47,13 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
     /** 目标气流长度最大值（格）：与鼓风机 256 转速下的最大距离一致（fanPushDistance 默认 20） */
     public static final int SUCK_RANGE_MAX = 20;
 
-    /** 每次吹出数量最小值 */
-    public static final int EJECT_AMOUNT_MIN = 1;
-
-    /** 每次吹出数量最大值 */
-    public static final int EJECT_AMOUNT_MAX = 64;
-
     /** 目标气流长度（格）：GUI 调节的数值，实际长度还会受转速上限约束 */
     private int suckRange = SUCK_RANGE_MIN;
-
-    /** 每次吹出数量（GUI 配置）：默认 64 = 整组吐出（与旧行为等价） */
-    private int ejectAmount = EJECT_AMOUNT_MAX;
 
     /** 吸尘器内部库存 */
     private final ItemStackHandler inventory = new ItemStackHandler(INVENTORY_SIZE);
 
-    /** 侧面的过滤 / 方向配置槽 */
+    /** 侧面的过滤 / 方向配置槽（吹出数量与模式也由它承载，见 FilteringBehaviour 的 showCount 机制） */
     private MechanicalCleanerFilterBehaviour filtering;
 
     // ===== 气流（复用鼓风机 AirCurrent）=====
@@ -160,14 +151,14 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
         behaviours.add(new DirectBeltInputBehaviour(this)
                 .onlyInsertWhen(this::canReceiveDirectInput));
 
-        filtering = new MechanicalCleanerFilterBehaviour(
+        filtering = (MechanicalCleanerFilterBehaviour) new MechanicalCleanerFilterBehaviour(
                 this,
                 new MechanicalCleanerValueBoxTransform()
         ).withDirectionCallback(direction -> {
             // 方向切换 = 吹/吸切换：重建气流并同步客户端
             updateAirFlow = true;
             sendData();
-        });
+        }).showCountWhen(() -> true);   // 始终显示数量配置（智能溜槽同款机制）
         filtering.setLabel(Component.translatable("create_crystal_industry.mechanical_cleaner.filter"));
         behaviours.add(filtering);
     }
@@ -251,18 +242,6 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
         updateAirFlow = true;
     }
 
-    // ==================== 吹出数量（GUI 配置） ====================
-
-    public int getEjectAmount() {
-        return ejectAmount;
-    }
-
-    public void setEjectAmount(int amount) {
-        ejectAmount = Math.max(EJECT_AMOUNT_MIN, Math.min(EJECT_AMOUNT_MAX, amount));
-        setChanged();
-        sendData();
-    }
-
     // ==================== 容器 UI ====================
 
     @Override
@@ -272,7 +251,8 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
 
     @Override
     public AbstractContainerMenu createMenu(int id, Inventory playerInventory, Player player) {
-        return new MechanicalCleanerMenu(id, playerInventory, inventory, worldPosition, suckRange, ejectAmount);
+        return new MechanicalCleanerMenu(id, playerInventory, inventory, worldPosition,
+                suckRange, getRotationDirection());
     }
 
     // ==================== NBT 持久化 ====================
@@ -282,7 +262,6 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
         super.read(compound, registries, clientPacket);
         // 两端都读：客户端需要计算气流长度（SuckRange）与 GUI 初始值
         suckRange = Math.max(SUCK_RANGE_MIN, Math.min(SUCK_RANGE_MAX, compound.getInt("SuckRange")));
-        ejectAmount = Math.max(EJECT_AMOUNT_MIN, Math.min(EJECT_AMOUNT_MAX, compound.getInt("EjectAmount")));
         if (clientPacket) {
             airCurrent.rebuild();
             return;
@@ -297,7 +276,6 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
         super.write(compound, registries, clientPacket);
         // 都很小，两端都写
         compound.putInt("SuckRange", suckRange);
-        compound.putInt("EjectAmount", ejectAmount);
         if (!clientPacket) {
             compound.put("Inventory", inventory.serializeNBT(registries));
         }
@@ -353,25 +331,35 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
             sendData();
         }
 
-        // 无转速则无风（红石锁 / 未接入应力都归于此）
-        if (getSpeed() == 0)
-            return;
+        boolean hasPower = getTrueSpeed() != 0;   // 是否有动力输入（网络转速，不受红石锁影响）
+        boolean locked = isRedstoneLocked();      // 红石锁：完全停止
 
-        // 每 5 tick 刷新气流中的实体列表
-        if (entitySearchCooldown-- <= 0) {
-            entitySearchCooldown = 5;
-            airCurrent.findEntities();
+        // 有动力且未锁定：驱动气流
+        if (hasPower && !locked) {
+            // 每 5 tick 刷新气流中的实体列表
+            if (entitySearchCooldown-- <= 0) {
+                entitySearchCooldown = 5;
+                airCurrent.findEntities();
+            }
+            airCurrent.tick();
         }
 
-        airCurrent.tick();
-
         if (server) {
+            if (locked)
+                return;   // 红石锁：不吸不吹
+
             if (isPulling()) {
-                // 吸入模式：气流范围内所有掉落物直接收入容器（无需先吸到正面）
-                collectItemsInFlow();
-                collectItemsFromNozzle();   // 分散网（喷嘴）覆盖范围
-            } else {
-                // 吹出模式：把容器里的物品喷到前方
+                if (hasPower) {
+                    // 有动力：气流范围 + 喷嘴覆盖范围 + 面前容器直吸（仅动力驱动时生效）
+                    collectItemsInFlow();
+                    collectItemsFromNozzle();
+                    collectItemsFromContainer();
+                } else {
+                    // 无动力：只被动吸掉落物（不依赖风）；容器直吸不生效
+                    collectItemsPassive();
+                }
+            } else if (hasPower) {
+                // 吹出模式需要动力
                 ejectItems();
             }
         }
@@ -393,6 +381,45 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
             return;
 
         List<ItemEntity> items = level.getEntitiesOfClass(ItemEntity.class, flowBounds);
+        for (ItemEntity itemEntity : items) {
+            suckItem(itemEntity);
+        }
+    }
+
+    /**
+     * 无动力时的被动吸取：不依赖 AirCurrent 的风力，
+     * 按配置的吸取距离（suckRange）扫描前方范围，把掉落物直接收入容器。
+     * 与有动力时一致：过滤生效；完整方块（isSuffocating）阻挡。
+     */
+    private void collectItemsPassive() {
+        Direction facing = getBlockState().getValue(MechanicalCleanerBlock.FACING);
+
+        // 逐格扫描，遇到完整方块截断（与早期 getEffectiveSuckRange 行为一致）
+        int effective = 0;
+        for (int i = 1; i <= suckRange; i++) {
+            BlockPos check = worldPosition.relative(facing, i);
+            if (level.getBlockState(check).isSuffocating(level, check))
+                break;
+            effective = i;
+        }
+        if (effective <= 0)
+            return;   // 前方紧贴完整方块，一格都吸不到
+
+        BlockPos first = worldPosition.relative(facing);
+        BlockPos last = first.relative(facing, effective - 1);
+
+        // 两角构造 AABB：对任意朝向都正确
+        Vec3 minCorner = new Vec3(
+                Math.min(first.getX(), last.getX()),
+                Math.min(first.getY(), last.getY()),
+                Math.min(first.getZ(), last.getZ()));
+        Vec3 maxCorner = new Vec3(
+                Math.max(first.getX(), last.getX()) + 1,
+                Math.max(first.getY(), last.getY()) + 1,
+                Math.max(first.getZ(), last.getZ()) + 1);
+        AABB area = new AABB(minCorner, maxCorner);
+
+        List<ItemEntity> items = level.getEntitiesOfClass(ItemEntity.class, area);
         for (ItemEntity itemEntity : items) {
             suckItem(itemEntity);
         }
@@ -440,6 +467,100 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
         return nozzlePos.equals(level.clip(context).getBlockPos());
     }
 
+    /**
+     * 吸入模式：识别正前方（FACING 方向）的容器，按过滤直接把其中物品吸进自身库存，
+     * 不产生掉落物实体。与吹出模式"面前容器直送"对称。
+     * 仅在"有动力"时由 tick 调用（被动模式不生效）。
+     * 每次吸取（每 tick）按"吹出个数"配置限制总吸取数量；数量设为 0（anyAmount）时不限。
+     * 只走物品过滤（canSuck）；数量精确/小于等于模式只影响吹出，不影响吸取上限。
+     */
+    private void collectItemsFromContainer() {
+        Direction facing = getBlockState().getValue(MechanicalCleanerBlock.FACING);
+        BlockPos frontPos = worldPosition.relative(facing);
+        // 访问前方面对吸尘器的那个面（与 ejectItems 直送容器时一致）
+        IItemHandler source = level.getCapability(Capabilities.ItemHandler.BLOCK, frontPos, facing.getOpposite());
+        if (source == null)
+            return;
+
+        // 每次吸取（本次 tick）的总额度：-1 = 不限
+        int amountLimit = getEjectAmountCap();
+        int extractedThisTick = 0;
+
+        for (int slot = 0; slot < source.getSlots(); slot++) {
+            if (amountLimit >= 0 && extractedThisTick >= amountLimit)
+                break;
+
+            ItemStack stackInSlot = source.getStackInSlot(slot);
+            if (stackInSlot.isEmpty())
+                continue;
+            if (!canSuck(stackInSlot))
+                continue;
+
+            // 本次可从该槽取出的数量 = min(剩余额度, 自身库存可容纳量)
+            int remainingBudget = amountLimit >= 0 ? amountLimit - extractedThisTick : Integer.MAX_VALUE;
+            int maxExtract = Math.min(getMaxInsertable(stackInSlot), remainingBudget);
+            if (maxExtract <= 0)
+                continue;
+
+            ItemStack extracted = source.extractItem(slot, maxExtract, false);
+            if (extracted.isEmpty())
+                continue;
+
+            extractedThisTick += extracted.getCount();
+
+            ItemStack remainder = insertAll(extracted);
+            if (!remainder.isEmpty()) {
+                // 理论不会发生（已按可放入量取出），保险起见退回源容器
+                source.insertItem(slot, remainder, false);
+            }
+            setChanged();
+        }
+    }
+
+    /**
+     * "吹出个数"配置作为容器吸取的每次数量上限：
+     * 数量未显示或设为 0（anyAmount）时返回 -1 = 不限。
+     */
+    private int getEjectAmountCap() {
+        if (filtering == null)
+            return -1;
+        if (!filtering.isCountVisible())
+            return -1;
+        if (filtering.anyAmount())
+            return -1;
+        return filtering.getAmount();
+    }
+
+    /** 模拟计算 stack 最多能有多少被放入自身库存 */
+    private int getMaxInsertable(ItemStack stack) {
+        ItemStack working = stack.copy();
+        int inserted = 0;
+        for (int slot = 0; slot < inventory.getSlots(); slot++) {
+            ItemStack remainder = inventory.insertItem(slot, working, true);
+            inserted += working.getCount() - remainder.getCount();
+            working = remainder;
+            if (working.isEmpty())
+                break;
+        }
+        return inserted;
+    }
+
+    /** 依次把整个 stack 塞入自身库存，返回塞不下的剩余部分 */
+    private ItemStack insertAll(ItemStack stack) {
+        ItemStack remaining = stack;
+        for (int slot = 0; slot < inventory.getSlots() && !remaining.isEmpty(); slot++) {
+            remaining = inventory.insertItem(slot, remaining, false);
+        }
+        return remaining;
+    }
+
+    /**
+     * 吹出逻辑（方案 A，与智能溜槽一致）：
+     * 数量是"筛选条件"，两种模式：
+     * - 严格模式（!filtering.upTo）：只有槽内堆叠数量 == 配置值才吹出整组；
+     * - 小于等于模式（filtering.upTo）：只有槽内堆叠数量 ≤ 配置值才吹出整组；
+     * - 数量为 0（anyAmount）或未显示数量时：不过滤，任何堆叠都吹出整组。
+     */
     private void ejectItems() {
         if (inventory == null)
             return;
@@ -470,13 +591,26 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
         }
         ejectCooldown = interval;
 
+        // ---- 数量判定（与 SmartChuteBlockEntity.getExtractionAmount/getExtractionMode 同构） ----
+        int stackCount = inventory.getStackInSlot(slotToEject).getCount();
+        boolean countVisible = filtering != null && filtering.isCountVisible();
+        boolean anyAmount = countVisible && filtering.anyAmount();
+        int amount = countVisible && !anyAmount ? filtering.getAmount() : 64;
+        boolean exactly = countVisible && !anyAmount && !filtering.upTo;
+
+        if (exactly) {
+            if (stackCount != amount)
+                return;   // 严格模式：堆叠数量必须正好等于配置值
+        } else {
+            if (stackCount > amount)
+                return;   // 小于等于模式：堆叠数量必须 ≤ 配置值
+        }
+
         Direction facing = getBlockState().getValue(MechanicalCleanerBlock.FACING);
         BlockPos frontPos = worldPosition.relative(facing);
 
-        // 取出数量 = min(GUI 配置数量, 槽内数量)
-        int stackCount = inventory.getStackInSlot(slotToEject).getCount();
-        int toExtract = Math.min(ejectAmount, stackCount);
-        ItemStack stack = inventory.extractItem(slotToEject, toExtract, false);
+        // 吹出整组
+        ItemStack stack = inventory.extractItem(slotToEject, stackCount, false);
 
         // 正前方是容器：直接输送
         IItemHandler target = level.getCapability(Capabilities.ItemHandler.BLOCK, frontPos, facing.getOpposite());
@@ -531,5 +665,15 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
         }
 
         setChanged();
+    }
+
+    /** GUI 风向按钮调用：切换一次风向（正转↔反转） */
+    public void toggleDirection() {
+        if (filtering != null)
+            filtering.toggleDirection();
+    }
+    /** 该命中点是否落在侧面过滤/方向配置栏位（值框）上 */
+    public boolean isHitOnConfigSlot(Vec3 hit) {
+        return filtering != null && filtering.testHit(hit);
     }
 }

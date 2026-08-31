@@ -80,24 +80,34 @@ public class MechanicalCleanerBlock extends DirectionalKineticBlock
             return ItemInteractionResult.SUCCESS;
         }
 
-        // 命中配置槽（4 个侧面）：交给基类行为系统处理
-        if (isConfigSlotSide(state, hitResult.getDirection())) {
+        // 命中侧面且命中点确实落在配置栏位（值框）上：才交给基类行为系统处理
+        // 侧面非栏位区域则继续往下走：空手打开容器
+        if (isConfigSlotSide(state, hitResult.getDirection()) && isHitOnConfigSlot(level, pos, hitResult)) {
             return super.useItemOn(stack, state, level, pos, player, hand, hitResult);
         }
 
-        // 其余位置：空手打开容器
+        // 其余位置（含侧面非栏位区域）：空手打开容器
         if (stack.isEmpty()) {
             if (level.getBlockEntity(pos) instanceof MechanicalCleanerBlockEntity blockEntity) {
-                // 网络包里写入方块位置 + 当前气流长度，客户端工厂据此构造菜单
+                // 网络包：方块位置 + 风力格数 + 当前风向（反转？）
                 player.openMenu(blockEntity, buf -> {
                     buf.writeBlockPos(pos);
                     buf.writeInt(blockEntity.getSuckRange());
-                    buf.writeInt(blockEntity.getEjectAmount());
+                    buf.writeBoolean(blockEntity.getRotationDirection()
+                            == MechanicalCleanerFilterBehaviour.RotationDirection.REVERSED);
                 });
             }
             return ItemInteractionResult.SUCCESS;
         }
         return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+    }
+
+    /** 命中点是否真的落在侧面的过滤/方向配置栏位（值框）上 */
+    private boolean isHitOnConfigSlot(Level level, BlockPos pos, BlockHitResult hitResult) {
+        if (level.getBlockEntity(pos) instanceof MechanicalCleanerBlockEntity be) {
+            return be.isHitOnConfigSlot(hitResult.getLocation());
+        }
+        return false;
     }
 
     /** 配置槽只在垂直于朝向的 4 个侧面（与 ValueBoxTransform.isSideActive 一致） */

@@ -71,12 +71,10 @@
     "block.create_crystal_industry.mechanical_accelerator": "动力催生器",
     "block.create_crystal_industry.mechanical_cleaner": "动力吸尘器",
     "container.create_crystal_industry.mechanical_cleaner": "动力吸尘器",
-    "create_crystal_industry.mechanical_cleaner.filter": "吸取过滤",
-    "create_crystal_industry.mechanical_cleaner.direction": "旋转方向",
-    "create_crystal_industry.mechanical_cleaner.direction.normal": "正向旋转",
-    "create_crystal_industry.mechanical_cleaner.direction.reversed": "反向旋转",
-    "create_crystal_industry.mechanical_cleaner.range": "气流长度",
-    "create_crystal_industry.mechanical_cleaner.range.value": "%s格",
-    "create_crystal_industry.mechanical_cleaner.amount": "吹出数量",
-    "create_crystal_industry.mechanical_cleaner.amount.value": "%s个"
+    "create_crystal_industry.mechanical_cleaner.filter": "吸取/吹出 过滤",
+    "create_crystal_industry.mechanical_cleaner.direction": "风力方向",
+    "create_crystal_industry.mechanical_cleaner.range": "风力格数",
+    "create_crystal_industry.mechanical_cleaner.range.value": "%s / 20 格",
+    "create_crystal_industry.mechanical_cleaner.direction.normal": "当前模式: 吹气",
+    "create_crystal_industry.mechanical_cleaner.direction.reversed": "当前模式: 吸气"
 }
