@@ -2,6 +2,8 @@ package com.minecart.yunxian;
 
 import com.simibubi.create.content.kinetics.base.DirectionalKineticBlock;
 import com.simibubi.create.foundation.block.IBE;
+import com.simibubi.create.foundation.block.ProperWaterloggedBlock;
+import net.createmod.catnip.math.VoxelShaper;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionHand;
@@ -11,28 +13,49 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraft.world.phys.shapes.VoxelShape;
 
 public class MechanicalCleanerBlock extends DirectionalKineticBlock
-        implements IBE<MechanicalCleanerBlockEntity> {
+        implements IBE<MechanicalCleanerBlockEntity>, ProperWaterloggedBlock {
 
     /** 红石锁：true = 收到红石信号，停转无风 */
     public static final BooleanProperty POWERED = BooleanProperty.create("powered");
 
+    /** 基准形状（FACING=UP）：顶面中心 12×12×8 凹陷 = 底部实心 + 四周 2 格宽边缘 */
+    private static final VoxelShape TOP_RECESS_BASE = Shapes.or(
+            Shapes.box(0.0, 0.0, 0.0, 1.0, 0.5, 1.0),          // 底部实心 (y 0~8)
+            Shapes.box(0.0, 0.5, 0.0, 1.0, 1.0, 0.125),        // 北缘 (z 0~2)
+            Shapes.box(0.0, 0.5, 0.875, 1.0, 1.0, 1.0),        // 南缘 (z 14~16)
+            Shapes.box(0.0, 0.5, 0.125, 0.125, 1.0, 0.875),    // 西缘 (x 0~2)
+            Shapes.box(0.875, 0.5, 0.125, 1.0, 1.0, 0.875)     // 东缘 (x 14~16)
+    );
+
+    /** 按方块朝向（FACING）旋转后的 6 个变体：凹陷始终在"模型顶面" */
+    private static final VoxelShaper TOP_RECESS_SHAPER =
+            VoxelShaper.forDirectional(TOP_RECESS_BASE, Direction.UP);
+
     public MechanicalCleanerBlock(Properties properties) {
         super(properties);
-        registerDefaultState(defaultBlockState().setValue(POWERED, false));
+        registerDefaultState(defaultBlockState()
+                .setValue(POWERED, false)
+                .setValue(WATERLOGGED, false));
     }
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(POWERED);
+        builder.add(POWERED, WATERLOGGED);
         super.createBlockStateDefinition(builder);
     }
 
@@ -67,10 +90,23 @@ public class MechanicalCleanerBlock extends DirectionalKineticBlock
     }
 
     @Override
+    public BlockState updateShape(BlockState state, Direction direction, BlockState neighborState,
+                                  LevelAccessor level, BlockPos pos, BlockPos neighborPos) {
+        // 含水支持：水流邻居变化时调度水的 tick（含水状态自动开/关）
+        updateWater(level, state, pos);
+        return super.updateShape(state, direction, neighborState, level, pos, neighborPos);
+    }
+
+    @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
-        BlockState state = super.getStateForPlacement(context);
+        BlockState state = withWater(super.getStateForPlacement(context), context);
         boolean powered = hasLockingSignal(context.getLevel(), context.getClickedPos(), state);
         return state.setValue(POWERED, powered);
+    }
+
+    @Override
+    public FluidState getFluidState(BlockState state) {
+        return fluidState(state);
     }
 
     @Override
@@ -86,17 +122,15 @@ public class MechanicalCleanerBlock extends DirectionalKineticBlock
             return super.useItemOn(stack, state, level, pos, player, hand, hitResult);
         }
 
-        // 其余位置（含侧面非栏位区域）：空手打开容器
-        if (stack.isEmpty()) {
-            if (level.getBlockEntity(pos) instanceof MechanicalCleanerBlockEntity blockEntity) {
-                // 网络包：方块位置 + 风力格数 + 当前风向（反转？）
-                player.openMenu(blockEntity, buf -> {
-                    buf.writeBlockPos(pos);
-                    buf.writeInt(blockEntity.getSuckRange());
-                    buf.writeBoolean(blockEntity.getRotationDirection()
-                            == MechanicalCleanerFilterBehaviour.RotationDirection.REVERSED);
-                });
-            }
+        // 其余位置（含侧面非栏位区域）：无论手持什么，都打开容器
+        if (level.getBlockEntity(pos) instanceof MechanicalCleanerBlockEntity blockEntity) {
+            // 网络包：方块位置 + 风力格数 + 当前风向（反转？）
+            player.openMenu(blockEntity, buf -> {
+                buf.writeBlockPos(pos);
+                buf.writeInt(blockEntity.getSuckRange());
+                buf.writeBoolean(blockEntity.getRotationDirection()
+                        == MechanicalCleanerFilterBehaviour.RotationDirection.REVERSED);
+            });
             return ItemInteractionResult.SUCCESS;
         }
         return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
@@ -137,5 +171,30 @@ public class MechanicalCleanerBlock extends DirectionalKineticBlock
     @Override
     public BlockEntityType<? extends MechanicalCleanerBlockEntity> getBlockEntityType() {
         return ModBlockEntities.MECHANICAL_CLEANER.get();
+    }
+
+    @Override
+    public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        return TOP_RECESS_SHAPER.get(state.getValue(FACING));
+    }
+
+    @Override
+    public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        return TOP_RECESS_SHAPER.get(state.getValue(FACING));
+    }
+
+    @Override
+    public VoxelShape getVisualShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        return TOP_RECESS_SHAPER.get(state.getValue(FACING));
+    }
+
+    @Override
+    public boolean isCollisionShapeFullBlock(BlockState state, BlockGetter level, BlockPos pos) {
+        return false;
+    }
+
+    @Override
+    public boolean useShapeForLightOcclusion(BlockState state) {
+        return true;
     }
 }

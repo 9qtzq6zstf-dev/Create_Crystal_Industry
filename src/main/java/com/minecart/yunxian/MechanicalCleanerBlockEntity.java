@@ -6,6 +6,7 @@ import com.simibubi.create.content.kinetics.belt.behaviour.DirectBeltInputBehavi
 import com.simibubi.create.content.kinetics.fan.AirCurrent;
 import com.simibubi.create.content.kinetics.fan.IAirCurrentSource;
 import com.simibubi.create.content.kinetics.fan.NozzleBlockEntity;
+import com.simibubi.create.content.logistics.chute.ChuteBlockEntity;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
 import com.simibubi.create.infrastructure.config.AllConfigs;
 import com.simibubi.create.infrastructure.config.CKinetics;
@@ -155,9 +156,10 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
                 this,
                 new MechanicalCleanerValueBoxTransform()
         ).withDirectionCallback(direction -> {
-            // 方向切换 = 吹/吸切换：重建气流并同步客户端
+            // 方向切换 = 吹/吸切换：重建气流、同步客户端，并通知相邻溜槽重算
             updateAirFlow = true;
             sendData();
+            updateChute();
         }).showCountWhen(() -> true);   // 始终显示数量配置（智能溜槽同款机制）
         filtering.setLabel(Component.translatable("create_crystal_industry.mechanical_cleaner.filter"));
         behaviours.add(filtering);
@@ -306,11 +308,37 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
     public void onSpeedChanged(float prevSpeed) {
         super.onSpeedChanged(prevSpeed);
         updateAirFlow = true;
+        updateChute();
     }
 
-    /** 前方方块变化时调用：重建气流（阻挡判定会变） */
+    @Override
+    public void remove() {
+        super.remove();
+        updateChute();
+    }
+
+    /** 前方方块变化时调用：重建气流（阻挡判定会变），并通知相邻溜槽重算 */
     public void blockInFrontChanged() {
         updateAirFlow = true;
+        updateChute();
+    }
+
+    /**
+     * 仿 EncasedFanBlockEntity.updateChute：
+     * 吸尘器垂直朝向时，通知正前方（FACING 方向）紧贴的溜槽重算风力。
+     * 朝 DOWN → 溜槽 updatePull；朝 UP → 溜槽 updatePush。
+     */
+    public void updateChute() {
+        Direction direction = getBlockState().getValue(MechanicalCleanerBlock.FACING);
+        if (!direction.getAxis().isVertical())
+            return;
+        BlockEntity poweredChute = level.getBlockEntity(worldPosition.relative(direction));
+        if (!(poweredChute instanceof ChuteBlockEntity chuteBE))
+            return;
+        if (direction == Direction.DOWN)
+            chuteBE.updatePull();
+        else
+            chuteBE.updatePush(1);
     }
 
     @Override
@@ -672,6 +700,7 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
         if (filtering != null)
             filtering.toggleDirection();
     }
+
     /** 该命中点是否落在侧面过滤/方向配置栏位（值框）上 */
     public boolean isHitOnConfigSlot(Vec3 hit) {
         return filtering != null && filtering.testHit(hit);
