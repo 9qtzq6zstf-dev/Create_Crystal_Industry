@@ -15,6 +15,9 @@ public class MechanicalCleanerMenu extends AbstractContainerMenu {
     /** 吸尘器容器格数：3 行 × 9 列 = 27 */
     public static final int SLOTS = 27;
 
+    /** 按钮 id 偏移：吹出数量滚轮通过 100 + value 与格数滚轮区分 */
+    public static final int EJECT_BUTTON_OFFSET = 100;
+
     // ==================== 槽位几何常量 ====================
 
     /** 单个槽位的边长（标准格子 18×18px） */
@@ -56,35 +59,50 @@ public class MechanicalCleanerMenu extends AbstractContainerMenu {
     /** 方块位置：用于 stillValid 与按钮包回写 */
     private final BlockPos pos;
 
-    /** 当前吸取距离（格数）：1~8 */
+    /** 当前吸取距离（格数）：1~20 */
     private final int suckRange;
 
-    // ---- 服务端：由方块实体 createMenu 调用，携带真实库存与吸取距离 ----
-    public MechanicalCleanerMenu(int id, Inventory playerInventory, ItemStackHandler inventory, BlockPos pos, int suckRange) {
+    /** 当前吹出数量：1~64 */
+    private final int ejectAmount;
+
+    // ---- 服务端：由方块实体 createMenu 调用，携带真实库存与两个配置 ----
+    public MechanicalCleanerMenu(int id, Inventory playerInventory, ItemStackHandler inventory, BlockPos pos,
+                                 int suckRange, int ejectAmount) {
         super(ModMenus.MECHANICAL_CLEANER.get(), id);
         this.inventory = inventory;
         this.pos = pos;
         this.suckRange = suckRange;
+        this.ejectAmount = ejectAmount;
         addSlots(playerInventory);
     }
 
-    // ---- 客户端：由网络包工厂调用，从 RegistryFriendlyByteBuf 读出方块位置与吸取距离 ----
+    // ---- 客户端：由网络包工厂调用，从 RegistryFriendlyByteBuf 读出方块位置与两个配置 ----
     public MechanicalCleanerMenu(int id, Inventory playerInventory, RegistryFriendlyByteBuf extraData) {
-        this(id, playerInventory, new ItemStackHandler(SLOTS), extraData.readBlockPos(), extraData.readInt());
+        this(id, playerInventory, new ItemStackHandler(SLOTS), extraData.readBlockPos(),
+                extraData.readInt(), extraData.readInt());
     }
 
     public int getSuckRange() {
         return suckRange;
     }
 
+    public int getEjectAmount() {
+        return ejectAmount;
+    }
+
     /**
-     * 滚轮配置回调：客户端点击包到达服务端后，
-     * 以按钮 id 作为新的吸取距离写回方块实体。
+     * 滚轮配置回调：客户端点击包到达服务端后按按钮 id 分流。
+     * - id < EJECT_BUTTON_OFFSET：格数（1~20）
+     * - id >= EJECT_BUTTON_OFFSET：吹出数量（100 + 1~64）
      */
     @Override
     public boolean clickMenuButton(Player player, int id) {
         if (player.level().getBlockEntity(pos) instanceof MechanicalCleanerBlockEntity be) {
-            be.setSuckRange(id);
+            if (id >= EJECT_BUTTON_OFFSET) {
+                be.setEjectAmount(id - EJECT_BUTTON_OFFSET);
+            } else {
+                be.setSuckRange(id);
+            }
             return true;
         }
         return false;

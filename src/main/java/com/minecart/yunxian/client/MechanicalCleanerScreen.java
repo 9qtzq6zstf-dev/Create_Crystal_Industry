@@ -88,18 +88,35 @@ public class MechanicalCleanerScreen extends AbstractContainerScreen<MechanicalC
     private static final int RANGE_MIN = 1;
     private static final int RANGE_MAX_EXCLUSIVE = MechanicalCleanerBlockEntity.SUCK_RANGE_MAX + 1; // 21
 
-    // ==================== 吸取距离数值标签（配置栏上方） ====================
+    // ==================== 吸取距离数值标签 ====================
 
     /** 数值标签相对 GUI 左边缘的 X：与配置栏左对齐 */
     private static final int RANGE_LABEL_X = RANGE_INPUT_X;
 
-    /** 数值标签相对 GUI 顶部的 Y：位于配置栏上方 12px */
+    /** 数值标签相对 GUI 顶部的 Y */
     private static final int RANGE_LABEL_Y = RANGE_INPUT_Y;
 
     /** 数值标签文本颜色：与标题一致 */
     private static final int RANGE_LABEL_COLOR = 0x404040;
 
+    // ==================== 吹出数量配置栏（格数配置左侧 30px） ====================
+
+    /** 吹出数量滚轮：位于格数配置栏左侧，间隔 30px；与格数配置同宽同高 */
+    private static final int EJECT_INPUT_X = RANGE_INPUT_X - RANGE_INPUT_WIDTH - 30; // 130 - 50 - 30 = 50
+    private static final int EJECT_INPUT_Y = RANGE_INPUT_Y;
+    private static final int EJECT_INPUT_WIDTH = RANGE_INPUT_WIDTH;
+    private static final int EJECT_INPUT_HEIGHT = RANGE_INPUT_HEIGHT;
+
+    /** 吹出数量范围：1~64（withRange 的 max 排他，故写 65） */
+    private static final int EJECT_MIN = 1;
+    private static final int EJECT_MAX_EXCLUSIVE = MechanicalCleanerBlockEntity.EJECT_AMOUNT_MAX + 1; // 65
+
+    /** 吹出数量标签：与数量配置栏左对齐、同高 */
+    private static final int EJECT_LABEL_X = EJECT_INPUT_X;
+    private static final int EJECT_LABEL_Y = EJECT_INPUT_Y;
+
     private ScrollInput rangeInput;
+    private ScrollInput ejectInput;
 
     public MechanicalCleanerScreen(MechanicalCleanerMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
@@ -124,7 +141,7 @@ public class MechanicalCleanerScreen extends AbstractContainerScreen<MechanicalC
         confirmButton.withCallback(this::onClose);
         this.addRenderableWidget(confirmButton);
 
-        // ---- 吸取距离数值标签：显示当前"X格"，随滚轮自动更新 ----
+        // ---- 吸取距离数值标签 + 滚轮配置（确认键左方） ----
         Label rangeLabel = new Label(
                 this.leftPos + RANGE_LABEL_X,
                 this.topPos + RANGE_LABEL_Y,
@@ -133,7 +150,6 @@ public class MechanicalCleanerScreen extends AbstractContainerScreen<MechanicalC
                 .withShadow();
         this.addRenderableWidget(rangeLabel);
 
-        // ---- 吸取距离滚轮配置（确认键左方） ----
         rangeInput = new ScrollInput(
                 this.leftPos + RANGE_INPUT_X,
                 this.topPos + RANGE_INPUT_Y,
@@ -143,15 +159,44 @@ public class MechanicalCleanerScreen extends AbstractContainerScreen<MechanicalC
                 .titled(Component.translatable("create_crystal_industry.mechanical_cleaner.range"))
                 .format(value -> Component.translatable(
                         "create_crystal_industry.mechanical_cleaner.range.value", value))
-                .writingTo(rangeLabel)   // 标签跟随滚轮显示当前值
+                .writingTo(rangeLabel)
                 .calling(value -> {
-                    // 发 vanilla 按钮包：服务端 AbstractContainerMenu.clickMenuButton(player, value) 收到
+                    // 格数滚轮：按钮 id 直接是 value（1~20）
                     if (this.minecraft != null && this.minecraft.player != null) {
                         this.minecraft.gameMode.handleInventoryButtonClick(this.menu.containerId, value);
                     }
                 });
         rangeInput.setState(this.menu.getSuckRange());
         this.addRenderableWidget(rangeInput);
+
+        // ---- 吹出数量数值标签 + 滚轮配置（格数配置左侧 30px） ----
+        Label ejectLabel = new Label(
+                this.leftPos + EJECT_LABEL_X,
+                this.topPos + EJECT_LABEL_Y,
+                Component.empty())
+                .colored(RANGE_LABEL_COLOR)
+                .withShadow();
+        this.addRenderableWidget(ejectLabel);
+
+        ejectInput = new ScrollInput(
+                this.leftPos + EJECT_INPUT_X,
+                this.topPos + EJECT_INPUT_Y,
+                EJECT_INPUT_WIDTH,
+                EJECT_INPUT_HEIGHT)
+                .withRange(EJECT_MIN, EJECT_MAX_EXCLUSIVE)
+                .titled(Component.translatable("create_crystal_industry.mechanical_cleaner.amount"))
+                .format(value -> Component.translatable(
+                        "create_crystal_industry.mechanical_cleaner.amount.value", value))
+                .writingTo(ejectLabel)
+                .calling(value -> {
+                    // 数量滚轮：按钮 id = 100 + value，与服务端 clickMenuButton 分流对应
+                    if (this.minecraft != null && this.minecraft.player != null) {
+                        this.minecraft.gameMode.handleInventoryButtonClick(
+                                this.menu.containerId, MechanicalCleanerMenu.EJECT_BUTTON_OFFSET + value);
+                    }
+                });
+        ejectInput.setState(this.menu.getEjectAmount());
+        this.addRenderableWidget(ejectInput);
     }
 
     @Override

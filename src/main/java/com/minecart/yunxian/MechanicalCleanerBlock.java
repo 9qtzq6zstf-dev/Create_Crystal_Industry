@@ -92,6 +92,7 @@ public class MechanicalCleanerBlock extends DirectionalKineticBlock
                 player.openMenu(blockEntity, buf -> {
                     buf.writeBlockPos(pos);
                     buf.writeInt(blockEntity.getSuckRange());
+                    buf.writeInt(blockEntity.getEjectAmount());
                 });
             }
             return ItemInteractionResult.SUCCESS;

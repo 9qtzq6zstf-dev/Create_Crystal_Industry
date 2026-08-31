@@ -76,5 +76,7 @@
     "create_crystal_industry.mechanical_cleaner.direction.normal": "正向旋转",
     "create_crystal_industry.mechanical_cleaner.direction.reversed": "反向旋转",
     "create_crystal_industry.mechanical_cleaner.range": "气流长度",
-    "create_crystal_industry.mechanical_cleaner.range.value": "%s格"
+    "create_crystal_industry.mechanical_cleaner.range.value": "%s格",
+    "create_crystal_industry.mechanical_cleaner.amount": "吹出数量",
+    "create_crystal_industry.mechanical_cleaner.amount.value": "%s个"
 }

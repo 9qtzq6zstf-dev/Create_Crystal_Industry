@@ -1,6 +1,7 @@
 package com.minecart.yunxian;
 
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
+import com.simibubi.create.content.kinetics.belt.BeltBlockEntity;
 import com.simibubi.create.content.kinetics.belt.behaviour.DirectBeltInputBehaviour;
 import com.simibubi.create.content.kinetics.fan.AirCurrent;
 import com.simibubi.create.content.kinetics.fan.IAirCurrentSource;
@@ -23,9 +24,13 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.items.IItemHandler;
+import net.neoforged.neoforge.items.ItemHandlerHelper;
 import net.neoforged.neoforge.items.ItemStackHandler;
 
 import java.util.List;
@@ -42,8 +47,17 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
     /** 目标气流长度最大值（格）：与鼓风机 256 转速下的最大距离一致（fanPushDistance 默认 20） */
     public static final int SUCK_RANGE_MAX = 20;
 
+    /** 每次吹出数量最小值 */
+    public static final int EJECT_AMOUNT_MIN = 1;
+
+    /** 每次吹出数量最大值 */
+    public static final int EJECT_AMOUNT_MAX = 64;
+
     /** 目标气流长度（格）：GUI 调节的数值，实际长度还会受转速上限约束 */
     private int suckRange = SUCK_RANGE_MIN;
+
+    /** 每次吹出数量（GUI 配置）：默认 64 = 整组吐出（与旧行为等价） */
+    private int ejectAmount = EJECT_AMOUNT_MAX;
 
     /** 吸尘器内部库存 */
     private final ItemStackHandler inventory = new ItemStackHandler(INVENTORY_SIZE);
@@ -64,6 +78,9 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
 
     /** 需要重建气流 */
     protected boolean updateAirFlow;
+
+    /** 吹出模式下的发射冷却：每次发射后按转速重置 */
+    private int ejectCooldown;
 
     public MechanicalCleanerBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.MECHANICAL_CLEANER.get(), pos, state);
@@ -137,11 +154,11 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
     public void addBehaviours(List<BlockEntityBehaviour> behaviours) {
         super.addBehaviours(behaviours);
 
-        // 开放容器核心：
-        // 1) 传送带可直接从任意面送物进来（默认 canInsertFromSide = true）
-        // 2) 工作盆 canOutputTo 靠它判定"是否朝吸尘器开口"
-        // 插入动作走物品栏能力（Capabilities.ItemHandler.BLOCK）
-        behaviours.add(new DirectBeltInputBehaviour(this));
+        // 开放容器输入判定（传送带 / 工作盆共用）：
+        // - 顶面朝上（FACING = UP）：两者都允许
+        // - 顶面朝向传送带（FACING 指向传送带所在方向）：仅传送带允许
+        behaviours.add(new DirectBeltInputBehaviour(this)
+                .onlyInsertWhen(this::canReceiveDirectInput));
 
         filtering = new MechanicalCleanerFilterBehaviour(
                 this,
@@ -155,10 +172,47 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
         behaviours.add(filtering);
     }
 
+    /**
+     * 判断是否允许传送带 / 工作盆直接输入。
+     *
+     * <p>调用约定（由实测 + 源码推导）：</p>
+     * <ul>
+     *   <li>传送带：side = 传送带→吸尘器方向 = facing.getOpposite()；传送带本体位于 relative(facing)。</li>
+     *   <li>工作盆：side = 盆→邻格方向；吸尘器水平朝向盆时该方向恰等于 facing。</li>
+     * </ul>
+     *
+     * <p>规则：</p>
+     * <ul>
+     *   <li>FACING = UP：工作盆与任意方向传送带都允许。</li>
+     *   <li>FACING 指向某方向：仅接受"顶面正对着的传送带"（side = facing.getOpposite() 且 relative(facing) 是传送带）。</li>
+     * </ul>
+     */
+    private boolean canReceiveDirectInput(Direction side) {
+        Direction facing = getBlockState().getValue(MechanicalCleanerBlock.FACING);
+        // 顶面朝上：工作盆与传送带都允许
+        if (facing == Direction.UP)
+            return true;
+        // 非 UP：只接受顶面正对着的传送带
+        // 传送带在 relative(facing)，它传入的 side = 传送带→吸尘器 = facing.getOpposite()
+        if (side != facing.getOpposite())
+            return false;
+        BlockEntity source = level.getBlockEntity(worldPosition.relative(facing));
+        return source instanceof BeltBlockEntity;
+    }
+
     // ==================== 过滤与方向 ====================
 
     /** 是否允许吸取该物品：过滤为空 = 全部吸取；否则仅吸过滤匹配的物品 */
     public boolean canSuck(ItemStack stack) {
+        if (filtering == null)
+            return true;
+        if (filtering.getFilter().isEmpty())
+            return true;
+        return filtering.test(stack);
+    }
+
+    /** 是否允许吹出该物品：过滤为空 = 全部吹出；否则仅吹出过滤匹配的物品 */
+    public boolean canEject(ItemStack stack) {
         if (filtering == null)
             return true;
         if (filtering.getFilter().isEmpty())
@@ -197,6 +251,18 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
         updateAirFlow = true;
     }
 
+    // ==================== 吹出数量（GUI 配置） ====================
+
+    public int getEjectAmount() {
+        return ejectAmount;
+    }
+
+    public void setEjectAmount(int amount) {
+        ejectAmount = Math.max(EJECT_AMOUNT_MIN, Math.min(EJECT_AMOUNT_MAX, amount));
+        setChanged();
+        sendData();
+    }
+
     // ==================== 容器 UI ====================
 
     @Override
@@ -206,7 +272,7 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
 
     @Override
     public AbstractContainerMenu createMenu(int id, Inventory playerInventory, Player player) {
-        return new MechanicalCleanerMenu(id, playerInventory, inventory, worldPosition, suckRange);
+        return new MechanicalCleanerMenu(id, playerInventory, inventory, worldPosition, suckRange, ejectAmount);
     }
 
     // ==================== NBT 持久化 ====================
@@ -214,8 +280,9 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
     @Override
     protected void read(CompoundTag compound, HolderLookup.Provider registries, boolean clientPacket) {
         super.read(compound, registries, clientPacket);
-        // SuckRange 两端都要读：客户端需要它计算气流长度（否则粒子只在第一格、风力错位）
+        // 两端都读：客户端需要计算气流长度（SuckRange）与 GUI 初始值
         suckRange = Math.max(SUCK_RANGE_MIN, Math.min(SUCK_RANGE_MAX, compound.getInt("SuckRange")));
+        ejectAmount = Math.max(EJECT_AMOUNT_MIN, Math.min(EJECT_AMOUNT_MAX, compound.getInt("EjectAmount")));
         if (clientPacket) {
             airCurrent.rebuild();
             return;
@@ -228,8 +295,9 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
     @Override
     public void write(CompoundTag compound, HolderLookup.Provider registries, boolean clientPacket) {
         super.write(compound, registries, clientPacket);
-        // SuckRange 很小，两端都写：客户端同步包也需要它
+        // 都很小，两端都写
         compound.putInt("SuckRange", suckRange);
+        compound.putInt("EjectAmount", ejectAmount);
         if (!clientPacket) {
             compound.put("Inventory", inventory.serializeNBT(registries));
         }
@@ -297,14 +365,19 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
 
         airCurrent.tick();
 
-        // 吸入模式：气流范围内所有掉落物直接收入容器（无需先吸到正面）
-        if (server && isPulling()) {
-            collectItemsInFlow();
-            collectItemsFromNozzle();   // 分散网（喷嘴）覆盖范围
+        if (server) {
+            if (isPulling()) {
+                // 吸入模式：气流范围内所有掉落物直接收入容器（无需先吸到正面）
+                collectItemsInFlow();
+                collectItemsFromNozzle();   // 分散网（喷嘴）覆盖范围
+            } else {
+                // 吹出模式：把容器里的物品喷到前方
+                ejectItems();
+            }
         }
     }
 
-    // ==================== 收集逻辑 ====================
+    // ==================== 收集 / 喷射逻辑 ====================
 
     /**
      * 吸入模式：扫描整个气流范围（airCurrent.bounds，已含阻挡截断），
@@ -365,6 +438,70 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
         ClipContext context = new ClipContext(entity.position(), VecHelper.getCenterOf(nozzlePos),
                 ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, entity);
         return nozzlePos.equals(level.clip(context).getBlockPos());
+    }
+
+    private void ejectItems() {
+        if (inventory == null)
+            return;
+
+        // 从第一个"非空且符合过滤"的槽取；不符合过滤的槽跳过
+        int slotToEject = -1;
+        for (int slot = 0; slot < inventory.getSlots(); slot++) {
+            ItemStack stackInSlot = inventory.getStackInSlot(slot);
+            if (stackInSlot.isEmpty())
+                continue;
+            if (!canEject(stackInSlot))
+                continue;
+            slotToEject = slot;
+            break;
+        }
+        if (slotToEject == -1)
+            return; // 没有可吹出的物品
+
+        float speed = Math.abs(getSpeed());
+        if (speed <= 0)
+            return; // 无转速不喷射
+
+        // 发射间隔（tick）：转速越快间隔越短；下限 2 tick，避免过密
+        int interval = Math.max(2, (int) Math.round(100f / speed));
+        if (ejectCooldown > 0) {
+            ejectCooldown--;
+            return;
+        }
+        ejectCooldown = interval;
+
+        Direction facing = getBlockState().getValue(MechanicalCleanerBlock.FACING);
+        BlockPos frontPos = worldPosition.relative(facing);
+
+        // 取出数量 = min(GUI 配置数量, 槽内数量)
+        int stackCount = inventory.getStackInSlot(slotToEject).getCount();
+        int toExtract = Math.min(ejectAmount, stackCount);
+        ItemStack stack = inventory.extractItem(slotToEject, toExtract, false);
+
+        // 正前方是容器：直接输送
+        IItemHandler target = level.getCapability(Capabilities.ItemHandler.BLOCK, frontPos, facing.getOpposite());
+        if (target != null) {
+            ItemStack remainder = ItemHandlerHelper.insertItemStacked(target, stack, false);
+            if (!remainder.isEmpty()) {
+                // 送不回去（容器满）：退回吸尘器
+                inventory.insertItem(slotToEject, remainder, false);
+            }
+            setChanged();
+            return;
+        }
+
+        // 前方不是容器：生成掉落物（模仿智能钻头，无任何初速度）
+        Vec3 spawnPos = VecHelper.offsetRandomly(
+                VecHelper.getCenterOf(frontPos),
+                level.random,
+                .125f
+        );
+        ItemEntity itemEntity = new ItemEntity(level, spawnPos.x, spawnPos.y, spawnPos.z, stack);
+        itemEntity.setDefaultPickUpDelay();
+        itemEntity.setDeltaMovement(Vec3.ZERO);   // 显式归零，无任何初速
+        level.addFreshEntity(itemEntity);
+
+        setChanged();
     }
 
     /**

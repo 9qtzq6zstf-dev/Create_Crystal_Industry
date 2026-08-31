@@ -76,6 +76,8 @@
     "create_crystal_industry.mechanical_cleaner.direction.normal": "Normal Rotation",
     "create_crystal_industry.mechanical_cleaner.direction.reversed": "Reversed Rotation",
     "create_crystal_industry.mechanical_cleaner.range": "Airflow Length",
-    "create_crystal_industry.mechanical_cleaner.range.value": "%s blocks"
+    "create_crystal_industry.mechanical_cleaner.range.value": "%s blocks",
+    "create_crystal_industry.mechanical_cleaner.amount": "Eject Amount",
+    "create_crystal_industry.mechanical_cleaner.amount.value": "%s pcs"
 }
 
