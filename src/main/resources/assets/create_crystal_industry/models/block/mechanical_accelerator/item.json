@@ -3,13 +3,13 @@
 	"credit": "Made with Blockbench",
 	"parent": "create:block/block",
 	"textures": {
-		"0": "create_crystal_industry:block/mechanical_accelerator/accelerator_top",
-		"1": "create_crystal_industry:block/mechanical_accelerator/accelerator_side",
+		"0": "create_crystal_industry:block/mechanical_accelerator/accelerator_top_powered",
+		"1": "create_crystal_industry:block/mechanical_accelerator/accelerator_side_powered",
 		"2": "create_crystal_industry:block/common/brass_frame",
 		"3": "create_crystal_industry:block/common/railway_gearbox",
 		"4": "create_crystal_industry:block/common/axis_top",
 		"5": "create_crystal_industry:block/common/axis",
-		"particle": "create_crystal_industry:block/mechanical_accelerator/accelerator_top"
+		"particle": "create_crystal_industry:block/mechanical_accelerator/accelerator_top_powered"
 	},
 	"elements": [
 		{
