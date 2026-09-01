@@ -37,6 +37,13 @@ public class GenericBuddingBlock extends BuddingAmethystBlock {
 
         Direction side = DIRECTIONS[random.nextInt(DIRECTIONS.length)];
         BlockPos neighborPos = pos.relative(side);
+
+        // ★ 新增：光照钩子。判断的是“晶簇将要生长的相邻格”，不是母岩自身
+        //   （母岩是不透明方块，自身位置光照恒为 0，不能作为依据）。
+        if (!canGrowAtLight(level, neighborPos)) {
+            return;
+        }
+
         BlockState neighborState = level.getBlockState(neighborPos);
 
         Block nextBlock = null;
@@ -57,6 +64,13 @@ public class GenericBuddingBlock extends BuddingAmethystBlock {
                             neighborState.getFluidState().getType() == Fluids.WATER);
             level.setBlockAndUpdate(neighborPos, newState);
         }
+    }
+
+    /**
+     * ★ 新增：子类可覆写以限制晶簇生长所需的光照。默认无限制（保持所有母岩原行为）。
+     */
+    protected boolean canGrowAtLight(ServerLevel level, BlockPos neighborPos) {
+        return true;
     }
 
     private static boolean canGrowAt(BlockState state) {

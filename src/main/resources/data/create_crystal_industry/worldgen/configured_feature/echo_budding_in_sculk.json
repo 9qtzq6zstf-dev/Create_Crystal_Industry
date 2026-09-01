@@ -2,7 +2,7 @@
     "type": "create_crystal_industry:echo_budding_in_sculk",
     "config": {
         "discard_chance_on_air_exposure": 0.0,
-        "size": 1,
+        "size": 3,
         "targets": [
             {
                 "target": {
@@ -10,7 +10,10 @@
                     "block": "minecraft:sculk"
                 },
                 "state": {
-                    "Name": "create_crystal_industry:echo_budding"
+                    "Name": "create_crystal_industry:echo_budding",
+                    "Properties": {
+                        "can_summon": "true"
+                    }
                 }
             }
         ]
