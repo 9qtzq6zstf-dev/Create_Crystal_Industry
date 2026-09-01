@@ -16,7 +16,11 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
  * 让溜槽把吸尘器当作"等效鼓风机"：
  * - 吸尘器在溜槽正上方、朝 DOWN → 影响 calculatePull（拉）
  * - 吸尘器在溜槽正下方、朝 UP   → 影响 calculatePush（推）
- * 与 EncasedFanBlockEntity 对 ChuteBlockEntity 的驱动方式完全对称。
+ *
+ * 符号约定（Create 溜槽源码）：
+ * - pull > 0 = pull_up（吸气向上），pull < 0 = push_down（吹气向下）
+ * - push > 0 = push_up（吹气向上），push < 0 = pull_down（吸气向下）
+ * 所以"吸尘器在上方"和"在下方"两处，吹向溜槽时符号是相反的，必须分开处理。
  */
 @Mixin(ChuteBlockEntity.class)
 public abstract class ChuteBlockEntityMixin {
@@ -33,7 +37,7 @@ public abstract class ChuteBlockEntityMixin {
                 && stateAbove.getValue(MechanicalCleanerBlock.FACING) == Direction.DOWN) {
             BlockEntity be = self.getLevel().getBlockEntity(above);
             if (be instanceof MechanicalCleanerBlockEntity cleaner) {
-                cir.setReturnValue(equivalentSpeed(cleaner, Direction.DOWN));
+                cir.setReturnValue(equivalentPull(cleaner));
             }
         }
     }
@@ -50,22 +54,34 @@ public abstract class ChuteBlockEntityMixin {
                 && stateBelow.getValue(MechanicalCleanerBlock.FACING) == Direction.UP) {
             BlockEntity be = self.getLevel().getBlockEntity(below);
             if (be instanceof MechanicalCleanerBlockEntity cleaner) {
-                cir.setReturnValue(equivalentSpeed(cleaner, Direction.UP));
+                cir.setReturnValue(equivalentPush(cleaner));
             }
         }
     }
 
     /**
-     * 吸尘器对溜槽的"等效鼓风机转速"：
-     * - 风向朝向溜槽（吹入）→ 正转速（物品向上）；
-     * - 风向背向溜槽（吸离）→ 负转速（物品向下）；
-     * - 无动力 / 红石锁（getAirFlowDirection 返回 null）→ 0，相当于没风。
+     * 吸尘器在溜槽上方（朝 DOWN）时的等效 pull：
+     * - 吹向溜槽（airflow=DOWN）→ pull < 0 → 溜槽"吹气向下"
+     * - 吸离溜槽（airflow=UP）  → pull > 0 → 溜槽"吸气向上"
      */
-    private static float equivalentSpeed(MechanicalCleanerBlockEntity cleaner, Direction toChute) {
+    private static float equivalentPull(MechanicalCleanerBlockEntity cleaner) {
         Direction airflow = cleaner.getAirFlowDirection();
         if (airflow == null)
             return 0f;
         float speed = Math.abs(cleaner.getSpeed());
-        return airflow == toChute ? speed : -speed;
+        return airflow == Direction.DOWN ? -speed : speed;
+    }
+
+    /**
+     * 吸尘器在溜槽下方（朝 UP）时的等效 push：
+     * - 吹向溜槽（airflow=UP）  → push > 0 → 溜槽"吹气向上"
+     * - 吸离溜槽（airflow=DOWN）→ push < 0 → 溜槽"吸气向下"
+     */
+    private static float equivalentPush(MechanicalCleanerBlockEntity cleaner) {
+        Direction airflow = cleaner.getAirFlowDirection();
+        if (airflow == null)
+            return 0f;
+        float speed = Math.abs(cleaner.getSpeed());
+        return airflow == Direction.UP ? speed : -speed;
     }
 }

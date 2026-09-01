@@ -24,9 +24,5 @@ public abstract class AirCurrentMixin {
     private void yunxian$removeFanImmunePlayers(Level world, CallbackInfo ci) {
         int before = caughtEntities.size();
         caughtEntities.removeIf(FanImmunityHelper::isImmune);
-        // 临时调试: 确认 Mixin 是否真的触发（生效后删掉这两行）
-        if (caughtEntities.size() != before)
-            System.out.println("[FanImmunity] AirCurrent 移除了 "
-                    + (before - caughtEntities.size()) + " 个免疫实体");
     }
 }
