@@ -265,7 +265,7 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
         // 两端都读：客户端需要计算气流长度（SuckRange）与 GUI 初始值
         suckRange = Math.max(SUCK_RANGE_MIN, Math.min(SUCK_RANGE_MAX, compound.getInt("SuckRange")));
         if (clientPacket) {
-            airCurrent.rebuild();
+            rebuildAirBounds();
             return;
         }
         if (compound.contains("Inventory")) {
@@ -341,6 +341,34 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
             chuteBE.updatePush(1);
     }
 
+    private void rebuildAirBounds() {
+        airCurrent.rebuild();
+        // 无动力/红石锁（getSpeed()==0）时 rebuild 已把 maxDistance 置 0，bounds 保持空
+        if (getSpeed() == 0) {
+            airCurrent.bounds = new AABB(0, 0, 0, 0, 0, 0);
+            return;
+        }
+
+        // rebuild() 之后 airCurrent.maxDistance = getFlowLimit(...) = 前方可穿过的格数
+        // （阻挡块在第 B 格时 = B-1）。从方块自身格开始铺风力范围：
+        // 覆盖 [自身格, 自身格+maxDistance]，遇到阻挡恰好停在阻挡前一格，
+        // 且风力与方块融为一体（起点在凹陷上）。
+        Direction facing = getAirflowOriginSide();
+        int reach = Math.max(0, (int) airCurrent.maxDistance);
+        BlockPos first = worldPosition;
+        BlockPos last = first.relative(facing, reach);
+
+        Vec3 minCorner = new Vec3(
+                Math.min(first.getX(), last.getX()),
+                Math.min(first.getY(), last.getY()),
+                Math.min(first.getZ(), last.getZ()));
+        Vec3 maxCorner = new Vec3(
+                Math.max(first.getX(), last.getX()) + 1,
+                Math.max(first.getY(), last.getY()) + 1,
+                Math.max(first.getZ(), last.getZ()) + 1);
+        airCurrent.bounds = new AABB(minCorner, maxCorner);
+    }
+
     @Override
     public void tick() {
         super.tick();
@@ -355,7 +383,7 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
 
         if (updateAirFlow) {
             updateAirFlow = false;
-            airCurrent.rebuild();
+            rebuildAirBounds();
             sendData();
         }
 
@@ -378,13 +406,15 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
 
             if (isPulling()) {
                 if (hasPower) {
-                    // 有动力：气流范围 + 喷嘴覆盖范围 + 面前容器直吸（仅动力驱动时生效）
+                    // 有动力：气流范围 + 喷嘴覆盖范围 + 面前容器直吸 + 内部凹陷吸取
                     collectItemsInFlow();
                     collectItemsFromNozzle();
                     collectItemsFromContainer();
+                    collectItemsInInterior();
                 } else {
-                    // 无动力：只被动吸掉落物（不依赖风）；容器直吸不生效
+                    // 无动力：只被动吸掉落物（不依赖风）；容器直吸不生效；凹陷内仍可吸
                     collectItemsPassive();
+                    collectItemsInInterior();
                 }
             } else if (hasPower) {
                 // 吹出模式需要动力
@@ -396,7 +426,7 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
     // ==================== 收集 / 喷射逻辑 ====================
 
     /**
-     * 吸入模式：扫描整个气流范围（airCurrent.bounds，已含阻挡截断），
+     * 吸入模式：扫描整个气流范围（airCurrent.bounds，已含阻挡截断与自身凹陷），
      * 范围内所有掉落物直接收入 27 格容器。
      * 容器满时物品原地堆积（由玩家产线处理）。
      */
@@ -448,6 +478,19 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
         AABB area = new AABB(minCorner, maxCorner);
 
         List<ItemEntity> items = level.getEntitiesOfClass(ItemEntity.class, area);
+        for (ItemEntity itemEntity : items) {
+            suckItem(itemEntity);
+        }
+    }
+
+    /**
+     * 收集掉进方块自身凹陷内的掉落物。
+     * 由于凹陷是方块内部唯一的开放空间（其余实心），扫描整块 AABB 是安全的。
+     * 只供吸入模式调用；吹出模式下凹陷内的物品应由风力吹出，不应被吸回。
+     */
+    private void collectItemsInInterior() {
+        AABB interior = new AABB(worldPosition);
+        List<ItemEntity> items = level.getEntitiesOfClass(ItemEntity.class, interior);
         for (ItemEntity itemEntity : items) {
             suckItem(itemEntity);
         }

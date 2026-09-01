@@ -6,7 +6,8 @@
     "mixins": [
         "AirCurrentMixin",
         "NozzleBlockEntityMixin",
-        "ChuteBlockEntityMixin"
+        "ChuteBlockEntityMixin",
+        "MechanicalCleanerAirCurrentMixin"
     ],
     "client": [
     ],
