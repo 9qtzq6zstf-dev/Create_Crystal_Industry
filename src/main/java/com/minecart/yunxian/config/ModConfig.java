@@ -148,12 +148,7 @@ public final class ModConfig {
                         "夜视护目镜屏幕遮罩的整体不透明度（0.0 = 完全透明不可见，1.0 = 完全不透明）。",
                         "Overall opacity of the night vision goggles screen overlay (0.0 = invisible, 1.0 = fully opaque).")
                 .defineInRange("gogglesOverlayAlpha", 0.75, 0.0, 1.0);
-        // ===== 回响望远镜 =====
-        public static final ModConfigSpec.BooleanValue SPYGLASS_GUI_RENDER_MODEL = BUILDER
-                .comment(
-                        "回响望远镜过滤界面右侧：true = 渲染 3D 模型，false = 渲染平面贴图（默认）。",
-                        "Echo Spyglass GUI right side: true = render 3D model, false = render flat texture (default).")
-                .define("spyglassGuiRenderModel", false);
+
         public static final ModConfigSpec SPEC = BUILDER.build();
     }
 }

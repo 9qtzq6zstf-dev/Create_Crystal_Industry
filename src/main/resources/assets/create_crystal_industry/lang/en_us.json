@@ -76,5 +76,13 @@
     "create_crystal_industry.mechanical_cleaner.range": "Wind Range",
     "create_crystal_industry.mechanical_cleaner.range.value": "%s / 20",
     "create_crystal_industry.mechanical_cleaner.direction.normal": "Current Mode: Blowing",
-    "create_crystal_industry.mechanical_cleaner.direction.reversed": "Current Mode: Sucking"
+    "create_crystal_industry.mechanical_cleaner.direction.reversed": "Current Mode: Sucking",
+    "create_crystal_industry.goggles.status_label": "Status: ",
+    "create_crystal_industry.goggles.status.working": "Working",
+    "create_crystal_industry.goggles.status.idle": "Idle",
+    "create_crystal_industry.goggles.work_speed_label": "Work Speed: ",
+    "create_crystal_industry.goggles.work_speed_unit": " random ticks / 20 ticks",
+    "create_crystal_industry.smart_drill.mode_label": "Current Mode: ",
+    "create_crystal_industry.flammable_ice_budding.growable": "Can Grow",
+    "create_crystal_industry.flammable_ice_budding.only_in_water": "Budding Flammable Ice can only grow in water"
 }

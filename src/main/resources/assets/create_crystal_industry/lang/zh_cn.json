@@ -76,5 +76,13 @@
     "create_crystal_industry.mechanical_cleaner.range": "风力格数",
     "create_crystal_industry.mechanical_cleaner.range.value": "%s / 20 格",
     "create_crystal_industry.mechanical_cleaner.direction.normal": "当前模式: 吹气",
-    "create_crystal_industry.mechanical_cleaner.direction.reversed": "当前模式: 吸气"
+    "create_crystal_industry.mechanical_cleaner.direction.reversed": "当前模式: 吸气",
+    "create_crystal_industry.goggles.status_label": "状态：",
+    "create_crystal_industry.goggles.status.working": "工作中",
+    "create_crystal_industry.goggles.status.idle": "已停止",
+    "create_crystal_industry.goggles.work_speed_label": "工作速度：",
+    "create_crystal_industry.goggles.work_speed_unit": " 随机刻 / 20 tick",
+    "create_crystal_industry.smart_drill.mode_label": "当前模式: ",
+    "create_crystal_industry.flammable_ice_budding.growable": "生长状态: 可生长",
+    "create_crystal_industry.flammable_ice_budding.only_in_water": "可燃冰母岩只能在水中生长"
 }

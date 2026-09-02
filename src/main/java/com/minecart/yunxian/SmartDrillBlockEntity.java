@@ -5,7 +5,9 @@ import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour
 import com.simibubi.create.foundation.blockEntity.behaviour.scrollValue.INamedIconOptions;
 import com.simibubi.create.foundation.gui.AllIcons;
 import com.simibubi.create.foundation.utility.BlockHelper;
+import com.simibubi.create.foundation.utility.CreateLang;
 import net.createmod.catnip.math.VecHelper;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.Registry;
@@ -223,5 +225,24 @@ public class SmartDrillBlockEntity extends DrillBlockEntity {
      */
     public float getTrueSpeed() {
         return super.getSpeed();
+    }
+
+    @Override
+    public boolean addToGoggleTooltip(List<Component> tooltip, boolean isPlayerSneaking) {
+        // 保留父类（DrillBlockEntity → KineticBlockEntity）的机械动力同款信息
+        super.addToGoggleTooltip(tooltip, isPlayerSneaking);
+
+        // 当前采集模式：普通采集 / 精准采集（整行灰色，与动力吸尘器方向提示一致）
+        // 前缀独立成 key，避免污染 DrillMode 在滚动选择器里的显示文本
+        DrillMode mode = filtering != null ? filtering.getMode() : DrillMode.NORMAL;
+
+        CreateLang.builder()
+                .add(Component.translatable("create_crystal_industry.smart_drill.mode_label")
+                        .withStyle(ChatFormatting.GRAY))
+                .add(Component.translatable(mode.getTranslationKey())
+                        .withStyle(ChatFormatting.GRAY))
+                .forGoggles(tooltip, 1);
+
+        return true;
     }
 }

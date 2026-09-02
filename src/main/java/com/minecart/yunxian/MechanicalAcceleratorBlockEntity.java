@@ -1,8 +1,14 @@
 package com.minecart.yunxian;
 
+import java.util.List;
+
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
+import com.simibubi.create.foundation.utility.CreateLang;
+
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.state.BlockState;
 
@@ -56,5 +62,43 @@ public class MechanicalAcceleratorBlockEntity extends KineticBlockEntity {
                 level.getBlockState(target).randomTick(serverLevel, target, serverLevel.random);
             }
         }
+    }
+
+    @Override
+    public boolean addToGoggleTooltip(List<Component> tooltip, boolean isPlayerSneaking) {
+        // 先输出 KineticBlockEntity 自带的 Kinetics + Stress Impact（Create 原生面板）
+        super.addToGoggleTooltip(tooltip, isPlayerSneaking);
+
+        float speed = Math.abs(getSpeed());
+        boolean running = speed != 0;
+
+        // 每 tick 期望施加的随机刻总数（6 个面求和后与 tick() 内 perFaceProb 公式等价）
+        float expectedPerTick = running
+                ? Math.min(MAX_EFFECT_RATE * (speed / FULL_SPEED), MAX_EFFECT_RATE)
+                : 0f;
+        float per20 = Math.round(expectedPerTick * 20f * 10f) / 10f;
+
+        // 状态：工作中 / 已停止
+        CreateLang.builder()
+                .add(Component.translatable("create_crystal_industry.goggles.status_label")
+                        .withStyle(ChatFormatting.GRAY))
+                .add(Component.translatable(running
+                                ? "create_crystal_industry.goggles.status.working"
+                                : "create_crystal_industry.goggles.status.idle")
+                        .withStyle(ChatFormatting.WHITE))
+                .forGoggles(tooltip, 1);
+
+        // 工作速度：平均每 20 tick 施加的随机刻数量（期望值，保留 1 位小数）
+        CreateLang.builder()
+                .add(Component.translatable("create_crystal_industry.goggles.work_speed_label")
+                        .withStyle(ChatFormatting.GRAY))
+                .add(CreateLang.number(per20)
+                        .style(ChatFormatting.WHITE))
+                .add(Component.literal(" "))
+                .add(Component.translatable("create_crystal_industry.goggles.work_speed_unit")
+                        .withStyle(ChatFormatting.DARK_GRAY))
+                .forGoggles(tooltip, 1);
+
+        return true;
     }
 }

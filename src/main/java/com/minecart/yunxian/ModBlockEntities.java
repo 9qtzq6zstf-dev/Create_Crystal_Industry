@@ -36,6 +36,12 @@ public final class ModBlockEntities {
                     MechanicalCleanerBlockEntity::new,
                     ModBlocks.MECHANICAL_CLEANER.get()
             ).build(null));
+    // 可燃冰母岩：纯展示 BE，仅用于护目镜信息
+    public static final Supplier<BlockEntityType<FlammableIceBuddingBlockEntity>> FLAMMABLE_ICE_BUDDING =
+            BLOCK_ENTITIES.register("flammable_ice_budding", () -> BlockEntityType.Builder.of(
+                    FlammableIceBuddingBlockEntity::new,
+                    ModBlocks.FLAMMABLE_ICE_BUDDING.get()
+            ).build(null));
 
     private ModBlockEntities() {
     }

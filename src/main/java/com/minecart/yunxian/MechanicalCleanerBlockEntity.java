@@ -8,9 +8,11 @@ import com.simibubi.create.content.kinetics.fan.IAirCurrentSource;
 import com.simibubi.create.content.kinetics.fan.NozzleBlockEntity;
 import com.simibubi.create.content.logistics.chute.ChuteBlockEntity;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
+import com.simibubi.create.foundation.utility.CreateLang;
 import com.simibubi.create.infrastructure.config.AllConfigs;
 import com.simibubi.create.infrastructure.config.CKinetics;
 import net.createmod.catnip.math.VecHelper;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
@@ -747,5 +749,21 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
     /** 该命中点是否落在侧面过滤/方向配置栏位（值框）上 */
     public boolean isHitOnConfigSlot(Vec3 hit) {
         return filtering != null && filtering.testHit(hit);
+    }
+    @Override
+    public boolean addToGoggleTooltip(List<Component> tooltip, boolean isPlayerSneaking) {
+        // 先输出 KineticBlockEntity 自带的 Kinetics + Stress Impact（机械动力同款面板）
+        super.addToGoggleTooltip(tooltip, isPlayerSneaking);
+
+        // 气流方向：吹气 / 吸气（按配置的模式显示，不依赖是否有动力）
+        boolean pulling = isPulling();
+        CreateLang.builder()
+                .add(Component.translatable(pulling
+                                ? "create_crystal_industry.mechanical_cleaner.direction.reversed"
+                                : "create_crystal_industry.mechanical_cleaner.direction.normal")
+                        .withStyle(ChatFormatting.GRAY))
+                .forGoggles(tooltip, 1);
+
+        return true;
     }
 }

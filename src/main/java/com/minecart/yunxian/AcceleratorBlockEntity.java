@@ -1,9 +1,16 @@
 package com.minecart.yunxian;
 
+import java.util.List;
+
+import com.simibubi.create.api.equipment.goggles.IHaveGoggleInformation;
+import com.simibubi.create.foundation.utility.CreateLang;
+
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -12,7 +19,7 @@ import net.neoforged.neoforge.energy.EnergyStorage;
 import net.neoforged.neoforge.energy.IEnergyStorage;
 import org.jetbrains.annotations.Nullable;
 
-public class AcceleratorBlockEntity extends BlockEntity implements IEnergyStorage {
+public class AcceleratorBlockEntity extends BlockEntity implements IEnergyStorage, IHaveGoggleInformation {
     private static final int MAX_ENERGY = 10_000;
     private static final int MAX_RECEIVE = 100;
     private static final int ENERGY_COST_PER_OPERATION = 100;
@@ -20,6 +27,9 @@ public class AcceleratorBlockEntity extends BlockEntity implements IEnergyStorag
 
     /** 相邻催生器之间每 tick 的最大传输量 */
     private static final int MAX_TRANSFER_PER_TICK = 500;
+
+    /** 一次成功的催生会对 6 个方向各施加一次 randomTick（= Direction.values().length） */
+    private static final float RANDOM_TICKS_PER_TICK = Direction.values().length;
 
     private int tickCounter;
     private final EnergyStorage energyStorage;
@@ -156,6 +166,39 @@ public class AcceleratorBlockEntity extends BlockEntity implements IEnergyStorag
 
     @Override
     public boolean canReceive() {
+        return true;
+    }
+
+    @Override
+    public boolean addToGoggleTooltip(List<Component> tooltip, boolean isPlayerSneaking) {
+        // 不要在 CreateLang.translate 里传自家 key —— 它会被强制加 "create." 前缀，
+        // 改用 Component.translatable 原样解析自家命名空间
+        boolean running = getBlockState().getValue(AcceleratorBlock.POWERED);
+
+        // 运行中每 tick 必定对 6 个方向各触发一次 randomTick（确定值，非期望值）
+        float per20 = running ? RANDOM_TICKS_PER_TICK * 20f : 0f;
+
+        // 状态：工作中 / 已停止
+        CreateLang.builder()
+                .add(Component.translatable("create_crystal_industry.goggles.status_label")
+                        .withStyle(ChatFormatting.GRAY))
+                .add(Component.translatable(running
+                                ? "create_crystal_industry.goggles.status.working"
+                                : "create_crystal_industry.goggles.status.idle")
+                        .withStyle(ChatFormatting.WHITE))
+                .forGoggles(tooltip, 1);
+
+        // 工作速度：平均每 20 tick 施加的随机刻数量
+        CreateLang.builder()
+                .add(Component.translatable("create_crystal_industry.goggles.work_speed_label")
+                        .withStyle(ChatFormatting.GRAY))
+                .add(CreateLang.number(per20)
+                        .style(ChatFormatting.WHITE))
+                .add(Component.literal(" "))
+                .add(Component.translatable("create_crystal_industry.goggles.work_speed_unit")
+                        .withStyle(ChatFormatting.DARK_GRAY))
+                .forGoggles(tooltip, 1);
+
         return true;
     }
 
