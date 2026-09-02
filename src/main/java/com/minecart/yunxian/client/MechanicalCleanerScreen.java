@@ -1,21 +1,28 @@
 package com.minecart.yunxian.client;
 
+import com.google.common.collect.ImmutableList;
 import com.minecart.yunxian.MechanicalCleanerBlockEntity;
 import com.minecart.yunxian.MechanicalCleanerFilterBehaviour.RotationDirection;
 import com.minecart.yunxian.MechanicalCleanerMenu;
+import com.minecart.yunxian.ModBlocks;
 import com.minecart.yunxian.Yunxian;
 import com.simibubi.create.foundation.gui.AllIcons;
+import com.simibubi.create.foundation.gui.menu.AbstractSimiContainerScreen;
 import com.simibubi.create.foundation.gui.widget.IconButton;
 import com.simibubi.create.foundation.gui.widget.Label;
 import com.simibubi.create.foundation.gui.widget.ScrollInput;
+import net.createmod.catnip.gui.element.GuiGameElement;
 import net.createmod.catnip.gui.element.ScreenElement;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.level.block.state.BlockState;
 
-public class MechanicalCleanerScreen extends AbstractContainerScreen<MechanicalCleanerMenu> {
+import java.util.List;
+
+public class MechanicalCleanerScreen extends AbstractSimiContainerScreen<MechanicalCleanerMenu> {
 
     // ==================== 贴图资源 ====================
     /** 机械动力图标大图（256×256） */
@@ -58,12 +65,12 @@ public class MechanicalCleanerScreen extends AbstractContainerScreen<MechanicalC
 
     public static final int TITLE_LABEL_Y = -6;
 
-    // ==================== 确认按钮（保持不变） ====================
+    // ==================== 确认按钮 ====================
 
     private static final int BUTTON_X = 185;
     private static final int BUTTON_Y = 81;
 
-    // ==================== 风力格数配置栏（GUI 鼠标滚轮调整） ====================
+    // ==================== 风力格数配置栏 ====================
 
     private static final int RANGE_INPUT_X = 35;
     private static final int RANGE_INPUT_Y = 86;
@@ -75,11 +82,22 @@ public class MechanicalCleanerScreen extends AbstractContainerScreen<MechanicalC
     private static final int RANGE_LABEL_Y = RANGE_INPUT_Y;
     private static final int LABEL_COLOR = 0xFFFFFF;
 
-    // ==================== 风向切换按钮（独立于确认按钮） ====================
+    // ==================== 风向切换按钮 ====================
 
-    /** 风向切换按钮：位于风力格数栏与确认按钮之间（仿确认按钮尺寸 18×18） */
     private static final int DIRECTION_BUTTON_X = 7;
     private static final int DIRECTION_BUTTON_Y = 81;
+
+    // ==================== 3D 模型参数（机械动力 GuiGameElement 官方写法） ====================
+
+    private static final int CLEANER_MODEL_X = 245;
+    private static final int CLEANER_MODEL_Y = 65;
+    private static final float CLEANER_MODEL_SCALE = 30F;
+    private static final float CLEANER_MODEL_ROT_X = 145;
+    private static final float CLEANER_MODEL_ROT_Y = 45;
+    private static final float CLEANER_MODEL_ROT_Z = -60;
+
+    /** 让 JEI 避开的模型区域半宽（像素）：模型越大/越靠右，调大此值 */
+    private static final int MODEL_AREA_HALF_SIZE = 40;
 
     private ScrollInput rangeInput;
     private IconButton directionButton;
@@ -93,12 +111,14 @@ public class MechanicalCleanerScreen extends AbstractContainerScreen<MechanicalC
 
     @Override
     protected void init() {
+        // AbstractSimiContainerScreen 要求：setWindowSize 必须在 super.init() 之前调用
+        setWindowSize(GUI_WIDTH, GUI_HEIGHT);
         super.init();
 
         this.titleLabelY = TITLE_LABEL_Y;
         this.titleLabelX = (this.imageWidth - this.font.width(this.title)) / 2;
 
-        // ---- 确认按钮（原样，不动） ----
+        // ---- 确认按钮 ----
         IconButton confirmButton = new IconButton(
                 this.leftPos + BUTTON_X,
                 this.topPos + BUTTON_Y,
@@ -107,7 +127,7 @@ public class MechanicalCleanerScreen extends AbstractContainerScreen<MechanicalC
         confirmButton.withCallback(this::onClose);
         this.addRenderableWidget(confirmButton);
 
-        // ---- 风力格数滚轮（GUI 鼠标滚轮调整） ----
+        // ---- 风力格数滚轮 ----
         Label rangeLabel = new Label(
                 this.leftPos + RANGE_LABEL_X,
                 this.topPos + RANGE_LABEL_Y,
@@ -135,7 +155,7 @@ public class MechanicalCleanerScreen extends AbstractContainerScreen<MechanicalC
         rangeInput.setState(this.menu.getSuckRange());
         this.addRenderableWidget(rangeInput);
 
-        // ---- 风向切换按钮（独立于确认按钮） ----
+        // ---- 风向切换按钮 ----
         reversed = this.menu.getDirection() == RotationDirection.REVERSED;
         directionButton = new IconButton(
                 this.leftPos + DIRECTION_BUTTON_X,
@@ -176,6 +196,36 @@ public class MechanicalCleanerScreen extends AbstractContainerScreen<MechanicalC
         int inventoryPanelY = guiTop + PLAYER_PANEL_Y;
         guiGraphics.blit(CREATE_INVENTORY_TEXTURE, inventoryPanelX, inventoryPanelY,
                 0, 0, INVENTORY_TEXTURE_WIDTH, INVENTORY_TEXTURE_HEIGHT);
+
+        // 在背景之上渲染吸尘器 3D 方块模型（右侧）
+        renderMechanicalCleanerModel(guiGraphics);
+    }
+
+    /**
+     * 用机械动力官方 GuiGameElement 渲染吸尘器方块状态。
+     */
+    private void renderMechanicalCleanerModel(GuiGraphics graphics) {
+        BlockState state = ModBlocks.MECHANICAL_CLEANER.get().defaultBlockState();
+
+        GuiGameElement.of(state)
+                .<GuiGameElement.GuiRenderBuilder>at(
+                        this.leftPos + CLEANER_MODEL_X,
+                        this.topPos + CLEANER_MODEL_Y,
+                        100)
+                .rotate(CLEANER_MODEL_ROT_X, CLEANER_MODEL_ROT_Y, CLEANER_MODEL_ROT_Z)
+                .scale(CLEANER_MODEL_SCALE)
+                .render(graphics);
+    }
+
+    /**
+     * 让 JEI 的物品栏避开右侧渲染的 3D 模型：
+     * 返回以模型中心为中心、半径为 MODEL_AREA_HALF_SIZE 的矩形区域。
+     */
+    @Override
+    public List<Rect2i> getExtraAreas() {
+        int x = this.leftPos + CLEANER_MODEL_X - MODEL_AREA_HALF_SIZE;
+        int y = this.topPos + CLEANER_MODEL_Y - MODEL_AREA_HALF_SIZE;
+        return ImmutableList.of(new Rect2i(x, y, MODEL_AREA_HALF_SIZE * 2, MODEL_AREA_HALF_SIZE * 2));
     }
 
     @Override
