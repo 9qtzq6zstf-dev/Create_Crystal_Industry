@@ -88,5 +88,7 @@
     "create_crystal_industry.echo_budding.warden_warning": "!当前回响母岩被挖掘会生成监守者!",
     "create_crystal_industry.echo_budding.growth.growable": "生长状态: 可生长",
     "create_crystal_industry.echo_budding.growth.requires_darkness": "当前回响母岩不可生长: 要求光照为0",
-    "create_crystal_industry.echo_budding.growth.no_space": "生长状态: 可生长"
+    "create_crystal_industry.echo_budding.growth.no_space": "生长状态: 生长空间不足",
+    "create_crystal_industry.goggles.growth_speed.natural": "生长速度: 自然生长（×1）",
+    "create_crystal_industry.goggles.growth_speed.label": "生长速度: ×"
 }

@@ -24,7 +24,7 @@ public class MechanicalAcceleratorBlockEntity extends KineticBlockEntity {
     public static final float MAX_EFFECT_RATE = ELECTRIC_RATE / 1f; // = 0.6
 
     /** 工作面数量：全部 6 个面 */
-    private static final int WORKING_FACES = 6;
+    public static final int WORKING_FACES = 6;   // private → public
 
     public MechanicalAcceleratorBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.MECHANICAL_ACCELERATOR.get(), pos, state);

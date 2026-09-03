@@ -36,6 +36,7 @@ import net.neoforged.neoforge.items.IItemHandler;
 import net.neoforged.neoforge.items.ItemHandlerHelper;
 import net.neoforged.neoforge.items.ItemStackHandler;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class MechanicalCleanerBlockEntity extends KineticBlockEntity
@@ -76,6 +77,13 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
     /** 吹出模式下的发射冷却：每次发射后按转速重置 */
     private int ejectCooldown;
 
+    // ===== 吸入幻影（纯视觉，不影响真实库存逻辑） =====
+
+    /** 服务端：待同步给客户端的吸入事件 */
+    private final List<SuckPhantom> pendingPhantoms = new ArrayList<>();
+    /** 客户端：正在渲染的幻影 */
+    private final List<SuckPhantom> activePhantoms = new ArrayList<>();
+
     public MechanicalCleanerBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.MECHANICAL_CLEANER.get(), pos, state);
         airCurrent = new AirCurrent(this);
@@ -84,6 +92,24 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
 
     public ItemStackHandler getInventory() {
         return inventory;
+    }
+
+    /** 客户端渲染队列（供 Renderer 读取） */
+    public List<SuckPhantom> getActivePhantoms() {
+        return activePhantoms;
+    }
+
+    /** 一次"吸入"的视觉事件：从被吸位置飞向方块中心 */
+    public static class SuckPhantom {
+        public static final int DURATION = 10;   // 视觉飞行时长（tick）
+        public final ItemStack stack;
+        public final Vec3 start;                  // 世界坐标（物品被吸前的位置）
+        public long startTime;                    // 客户端收到时填入本地 gameTime
+
+        public SuckPhantom(ItemStack stack, Vec3 start) {
+            this.stack = stack;
+            this.start = start;
+        }
     }
 
     // ==================== IAirCurrentSource ====================
@@ -268,6 +294,24 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
         suckRange = Math.max(SUCK_RANGE_MIN, Math.min(SUCK_RANGE_MAX, compound.getInt("SuckRange")));
         if (clientPacket) {
             rebuildAirBounds();
+
+            // 解析服务端发来的"吸入事件"，加入客户端幻影渲染队列
+            if (level != null && level.isClientSide && compound.contains("SuckPhantoms")) {
+                CompoundTag list = compound.getCompound("SuckPhantoms");
+                int count = list.getInt("Count");
+                for (int i = 0; i < count; i++) {
+                    CompoundTag t = list.getCompound(String.valueOf(i));
+                    ItemStack stack = ItemStack.parseOptional(registries, t.getCompound("Stack"));
+                    if (stack.isEmpty())
+                        continue;
+                    SuckPhantom p = new SuckPhantom(stack,
+                            new Vec3(t.getDouble("X"), t.getDouble("Y"), t.getDouble("Z")));
+                    p.startTime = level.getGameTime();
+                    activePhantoms.add(p);
+                    if (activePhantoms.size() > 16)
+                        activePhantoms.remove(0);
+                }
+            }
             return;
         }
         if (compound.contains("Inventory")) {
@@ -278,11 +322,27 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
     @Override
     public void write(CompoundTag compound, HolderLookup.Provider registries, boolean clientPacket) {
         super.write(compound, registries, clientPacket);
-        // 都很小，两端都写
         compound.putInt("SuckRange", suckRange);
-        if (!clientPacket) {
-            compound.put("Inventory", inventory.serializeNBT(registries));
+        if (clientPacket) {
+            // 客户端包：携带待播放的吸入事件并清空待发队列
+            if (!pendingPhantoms.isEmpty()) {
+                CompoundTag list = new CompoundTag();
+                int i = 0;
+                for (SuckPhantom p : pendingPhantoms) {
+                    CompoundTag t = new CompoundTag();
+                    t.put("Stack", p.stack.saveOptional(registries));
+                    t.putDouble("X", p.start.x);
+                    t.putDouble("Y", p.start.y);
+                    t.putDouble("Z", p.start.z);
+                    list.put(String.valueOf(i++), t);
+                }
+                list.putInt("Count", pendingPhantoms.size());
+                compound.put("SuckPhantoms", list);
+                pendingPhantoms.clear();
+            }
+            return;
         }
+        compound.put("Inventory", inventory.serializeNBT(registries));
     }
 
     // ==================== 红石锁 ====================
@@ -714,6 +774,7 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
     /**
      * 尝试把一个掉落物吸入容器。
      * 依次尝试放入每个槽位；放不下的部分留在掉落物中（不吞物品）。
+     * 物品仍会瞬间进库存；同时记录一条"吸入事件"，让客户端播放幻影飞入动画。
      */
     private void suckItem(ItemEntity itemEntity) {
         // 过滤拦截：不匹配的物品不吸入
@@ -732,9 +793,22 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
         if (inserted <= 0)
             return;
 
+        // 吸走前先备份一份 + 记录起始位置（用于幻影动画）
+        ItemStack phantomStack = itemEntity.getItem().copy();
+        Vec3 origin = itemEntity.position();
+
         itemEntity.getItem().shrink(inserted);
         if (itemEntity.getItem().isEmpty()) {
             itemEntity.discard();
+        }
+
+        // 服务端：把吸入事件随下一次 sendData 同步给客户端
+        if (level != null && !level.isClientSide) {
+            phantomStack.setCount(inserted);
+            pendingPhantoms.add(new SuckPhantom(phantomStack, origin));
+            if (pendingPhantoms.size() > 8)
+                pendingPhantoms.remove(0);
+            sendData();
         }
 
         setChanged();
@@ -750,6 +824,7 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
     public boolean isHitOnConfigSlot(Vec3 hit) {
         return filtering != null && filtering.testHit(hit);
     }
+
     @Override
     public boolean addToGoggleTooltip(List<Component> tooltip, boolean isPlayerSneaking) {
         // 先输出 KineticBlockEntity 自带的 Kinetics + Stress Impact（机械动力同款面板）

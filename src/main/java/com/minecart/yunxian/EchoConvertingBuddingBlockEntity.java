@@ -52,6 +52,10 @@ public class EchoConvertingBuddingBlockEntity extends BlockEntity implements IHa
                         .withStyle(ChatFormatting.GRAY))
                 .forGoggles(tooltip, 1);
 
+        // 追加“当前生长速度”（与其它母岩一致）
+        if (level != null)
+            BuddingGrowthHelper.appendGrowthTooltip(level, worldPosition, tooltip);
+
         return true;
     }
 }

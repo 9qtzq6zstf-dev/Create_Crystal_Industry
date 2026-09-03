@@ -7,10 +7,13 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.AmethystClusterBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.BuddingAmethystBlock;
+import net.minecraft.world.level.block.EntityBlock;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluids;
+import org.jetbrains.annotations.Nullable;
 
-public class GenericBuddingBlock extends BuddingAmethystBlock {
+public class GenericBuddingBlock extends BuddingAmethystBlock implements EntityBlock {
     private static final Direction[] DIRECTIONS = Direction.values();
 
     protected final int growthChance;
@@ -27,6 +30,15 @@ public class GenericBuddingBlock extends BuddingAmethystBlock {
         this.mediumBud = mediumBud;
         this.largeBud = largeBud;
         this.cluster = cluster;
+    }
+
+    // 纯展示用共享 BE：不 tick、不存数据，仅支撑“当前生长速度”护目镜信息。
+    // 子类（EchoConvertingBuddingBlock / FlammableIceBuddingBlock）已自行 override，
+    // 仍使用各自的专用 BE，不受此方法影响。
+    @Nullable
+    @Override
+    public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
+        return new BuddingGrowthBlockEntity(pos, state);
     }
 
     @Override

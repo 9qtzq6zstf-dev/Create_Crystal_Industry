@@ -26,7 +26,7 @@ public class AcceleratorBlockEntity extends BlockEntity implements IEnergyStorag
     private static final int INTERVAL_TICKS = 1;
 
     /** 相邻催生器之间每 tick 的最大传输量 */
-    private static final int MAX_TRANSFER_PER_TICK = 500;
+    private static final int MAX_TRANSFER_PER_TICK = 4000;
 
     /** 一次成功的催生会对 6 个方向各施加一次 randomTick（= Direction.values().length） */
     private static final float RANDOM_TICKS_PER_TICK = Direction.values().length;

@@ -48,6 +48,21 @@ public final class ModBlockEntities {
                     EchoConvertingBuddingBlockEntity::new,
                     ModBlocks.ECHO_BUDDING.get()
             ).build(null));
+    // 母岩共享的“生长速度”展示 BE（玫瑰石英/荧石走 GenericBuddingBlock，
+    // 矿石×4 走 OreConvertingBuddingBlock，石英走 QuartzConvertingBuddingBlock，
+    // 红石走 RedstoneBuddingBlock——全部继承 GenericBuddingBlock 的 newBlockEntity）
+    public static final Supplier<BlockEntityType<BuddingGrowthBlockEntity>> BUDDING_GROWTH =
+            BLOCK_ENTITIES.register("budding_growth", () -> BlockEntityType.Builder.of(
+                    BuddingGrowthBlockEntity::new,
+                    ModBlocks.ROSE_QUARTZ_BUDDING.get(),
+                    ModBlocks.RAW_IRON_BUDDING.get(),
+                    ModBlocks.RAW_GOLD_BUDDING.get(),
+                    ModBlocks.RAW_COPPER_BUDDING.get(),
+                    ModBlocks.RAW_ZINC_BUDDING.get(),
+                    ModBlocks.QUARTZ_BUDDING.get(),
+                    ModBlocks.GLOWSTONE_BUDDING.get(),
+                    ModBlocks.REDSTONE_BUDDING.get()
+            ).build(null));
 
     private ModBlockEntities() {
     }
