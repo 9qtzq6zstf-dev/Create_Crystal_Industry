@@ -50,11 +50,13 @@ public class ModRenderers {
         EchoSpyglassUseRenderer.register();
         modEventBus.addListener(ModRenderers::onRegisterItemDecorations);
         modEventBus.addListener(ModRenderers::onRegisterRenderers);
+        EchoSpyglassFrameRenderer.register();
     }
 
     private static void onRegisterAdditional(ModelEvent.RegisterAdditional event) {
         event.register(NIGHT_VISION_GOGGLES_3D);
         event.register(NIGHT_VISION_GOGGLES_3D_ON);
+        event.register(EchoSpyglassFrameRenderer.FLAT_MODEL);
     }
 
     private static void onModifyBakingResult(ModelEvent.ModifyBakingResult event) {
@@ -118,4 +120,8 @@ public class ModRenderers {
                 ModBlockEntities.MECHANICAL_CLEANER.get(),
                 MechanicalCleanerRenderer::new);
     }
+    static final ModelResourceLocation ECHO_SPYGLASS_FLAT =
+            new ModelResourceLocation(
+                    ResourceLocation.fromNamespaceAndPath(Yunxian.MODID, "item/echo_spyglass_flat"),
+                    "standalone");
 }

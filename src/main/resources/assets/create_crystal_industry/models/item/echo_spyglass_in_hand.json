@@ -33,6 +33,6 @@
 			"translation": [0, 0, -16],
 			"scale": [1.5, 1.5, 1.5]
 		},
-		"fixed": { "translation": [0, 0, -1.5], "scale": [1.5, 1.5, 1.5] }
+		"fixed": { "translation": [0, 0, -1.5], "scale": [0, 0, 0 ] }
 	}
 }
