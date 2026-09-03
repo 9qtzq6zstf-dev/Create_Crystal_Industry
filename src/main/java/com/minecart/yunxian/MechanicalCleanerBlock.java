@@ -6,6 +6,7 @@ import com.simibubi.create.foundation.block.ProperWaterloggedBlock;
 import net.createmod.catnip.math.VoxelShaper;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.world.Containers;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.MenuProvider;
@@ -16,6 +17,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
@@ -26,6 +28,7 @@ import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import net.neoforged.neoforge.items.ItemStackHandler;
 
 public class MechanicalCleanerBlock extends DirectionalKineticBlock
         implements IBE<MechanicalCleanerBlockEntity>, ProperWaterloggedBlock {
@@ -87,6 +90,27 @@ public class MechanicalCleanerBlock extends DirectionalKineticBlock
         }
         // 前方方块变化 → 重建气流（阻挡判定会变）
         withBlockEntityDo(level, pos, MechanicalCleanerBlockEntity::blockInFrontChanged);
+    }
+
+    /**
+     * 方块被破坏/替换时：把容器内 27 格库存全部掉落出来（类似原版箱子），
+     * 避免内容物随方块实体一起消失。
+     */
+    @Override
+    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
+        // 方块确实被替换成其它方块（不是自己状态变化），且不是被活塞等整体搬动
+        if (!state.is(newState.getBlock()) && !isMoving) {
+            BlockEntity be = level.getBlockEntity(pos);
+            if (!level.isClientSide && be instanceof MechanicalCleanerBlockEntity cleaner) {
+                ItemStackHandler inv = cleaner.getInventory();
+                for (int i = 0; i < inv.getSlots(); i++) {
+                    ItemStack stack = inv.getStackInSlot(i);
+                    if (!stack.isEmpty())
+                        Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), stack);
+                }
+            }
+        }
+        super.onRemove(state, level, pos, newState, isMoving);
     }
 
     @Override
