@@ -84,5 +84,9 @@
     "create_crystal_industry.goggles.work_speed_unit": " 随机刻 / 20 tick",
     "create_crystal_industry.smart_drill.mode_label": "当前模式: ",
     "create_crystal_industry.flammable_ice_budding.growable": "生长状态: 可生长",
-    "create_crystal_industry.flammable_ice_budding.only_in_water": "可燃冰母岩只能在水中生长"
+    "create_crystal_industry.flammable_ice_budding.only_in_water": "可燃冰母岩只能在水中生长",
+    "create_crystal_industry.echo_budding.warden_warning": "!当前回响母岩被挖掘会生成监守者!",
+    "create_crystal_industry.echo_budding.growth.growable": "生长状态: 可生长",
+    "create_crystal_industry.echo_budding.growth.requires_darkness": "当前回响母岩不可生长: 要求光照为0",
+    "create_crystal_industry.echo_budding.growth.no_space": "生长状态: 可生长"
 }

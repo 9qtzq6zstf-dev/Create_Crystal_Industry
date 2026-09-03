@@ -63,6 +63,9 @@
         "create_crystal_industry:flammable_ice_block",
         
         "create_crystal_industry:accelerator",
-        "create_crystal_industry:smart_drill"
+        "create_crystal_industry:smart_drill",
+        "create_crystal_industry:mechanical_accelerator",
+        "create_crystal_industry:mechanical_cleaner"
+        
     ]
 }

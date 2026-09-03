@@ -84,5 +84,9 @@
     "create_crystal_industry.goggles.work_speed_unit": " random ticks / 20 ticks",
     "create_crystal_industry.smart_drill.mode_label": "Current Mode: ",
     "create_crystal_industry.flammable_ice_budding.growable": "Can Grow",
-    "create_crystal_industry.flammable_ice_budding.only_in_water": "Budding Flammable Ice can only grow in water"
+    "create_crystal_industry.flammable_ice_budding.only_in_water": "Budding Flammable Ice can only grow in water",
+    "create_crystal_industry.echo_budding.warden_warning": "!This Budding Echo summons a Warden when mined!",
+    "create_crystal_industry.echo_budding.growth.growable": "Growth Status: Can Grow",
+    "create_crystal_industry.echo_budding.growth.requires_darkness": "This Budding Echo cannot grow: requires light level 0",
+    "create_crystal_industry.echo_budding.growth.no_space": "Growth Status: Can Grow"
 }

@@ -1,0 +1,19 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "pattern": [
+        "SSS",
+        "STS",
+        "SSS"
+    ],
+    "key": {
+        "S": {
+            "item": "minecraft:echo_shard"
+        },
+        "T": {
+            "item": "create:goggles"
+        }
+    },
+    "result": {
+        "id": "create_crystal_industry:night_vision_goggles"
+    }
+}

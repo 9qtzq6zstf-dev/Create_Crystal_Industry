@@ -15,7 +15,7 @@ import java.util.function.Consumer;
 
 public class MechanicalCleanerFilterBehaviour extends FilteringBehaviour {
 
-    private RotationDirection direction = RotationDirection.NORMAL;
+    private RotationDirection direction = RotationDirection.REVERSED;   // 默认吸气
     private Consumer<RotationDirection> directionCallback = d -> {};
 
     public MechanicalCleanerFilterBehaviour(SmartBlockEntity be, ValueBoxTransform slot) {

@@ -1,0 +1,25 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "pattern": [
+        " P ",
+        "EME",
+        " S "
+    ],
+    "key": {
+        "S": {
+            "item": "create:shaft"
+        },
+        "P": {
+            "item": "create:propeller"
+        },
+        "E": {
+            "item": "create:electron_tube"
+        },
+        "M": {
+            "item": "create:smart_chute"
+        }
+    },
+    "result": {
+        "id": "create_crystal_industry:mechanical_cleaner"
+    }
+}

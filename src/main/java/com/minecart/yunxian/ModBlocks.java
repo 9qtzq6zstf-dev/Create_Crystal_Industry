@@ -6,6 +6,7 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredBlock;
@@ -68,11 +69,11 @@ public final class ModBlocks {
             () -> BuiltInRegistries.BLOCK.get(ResourceLocation.parse("create:deepslate_zinc_ore")),
             () -> BuiltInRegistries.BLOCK.get(ResourceLocation.parse("create:raw_zinc_block")));
 
-    // Echo
-    public static final DeferredBlock<Block> ECHO_SMALL_BUD = bud("echo_small_bud", Blocks.SMALL_AMETHYST_BUD, 1, 1, "small_bud");
-    public static final DeferredBlock<Block> ECHO_MEDIUM_BUD = bud("echo_medium_bud", Blocks.MEDIUM_AMETHYST_BUD, 3, 2, "medium_bud");
-    public static final DeferredBlock<Block> ECHO_LARGE_BUD = bud("echo_large_bud", Blocks.LARGE_AMETHYST_BUD, 5, 3, "large_bud");
-    public static final DeferredBlock<Block> ECHO_CLUSTER = cluster("echo_cluster");
+    // Echo（无发光：发光会阻碍要求光照=0 的回响生长）
+    public static final DeferredBlock<Block> ECHO_SMALL_BUD = darkBud("echo_small_bud", Blocks.SMALL_AMETHYST_BUD, 1, 1, "small_bud");
+    public static final DeferredBlock<Block> ECHO_MEDIUM_BUD = darkBud("echo_medium_bud", Blocks.MEDIUM_AMETHYST_BUD, 3, 2, "medium_bud");
+    public static final DeferredBlock<Block> ECHO_LARGE_BUD = darkBud("echo_large_bud", Blocks.LARGE_AMETHYST_BUD, 5, 3, "large_bud");
+    public static final DeferredBlock<Block> ECHO_CLUSTER = darkCluster("echo_cluster");
     public static final DeferredBlock<Block> ECHO_BUDDING = registerBlock("echo_budding",
             () -> new EchoConvertingBuddingBlock(5, BlockBehaviour.Properties.ofFullCopy(Blocks.BUDDING_AMETHYST),
                     ECHO_SMALL_BUD.get(), ECHO_MEDIUM_BUD.get(), ECHO_LARGE_BUD.get(), ECHO_CLUSTER.get()));
@@ -122,19 +123,24 @@ public final class ModBlocks {
                     () -> Blocks.REDSTONE_ORE, () -> Blocks.DEEPSLATE_REDSTONE_ORE,
                     () -> Blocks.REDSTONE_BLOCK));
 
-    // Flammable ice
-    public static final DeferredBlock<Block> FLAMMABLE_ICE_SMALL_BUD = bud("flammable_ice_small_bud", Blocks.SMALL_AMETHYST_BUD, 1, 1, "small_bud");
-    public static final DeferredBlock<Block> FLAMMABLE_ICE_MEDIUM_BUD = bud("flammable_ice_medium_bud", Blocks.MEDIUM_AMETHYST_BUD, 3, 2, "medium_bud");
-    public static final DeferredBlock<Block> FLAMMABLE_ICE_LARGE_BUD = bud("flammable_ice_large_bud", Blocks.LARGE_AMETHYST_BUD, 5, 3, "large_bud");
-    public static final DeferredBlock<Block> FLAMMABLE_ICE_CLUSTER = cluster("flammable_ice_cluster");
-    // 母岩
+    // Flammable ice（全部使用冰/玻璃音效；母岩与装饰方块带蓝冰摩擦）
+    public static final DeferredBlock<Block> FLAMMABLE_ICE_SMALL_BUD = iceBud("flammable_ice_small_bud", Blocks.SMALL_AMETHYST_BUD, 1, 1, "small_bud");
+    public static final DeferredBlock<Block> FLAMMABLE_ICE_MEDIUM_BUD = iceBud("flammable_ice_medium_bud", Blocks.MEDIUM_AMETHYST_BUD, 3, 2, "medium_bud");
+    public static final DeferredBlock<Block> FLAMMABLE_ICE_LARGE_BUD = iceBud("flammable_ice_large_bud", Blocks.LARGE_AMETHYST_BUD, 5, 3, "large_bud");
+    public static final DeferredBlock<Block> FLAMMABLE_ICE_CLUSTER = iceCluster("flammable_ice_cluster");
+    // 母岩（冰音效 + 蓝冰摩擦 + 水中生长逻辑）
     public static final DeferredBlock<Block> FLAMMABLE_ICE_BUDDING = registerBlock("flammable_ice_budding",
-            () -> new FlammableIceBuddingBlock(5, BlockBehaviour.Properties.ofFullCopy(Blocks.BUDDING_AMETHYST),
+            () -> new FlammableIceBuddingBlock(5,
+                    BlockBehaviour.Properties.ofFullCopy(Blocks.BUDDING_AMETHYST)
+                            .sound(SoundType.GLASS)
+                            .friction(0.989F),
                     FLAMMABLE_ICE_SMALL_BUD.get(), FLAMMABLE_ICE_MEDIUM_BUD.get(),
                     FLAMMABLE_ICE_LARGE_BUD.get(), FLAMMABLE_ICE_CLUSTER.get()));
-    // 装饰方块（可燃冰合成）
+    // 装饰方块（冰音效 + 蓝冰摩擦）
     public static final DeferredBlock<Block> FLAMMABLE_ICE_BLOCK = registerBlock("flammable_ice_block",
-            () -> new Block(BlockBehaviour.Properties.ofFullCopy(Blocks.BLUE_ICE)));
+            () -> new Block(BlockBehaviour.Properties.ofFullCopy(Blocks.BLUE_ICE)
+                    .sound(SoundType.GLASS)
+                    .friction(0.989F)));
 
     //催生器
     public static final DeferredBlock<Block> ACCELERATOR = registerBlock("accelerator",
@@ -197,6 +203,29 @@ public final class ModBlocks {
                 "cluster"
         ));
     }
+    /** 无发光芽体：ofFullCopy 会继承原版紫水晶的 lightLevel，这里显式清零 */
+    private static DeferredBlock<Block> darkBud(String name, Block copyFrom, int stage, int height,
+                                                String stageKey) {
+        return registerBlock(name, () -> new YunxianClusterBlock(
+                stage, height,
+                BlockBehaviour.Properties.ofFullCopy(copyFrom).lightLevel(state -> 0),
+                stageKey));
+    }
+
+    /** 无发光晶簇：回响生长要求目标格亮度为 0，晶簇自身不得发光 */
+    private static DeferredBlock<Block> darkCluster(String name) {
+        return registerBlock(name, () -> new YunxianClusterBlock(
+                7,
+                3,
+                BlockBehaviour.Properties.ofFullCopy(Blocks.AMETHYST_CLUSTER)
+                        .lightLevel(state -> 0)
+                        .noOcclusion()
+                        .isRedstoneConductor((state, level, pos) -> false)
+                        .isSuffocating((state, level, pos) -> false)
+                        .isViewBlocking((state, level, pos) -> false),
+                "cluster"
+        ));
+    }
 
     private static DeferredBlock<Block> oreBudding(String name,
                                                    DeferredBlock<Block> small,
@@ -218,6 +247,30 @@ public final class ModBlocks {
         DeferredBlock<T> block = BLOCKS.register(name, blockSupplier);
         ModItems.ITEMS.register(name, () -> new BlockItem(block.get(), new Item.Properties()));
         return block;
+    }
+
+    /** 可燃冰晶芽：继承紫水晶芽属性但使用冰（玻璃）音效 */
+    private static DeferredBlock<Block> iceBud(String name, Block copyFrom, int stage, int height,
+                                               String stageKey) {
+        return registerBlock(name, () -> new YunxianClusterBlock(
+                stage, height,
+                BlockBehaviour.Properties.ofFullCopy(copyFrom).sound(SoundType.GLASS),
+                stageKey));
+    }
+
+    /** 可燃冰晶簇：继承紫水晶簇属性但使用冰（玻璃）音效 */
+    private static DeferredBlock<Block> iceCluster(String name) {
+        return registerBlock(name, () -> new YunxianClusterBlock(
+                7,
+                3,
+                BlockBehaviour.Properties.ofFullCopy(Blocks.AMETHYST_CLUSTER)
+                        .sound(SoundType.GLASS)
+                        .noOcclusion()
+                        .isRedstoneConductor((state, level, pos) -> false)
+                        .isSuffocating((state, level, pos) -> false)
+                        .isViewBlocking((state, level, pos) -> false),
+                "cluster"
+        ));
     }
 
     public static void register(IEventBus modEventBus) {

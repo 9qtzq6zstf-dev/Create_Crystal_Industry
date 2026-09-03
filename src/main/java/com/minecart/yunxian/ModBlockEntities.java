@@ -42,6 +42,12 @@ public final class ModBlockEntities {
                     FlammableIceBuddingBlockEntity::new,
                     ModBlocks.FLAMMABLE_ICE_BUDDING.get()
             ).build(null));
+    // 回响母岩：纯展示 BE，仅用于护目镜信息
+    public static final Supplier<BlockEntityType<EchoConvertingBuddingBlockEntity>> ECHO_BUDDING =
+            BLOCK_ENTITIES.register("echo_budding", () -> BlockEntityType.Builder.of(
+                    EchoConvertingBuddingBlockEntity::new,
+                    ModBlocks.ECHO_BUDDING.get()
+            ).build(null));
 
     private ModBlockEntities() {
     }

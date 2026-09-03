@@ -1,0 +1,25 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "pattern": [
+        "ABA",
+        "BCB",
+        "ASA"
+    ],
+    "key": {
+        "A": {
+            "item": "create:brass_ingot"
+        },
+        "B": {
+            "item": "create:electron_tube"
+        },
+        "C": {
+            "item": "create:railway_casing"
+        },
+        "S": {
+            "item": "create:shaft"
+        }
+    },
+    "result": {
+        "id": "create_crystal_industry:mechanical_accelerator"
+    }
+}
