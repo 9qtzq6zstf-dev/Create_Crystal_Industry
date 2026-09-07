@@ -104,6 +104,14 @@ public final class ModCreativeTabs {
                         output.accept(ModBlocks.MECHANICAL_CLEANER.get());
                         output.accept(ModItems.ECHO_SPYGLASS.get());
                         output.accept(ModItems.NIGHT_VISION_GOGGLES.get());
+
+                        if (ModBlocks.AE2_LOADED && ModBlocks.FLUIX_BUDDING != null) {
+                            output.accept(ModBlocks.FLUIX_BUDDING.get());
+                            output.accept(ModBlocks.FLUIX_SMALL_BUD.get());
+                            output.accept(ModBlocks.FLUIX_MEDIUM_BUD.get());
+                            output.accept(ModBlocks.FLUIX_LARGE_BUD.get());
+                            output.accept(ModBlocks.FLUIX_CLUSTER.get());
+                        }
                     })
                     .build());
 

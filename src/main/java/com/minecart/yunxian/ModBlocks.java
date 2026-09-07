@@ -11,6 +11,7 @@ import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredBlock;
 import net.neoforged.neoforge.registries.DeferredRegister;
+import net.neoforged.fml.ModList;
 
 import java.util.function.Supplier;
 
@@ -191,6 +192,37 @@ public final class ModBlocks {
     // 动力吸尘器
     public static final DeferredBlock<Block> MECHANICAL_CLEANER = registerBlock("mechanical_cleaner",
             () -> new MechanicalCleanerBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK).noOcclusion()));
+
+    // ===== AE2 联动：福鲁伊克斯母岩（仅当 AE2 加载时注册）=====
+    public static final boolean AE2_LOADED =
+            ModList.get() != null && ModList.get().isLoaded("ae2");
+
+    public static final DeferredBlock<Block> FLUIX_SMALL_BUD;
+    public static final DeferredBlock<Block> FLUIX_MEDIUM_BUD;
+    public static final DeferredBlock<Block> FLUIX_LARGE_BUD;
+    public static final DeferredBlock<Block> FLUIX_CLUSTER;
+    public static final DeferredBlock<FluixBuddingBlock> FLUIX_BUDDING;
+
+    static {
+        if (AE2_LOADED) {
+            FLUIX_SMALL_BUD = bud("fluix_small_bud", Blocks.SMALL_AMETHYST_BUD, 1, 1, "small_bud");
+            FLUIX_MEDIUM_BUD = bud("fluix_medium_bud", Blocks.MEDIUM_AMETHYST_BUD, 3, 2, "medium_bud");
+            FLUIX_LARGE_BUD = bud("fluix_large_bud", Blocks.LARGE_AMETHYST_BUD, 5, 3, "large_bud");
+            FLUIX_CLUSTER = cluster("fluix_cluster");
+            FLUIX_BUDDING = registerBlock("fluix_budding",
+                    () -> new FluixBuddingBlock(5,
+                            BlockBehaviour.Properties.ofFullCopy(Blocks.BUDDING_AMETHYST),
+                            FLUIX_SMALL_BUD.get(), FLUIX_MEDIUM_BUD.get(), FLUIX_LARGE_BUD.get(),
+                            FLUIX_CLUSTER.get(),
+                            () -> BuiltInRegistries.BLOCK.get(ResourceLocation.parse("ae2:fluix_block"))));
+        } else {
+            FLUIX_SMALL_BUD = null;
+            FLUIX_MEDIUM_BUD = null;
+            FLUIX_LARGE_BUD = null;
+            FLUIX_CLUSTER = null;
+            FLUIX_BUDDING = null;
+        }
+    }
 
     private ModBlocks() {
     }

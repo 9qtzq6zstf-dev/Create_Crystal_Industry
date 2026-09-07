@@ -4,6 +4,9 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredRegister;
+import net.minecraft.world.level.block.Block;
+import java.util.ArrayList;
+import java.util.List;
 
 import java.util.function.Supplier;
 
@@ -52,20 +55,26 @@ public final class ModBlockEntities {
     // 矿石×4 走 OreConvertingBuddingBlock，石英走 QuartzConvertingBuddingBlock，
     // 红石走 RedstoneBuddingBlock——全部继承 GenericBuddingBlock 的 newBlockEntity）
     public static final Supplier<BlockEntityType<BuddingGrowthBlockEntity>> BUDDING_GROWTH =
-            BLOCK_ENTITIES.register("budding_growth", () -> BlockEntityType.Builder.of(
-                    BuddingGrowthBlockEntity::new,
-                    ModBlocks.ROSE_QUARTZ_BUDDING.get(),
-                    ModBlocks.RAW_IRON_BUDDING.get(),
-                    ModBlocks.RAW_GOLD_BUDDING.get(),
-                    ModBlocks.RAW_COPPER_BUDDING.get(),
-                    ModBlocks.RAW_ZINC_BUDDING.get(),
-                    ModBlocks.QUARTZ_BUDDING.get(),
-                    ModBlocks.GLOWSTONE_BUDDING.get(),
-                    ModBlocks.REDSTONE_BUDDING.get(),
-                    ModBlocks.DIAMOND_BUDDING.get(),
-                    ModBlocks.EMERALD_BUDDING.get(),
-                    ModBlocks.LAPIS_BUDDING.get()
-            ).build(null));
+            BLOCK_ENTITIES.register("budding_growth", () -> {
+                List<Block> buddingBlocks = new ArrayList<>(List.of(
+                        ModBlocks.ROSE_QUARTZ_BUDDING.get(),
+                        ModBlocks.RAW_IRON_BUDDING.get(),
+                        ModBlocks.RAW_GOLD_BUDDING.get(),
+                        ModBlocks.RAW_COPPER_BUDDING.get(),
+                        ModBlocks.RAW_ZINC_BUDDING.get(),
+                        ModBlocks.QUARTZ_BUDDING.get(),
+                        ModBlocks.GLOWSTONE_BUDDING.get(),
+                        ModBlocks.REDSTONE_BUDDING.get(),
+                        ModBlocks.DIAMOND_BUDDING.get(),
+                        ModBlocks.EMERALD_BUDDING.get(),
+                        ModBlocks.LAPIS_BUDDING.get()
+                ));
+                if (ModBlocks.AE2_LOADED && ModBlocks.FLUIX_BUDDING != null) {
+                    buddingBlocks.add(ModBlocks.FLUIX_BUDDING.get());
+                }
+                return BlockEntityType.Builder.of(BuddingGrowthBlockEntity::new,
+                        buddingBlocks.toArray(new Block[0])).build(null);
+            });
 
     private ModBlockEntities() {
     }
