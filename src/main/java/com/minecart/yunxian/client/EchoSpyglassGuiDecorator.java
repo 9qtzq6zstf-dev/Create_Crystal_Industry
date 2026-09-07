@@ -17,9 +17,16 @@ public final class EchoSpyglassGuiDecorator implements IItemDecorator {
     @Override
     public boolean render(GuiGraphics graphics, Font font, ItemStack stack,
                           int xOffset, int yOffset) {
-        // 必须用 9 参重载并显式给 16x16:6 参重载会把贴图当 256x256,
-        // 导致只采样到左上角一小块。
+        graphics.pose().pushPose();
+        // 关键修复:把平面贴图抬到与"物品模型"相同的深度。
+        // GuiGraphics.renderItem 画模型时会在 base 之上再 translate z=150
+        // (槽位 base=100 → 250,浮动物品 base=232 → 382);
+        // 而装饰器回调时 pose 上只有 base,blit 的 blitOffset 又是 0,
+        // 浮动物品时画在 232 < 槽位模型 250,深度测试一开就被其他图标挡住。
+        // 这里补上 150,让贴图落到模型本该在的那一层。
+        graphics.pose().translate(0.0F, 0.0F, 150.0F);
         graphics.blit(FLAT_TEXTURE, xOffset, yOffset, 0, 0, 16, 16, 16, 16);
+        graphics.pose().popPose();
         return true;
     }
 }
