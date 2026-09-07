@@ -17,6 +17,12 @@
         "create_crystal_industry:redstone_small_bud",
         "create_crystal_industry:redstone_medium_bud",
         "create_crystal_industry:redstone_large_bud",
-        "create_crystal_industry:redstone_cluster"
+        "create_crystal_industry:redstone_cluster",
+        
+        "create_crystal_industry:diamond_budding",
+        "create_crystal_industry:diamond_small_bud",
+        "create_crystal_industry:diamond_medium_bud",
+        "create_crystal_industry:diamond_large_bud",
+        "create_crystal_industry:diamond_cluster"
     ]
 }

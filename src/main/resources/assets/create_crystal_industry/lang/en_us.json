@@ -90,5 +90,10 @@
     "create_crystal_industry.echo_budding.growth.requires_darkness": "This Budding Echo cannot grow: requires light level 0",
     "create_crystal_industry.echo_budding.growth.no_space": "Growth Status: No space to grow",
     "create_crystal_industry.goggles.growth_speed.natural": "Growth Speed: Natural Growth (×1)",
-    "create_crystal_industry.goggles.growth_speed.label": "Growth Speed: ×"
+    "create_crystal_industry.goggles.growth_speed.label": "Growth Speed: ×",
+    "block.create_crystal_industry.diamond_budding": "Budding Diamond",
+    "block.create_crystal_industry.diamond_small_bud": "Small Diamond Bud",
+    "block.create_crystal_industry.diamond_medium_bud": "Medium Diamond Bud",
+    "block.create_crystal_industry.diamond_large_bud": "Large Diamond Bud",
+    "block.create_crystal_industry.diamond_cluster": "Diamond Cluster"
 }

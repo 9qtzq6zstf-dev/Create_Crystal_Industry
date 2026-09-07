@@ -90,5 +90,10 @@
     "create_crystal_industry.echo_budding.growth.requires_darkness": "当前回响母岩不可生长: 要求光照为0",
     "create_crystal_industry.echo_budding.growth.no_space": "生长状态: 生长空间不足",
     "create_crystal_industry.goggles.growth_speed.natural": "生长速度: 自然生长（×1）",
-    "create_crystal_industry.goggles.growth_speed.label": "生长速度: ×"
+    "create_crystal_industry.goggles.growth_speed.label": "生长速度: ×",
+    "block.create_crystal_industry.diamond_budding": "钻石母岩",
+    "block.create_crystal_industry.diamond_small_bud": "小型钻石芽",
+    "block.create_crystal_industry.diamond_medium_bud": "中型钻石芽",
+    "block.create_crystal_industry.diamond_large_bud": "大型钻石芽",
+    "block.create_crystal_industry.diamond_cluster": "钻石晶簇"
 }

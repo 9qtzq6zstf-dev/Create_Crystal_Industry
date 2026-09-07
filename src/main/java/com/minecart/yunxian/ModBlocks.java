@@ -69,6 +69,16 @@ public final class ModBlocks {
             () -> BuiltInRegistries.BLOCK.get(ResourceLocation.parse("create:deepslate_zinc_ore")),
             () -> BuiltInRegistries.BLOCK.get(ResourceLocation.parse("create:raw_zinc_block")));
 
+    // Diamond（镜像 Raw iron）
+    public static final DeferredBlock<Block> DIAMOND_SMALL_BUD = bud("diamond_small_bud", Blocks.SMALL_AMETHYST_BUD, 1, 1, "small_bud");
+    public static final DeferredBlock<Block> DIAMOND_MEDIUM_BUD = bud("diamond_medium_bud", Blocks.MEDIUM_AMETHYST_BUD, 3, 2, "medium_bud");
+    public static final DeferredBlock<Block> DIAMOND_LARGE_BUD = bud("diamond_large_bud", Blocks.LARGE_AMETHYST_BUD, 5, 3, "large_bud");
+    public static final DeferredBlock<Block> DIAMOND_CLUSTER = cluster("diamond_cluster");
+    public static final DeferredBlock<Block> DIAMOND_BUDDING = oreBudding(
+            "diamond_budding", DIAMOND_SMALL_BUD, DIAMOND_MEDIUM_BUD, DIAMOND_LARGE_BUD,
+            DIAMOND_CLUSTER,
+            () -> Blocks.DIAMOND_ORE, () -> Blocks.DEEPSLATE_DIAMOND_ORE, () -> Blocks.DIAMOND_BLOCK);
+
     // Echo（无发光：发光会阻碍要求光照=0 的回响生长）
     public static final DeferredBlock<Block> ECHO_SMALL_BUD = darkBud("echo_small_bud", Blocks.SMALL_AMETHYST_BUD, 1, 1, "small_bud");
     public static final DeferredBlock<Block> ECHO_MEDIUM_BUD = darkBud("echo_medium_bud", Blocks.MEDIUM_AMETHYST_BUD, 3, 2, "medium_bud");

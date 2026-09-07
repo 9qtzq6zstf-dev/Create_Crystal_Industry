@@ -25,6 +25,7 @@ public final class ModConfig {
         public static final ModConfigSpec.BooleanValue GENERATE_ECHO = budding("echo", true);
         public static final ModConfigSpec.BooleanValue GENERATE_GLOWSTONE = budding("glowstone", true);
         public static final ModConfigSpec.BooleanValue GENERATE_QUARTZ = budding("quartz", true);
+        public static final ModConfigSpec.BooleanValue GENERATE_DIAMOND = budding("diamond", true);
 
         // ★ 新增：可燃冰母岩结构生成开关 ★
         public static final ModConfigSpec.BooleanValue GENERATE_FLAMMABLE_ICE = budding("flammable_ice", true);
@@ -106,6 +107,7 @@ public final class ModConfig {
                 case "raw_gold" -> GENERATE_RAW_GOLD.get();
                 case "raw_copper" -> GENERATE_RAW_COPPER.get();
                 case "raw_zinc" -> GENERATE_RAW_ZINC.get();
+                case "diamond" -> GENERATE_DIAMOND.get();
                 case "redstone" -> GENERATE_REDSTONE.get();
                 case "echo" -> GENERATE_ECHO.get();
                 case "glowstone" -> GENERATE_GLOWSTONE.get();
