@@ -89,6 +89,16 @@ public final class ModBlocks {
             EMERALD_CLUSTER,
             () -> Blocks.EMERALD_ORE, () -> Blocks.DEEPSLATE_EMERALD_ORE, () -> Blocks.EMERALD_BLOCK);
 
+    // Lapis Lazuli（镜像 Diamond / Emerald）
+    public static final DeferredBlock<Block> LAPIS_SMALL_BUD = bud("lapis_small_bud", Blocks.SMALL_AMETHYST_BUD, 1, 1, "small_bud");
+    public static final DeferredBlock<Block> LAPIS_MEDIUM_BUD = bud("lapis_medium_bud", Blocks.MEDIUM_AMETHYST_BUD, 3, 2, "medium_bud");
+    public static final DeferredBlock<Block> LAPIS_LARGE_BUD = bud("lapis_large_bud", Blocks.LARGE_AMETHYST_BUD, 5, 3, "large_bud");
+    public static final DeferredBlock<Block> LAPIS_CLUSTER = cluster("lapis_cluster");
+    public static final DeferredBlock<Block> LAPIS_BUDDING = oreBudding(
+            "lapis_budding", LAPIS_SMALL_BUD, LAPIS_MEDIUM_BUD, LAPIS_LARGE_BUD,
+            LAPIS_CLUSTER,
+            () -> Blocks.LAPIS_ORE, () -> Blocks.DEEPSLATE_LAPIS_ORE, () -> Blocks.LAPIS_BLOCK);
+
     // Echo（无发光：发光会阻碍要求光照=0 的回响生长）
     public static final DeferredBlock<Block> ECHO_SMALL_BUD = darkBud("echo_small_bud", Blocks.SMALL_AMETHYST_BUD, 1, 1, "small_bud");
     public static final DeferredBlock<Block> ECHO_MEDIUM_BUD = darkBud("echo_medium_bud", Blocks.MEDIUM_AMETHYST_BUD, 3, 2, "medium_bud");

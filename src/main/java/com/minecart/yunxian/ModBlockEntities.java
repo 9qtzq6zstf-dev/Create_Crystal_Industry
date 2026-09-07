@@ -63,7 +63,8 @@ public final class ModBlockEntities {
                     ModBlocks.GLOWSTONE_BUDDING.get(),
                     ModBlocks.REDSTONE_BUDDING.get(),
                     ModBlocks.DIAMOND_BUDDING.get(),
-                    ModBlocks.EMERALD_BUDDING.get()
+                    ModBlocks.EMERALD_BUDDING.get(),
+                    ModBlocks.LAPIS_BUDDING.get()
             ).build(null));
 
     private ModBlockEntities() {

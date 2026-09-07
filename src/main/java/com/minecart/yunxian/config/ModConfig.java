@@ -23,6 +23,7 @@ public final class ModConfig {
         public static final ModConfigSpec.BooleanValue GENERATE_RAW_ZINC = budding("raw_zinc", true);
         public static final ModConfigSpec.BooleanValue GENERATE_DIAMOND = budding("diamond", true);
         public static final ModConfigSpec.BooleanValue GENERATE_EMERALD = budding("emerald", true);
+        public static final ModConfigSpec.BooleanValue GENERATE_LAPIS = budding("lapis", true);
         public static final ModConfigSpec.BooleanValue GENERATE_REDSTONE = budding("redstone", true);
         public static final ModConfigSpec.BooleanValue GENERATE_ECHO = budding("echo", true);
         public static final ModConfigSpec.BooleanValue GENERATE_GLOWSTONE = budding("glowstone", true);
@@ -110,6 +111,7 @@ public final class ModConfig {
                 case "raw_zinc" -> GENERATE_RAW_ZINC.get();
                 case "diamond" -> GENERATE_DIAMOND.get();
                 case "emerald" -> GENERATE_EMERALD.get();
+                case "lapis" -> GENERATE_LAPIS.get();
                 case "redstone" -> GENERATE_REDSTONE.get();
                 case "echo" -> GENERATE_ECHO.get();
                 case "glowstone" -> GENERATE_GLOWSTONE.get();

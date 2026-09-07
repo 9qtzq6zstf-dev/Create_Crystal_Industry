@@ -54,6 +54,12 @@ public final class ModCreativeTabs {
                         output.accept(ModBlocks.DIAMOND_LARGE_BUD.get());
                         output.accept(ModBlocks.DIAMOND_CLUSTER.get());
 
+                        output.accept(ModBlocks.LAPIS_BUDDING.get());
+                        output.accept(ModBlocks.LAPIS_SMALL_BUD.get());
+                        output.accept(ModBlocks.LAPIS_MEDIUM_BUD.get());
+                        output.accept(ModBlocks.LAPIS_LARGE_BUD.get());
+                        output.accept(ModBlocks.LAPIS_CLUSTER.get());
+
                         output.accept(ModBlocks.EMERALD_BUDDING.get());
                         output.accept(ModBlocks.EMERALD_SMALL_BUD.get());
                         output.accept(ModBlocks.EMERALD_MEDIUM_BUD.get());

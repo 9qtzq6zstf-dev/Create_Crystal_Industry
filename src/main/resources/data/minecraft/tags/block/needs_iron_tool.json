@@ -29,6 +29,12 @@
         "create_crystal_industry:emerald_small_bud",
         "create_crystal_industry:emerald_medium_bud",
         "create_crystal_industry:emerald_large_bud",
-        "create_crystal_industry:emerald_cluster"
+        "create_crystal_industry:emerald_cluster",
+        
+        "create_crystal_industry:lapis_budding",
+        "create_crystal_industry:lapis_small_bud",
+        "create_crystal_industry:lapis_medium_bud",
+        "create_crystal_industry:lapis_large_bud",
+        "create_crystal_industry:lapis_cluster"
     ]
 }
