@@ -95,5 +95,10 @@
     "block.create_crystal_industry.diamond_small_bud": "Small Diamond Bud",
     "block.create_crystal_industry.diamond_medium_bud": "Medium Diamond Bud",
     "block.create_crystal_industry.diamond_large_bud": "Large Diamond Bud",
-    "block.create_crystal_industry.diamond_cluster": "Diamond Cluster"
+    "block.create_crystal_industry.diamond_cluster": "Diamond Cluster",
+    "block.create_crystal_industry.emerald_budding": "Budding Emerald",
+    "block.create_crystal_industry.emerald_small_bud": "Small Emerald Bud",
+    "block.create_crystal_industry.emerald_medium_bud": "Medium Emerald Bud",
+    "block.create_crystal_industry.emerald_large_bud": "Large Emerald Bud",
+    "block.create_crystal_industry.emerald_cluster": "Emerald Cluster"
 }

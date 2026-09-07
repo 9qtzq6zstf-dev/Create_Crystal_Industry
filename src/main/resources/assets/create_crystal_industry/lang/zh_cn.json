@@ -95,5 +95,10 @@
     "block.create_crystal_industry.diamond_small_bud": "小型钻石芽",
     "block.create_crystal_industry.diamond_medium_bud": "中型钻石芽",
     "block.create_crystal_industry.diamond_large_bud": "大型钻石芽",
-    "block.create_crystal_industry.diamond_cluster": "钻石晶簇"
+    "block.create_crystal_industry.diamond_cluster": "钻石晶簇",
+    "block.create_crystal_industry.emerald_budding": "绿宝石母岩",
+    "block.create_crystal_industry.emerald_small_bud": "小型绿宝石芽",
+    "block.create_crystal_industry.emerald_medium_bud": "中型绿宝石芽",
+    "block.create_crystal_industry.emerald_large_bud": "大型绿宝石芽",
+    "block.create_crystal_industry.emerald_cluster": "绿宝石晶簇"
 }

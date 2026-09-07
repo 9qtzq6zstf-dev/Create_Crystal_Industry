@@ -23,6 +23,12 @@
         "create_crystal_industry:diamond_small_bud",
         "create_crystal_industry:diamond_medium_bud",
         "create_crystal_industry:diamond_large_bud",
-        "create_crystal_industry:diamond_cluster"
+        "create_crystal_industry:diamond_cluster",
+        
+        "create_crystal_industry:emerald_budding",
+        "create_crystal_industry:emerald_small_bud",
+        "create_crystal_industry:emerald_medium_bud",
+        "create_crystal_industry:emerald_large_bud",
+        "create_crystal_industry:emerald_cluster"
     ]
 }

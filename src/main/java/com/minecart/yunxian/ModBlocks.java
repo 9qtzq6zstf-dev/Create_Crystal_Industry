@@ -69,7 +69,7 @@ public final class ModBlocks {
             () -> BuiltInRegistries.BLOCK.get(ResourceLocation.parse("create:deepslate_zinc_ore")),
             () -> BuiltInRegistries.BLOCK.get(ResourceLocation.parse("create:raw_zinc_block")));
 
-    // Diamond（镜像 Raw iron）
+    // Diamond
     public static final DeferredBlock<Block> DIAMOND_SMALL_BUD = bud("diamond_small_bud", Blocks.SMALL_AMETHYST_BUD, 1, 1, "small_bud");
     public static final DeferredBlock<Block> DIAMOND_MEDIUM_BUD = bud("diamond_medium_bud", Blocks.MEDIUM_AMETHYST_BUD, 3, 2, "medium_bud");
     public static final DeferredBlock<Block> DIAMOND_LARGE_BUD = bud("diamond_large_bud", Blocks.LARGE_AMETHYST_BUD, 5, 3, "large_bud");
@@ -78,6 +78,16 @@ public final class ModBlocks {
             "diamond_budding", DIAMOND_SMALL_BUD, DIAMOND_MEDIUM_BUD, DIAMOND_LARGE_BUD,
             DIAMOND_CLUSTER,
             () -> Blocks.DIAMOND_ORE, () -> Blocks.DEEPSLATE_DIAMOND_ORE, () -> Blocks.DIAMOND_BLOCK);
+
+    // Emerald
+    public static final DeferredBlock<Block> EMERALD_SMALL_BUD = bud("emerald_small_bud", Blocks.SMALL_AMETHYST_BUD, 1, 1, "small_bud");
+    public static final DeferredBlock<Block> EMERALD_MEDIUM_BUD = bud("emerald_medium_bud", Blocks.MEDIUM_AMETHYST_BUD, 3, 2, "medium_bud");
+    public static final DeferredBlock<Block> EMERALD_LARGE_BUD = bud("emerald_large_bud", Blocks.LARGE_AMETHYST_BUD, 5, 3, "large_bud");
+    public static final DeferredBlock<Block> EMERALD_CLUSTER = cluster("emerald_cluster");
+    public static final DeferredBlock<Block> EMERALD_BUDDING = oreBudding(
+            "emerald_budding", EMERALD_SMALL_BUD, EMERALD_MEDIUM_BUD, EMERALD_LARGE_BUD,
+            EMERALD_CLUSTER,
+            () -> Blocks.EMERALD_ORE, () -> Blocks.DEEPSLATE_EMERALD_ORE, () -> Blocks.EMERALD_BLOCK);
 
     // Echo（无发光：发光会阻碍要求光照=0 的回响生长）
     public static final DeferredBlock<Block> ECHO_SMALL_BUD = darkBud("echo_small_bud", Blocks.SMALL_AMETHYST_BUD, 1, 1, "small_bud");
