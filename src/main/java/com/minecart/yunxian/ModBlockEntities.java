@@ -1,8 +1,10 @@
 package com.minecart.yunxian;
 
+import appeng.api.AECapabilities;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.minecraft.world.level.block.Block;
 import java.util.ArrayList;
@@ -69,12 +71,30 @@ public final class ModBlockEntities {
                         ModBlocks.EMERALD_BUDDING.get(),
                         ModBlocks.LAPIS_BUDDING.get()
                 ));
-                if (ModBlocks.AE2_LOADED && ModBlocks.FLUIX_BUDDING != null) {
-                    buddingBlocks.add(ModBlocks.FLUIX_BUDDING.get());
-                }
                 return BlockEntityType.Builder.of(BuddingGrowthBlockEntity::new,
                         buddingBlocks.toArray(new Block[0])).build(null);
             });
+
+    public static final Supplier<BlockEntityType<FluixBuddingBlockEntity>> FLUIX_BUDDING;
+
+    static {
+        if (ModBlocks.AE2_LOADED && ModBlocks.FLUIX_BUDDING != null) {
+            FLUIX_BUDDING = BLOCK_ENTITIES.register("fluix_budding", () -> BlockEntityType.Builder.of(
+                    (pos, state) -> FluixBuddingBlockEntity.create(pos, state),
+                    ModBlocks.FLUIX_BUDDING.get()
+            ).build(null));
+        } else {
+            FLUIX_BUDDING = null;
+        }
+    }
+    public static void registerCapabilities(RegisterCapabilitiesEvent event) {
+        if (FLUIX_BUDDING != null) {
+            event.registerBlockEntity(
+                    AECapabilities.IN_WORLD_GRID_NODE_HOST,
+                    FLUIX_BUDDING.get(),
+                    (blockEntity, context) -> blockEntity);
+        }
+    }
 
     private ModBlockEntities() {
     }

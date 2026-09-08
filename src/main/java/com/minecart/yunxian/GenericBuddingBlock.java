@@ -50,8 +50,6 @@ public class GenericBuddingBlock extends BuddingAmethystBlock implements EntityB
         Direction side = DIRECTIONS[random.nextInt(DIRECTIONS.length)];
         BlockPos neighborPos = pos.relative(side);
 
-        // ★ 新增：光照钩子。判断的是“晶簇将要生长的相邻格”，不是母岩自身
-        //   （母岩是不透明方块，自身位置光照恒为 0，不能作为依据）。
         if (!canGrowAtLight(level, neighborPos)) {
             return;
         }
@@ -70,6 +68,11 @@ public class GenericBuddingBlock extends BuddingAmethystBlock implements EntityB
         }
 
         if (nextBlock != null) {
+            // ★ 生长能量钩子：真正放置下一阶段前询问子类。
+            // 返回 false 表示本次放弃生长（福鲁伊克斯母岩在此扣除 AE）。
+            if (!payGrowthEnergy(level, pos, neighborPos)) {
+                return;
+            }
             BlockState newState = nextBlock.defaultBlockState()
                     .setValue(AmethystClusterBlock.FACING, side)
                     .setValue(AmethystClusterBlock.WATERLOGGED,
@@ -82,6 +85,16 @@ public class GenericBuddingBlock extends BuddingAmethystBlock implements EntityB
      * ★ 新增：子类可覆写以限制晶簇生长所需的光照。默认无限制（保持所有母岩原行为）。
      */
     protected boolean canGrowAtLight(ServerLevel level, BlockPos neighborPos) {
+        return true;
+    }
+
+    /**
+     * ★ 生长能量钩子：随机判定通过、即将放置下一阶段前调用。
+     * 默认放行；需要能量才生长的子类（福鲁伊克斯母岩）覆写此方法，
+     * 扣费成功返回 true，无网络/无频道/电量不足返回 false 放弃本次生长。
+     * 其它母岩不受影响（默认 true）。
+     */
+    protected boolean payGrowthEnergy(ServerLevel level, BlockPos pos, BlockPos neighborPos) {
         return true;
     }
 

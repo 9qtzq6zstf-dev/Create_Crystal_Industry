@@ -110,5 +110,8 @@
     "block.create_crystal_industry.fluix_small_bud": "小型福鲁伊克斯芽",
     "block.create_crystal_industry.fluix_medium_bud": "中型福鲁伊克斯芽",
     "block.create_crystal_industry.fluix_large_bud": "大型福鲁伊克斯芽",
-    "block.create_crystal_industry.fluix_cluster": "福鲁伊克斯晶簇"
+    "block.create_crystal_industry.fluix_cluster": "福鲁伊克斯晶簇",
+    "create_crystal_industry.fluix_budding.powered": "ME网络：已供电且激活",
+    "create_crystal_industry.fluix_budding.unpowered": "ME网络：未供电或无频道",
+    "create_crystal_industry.fluix_budding.cost": "每次生长消耗 %s AE"
 }

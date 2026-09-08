@@ -31,6 +31,7 @@ public class Yunxian {
         ModRenderers.register(modEventBus);
         ModFeatures.register(modEventBus);
         ModArmInteractionPointTypes.register(modEventBus);
+        modEventBus.addListener(ModBlockEntities::registerCapabilities);
     }
 
     private static void commonSetup(FMLCommonSetupEvent event) {
