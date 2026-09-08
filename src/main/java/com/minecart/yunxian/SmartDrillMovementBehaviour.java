@@ -7,12 +7,15 @@ import com.simibubi.create.foundation.utility.BlockHelper;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.TagKey;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.BuddingAmethystBlock;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,6 +32,13 @@ public class SmartDrillMovementBehaviour extends DrillMovementBehaviour {
 
     /** canBreak 没有 context 参数，用字段在调用期间中转（服务端单线程） */
     private MovementContext activeContext;
+
+    /** c:budding_blocks 方块标签（data/c/tags/block/...，如存在） */
+    private static final TagKey<Block> BUDDING_BLOCKS_BLOCK_TAG =
+            TagKey.create(Registries.BLOCK, ResourceLocation.parse("c:budding_blocks"));
+    /** c:budding_blocks 物品标签（data/c/tags/item/...，当前实际生效的那份） */
+    private static final TagKey<Item> BUDDING_BLOCKS_ITEM_TAG =
+            TagKey.create(Registries.ITEM, ResourceLocation.parse("c:budding_blocks"));
 
     public SmartDrillMovementBehaviour() {
         LOGGER.error("[SmartDrillMovement] registered");   // ← 环节1的探针
@@ -75,6 +85,18 @@ public class SmartDrillMovementBehaviour extends DrillMovementBehaviour {
         return allowed;
     }
 
+    /**
+     * 命中 c:budding_blocks（物品标签或方块标签任一）→ 精准模式直接掉落方块自身。
+     * 注意：钻头破坏的是方块状态，若只存在物品标签，必须通过方块对应的物品去匹配。
+     */
+    private static boolean isBuddingBlock(BlockState state) {
+        if (state.is(BUDDING_BLOCKS_BLOCK_TAG)) {
+            return true;
+        }
+        Item item = state.getBlock().asItem();
+        return item != Items.AIR && new ItemStack(item).is(BUDDING_BLOCKS_ITEM_TAG);
+    }
+
     @Override
     protected void destroyBlock(MovementContext context, BlockPos breakingPos) {
         if (getMode(context) != SmartDrillBlockEntity.DrillMode.PRECISE) {
@@ -84,8 +106,8 @@ public class SmartDrillMovementBehaviour extends DrillMovementBehaviour {
 
         BlockState state = context.world.getBlockState(breakingPos);
 
-        // 母岩不遵循原版掉落表：精准模式下直接掉落母岩方块本身
-        if (state.getBlock() instanceof BuddingAmethystBlock) {
+        // 命中 c:budding_blocks 的方块不遵循原版掉落表：精准模式下直接掉落方块自身
+        if (isBuddingBlock(state)) {
             BlockHelper.destroyBlock(context.world, breakingPos, 1f, stack -> {
                 if (!stack.isEmpty())
                     collectOrDropItem(context, stack);

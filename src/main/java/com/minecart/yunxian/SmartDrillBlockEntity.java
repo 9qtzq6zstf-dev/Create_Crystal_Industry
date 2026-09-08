@@ -14,12 +14,15 @@ import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.Enchantments;
-import net.minecraft.world.level.block.BuddingAmethystBlock;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
@@ -33,6 +36,13 @@ public class SmartDrillBlockEntity extends DrillBlockEntity {
      * 客户端世界状态可能因"无更新的方块变化"而滞后，停转必须信任服务器。
      */
     private boolean syncedBlocked;
+
+    /** c:budding_blocks 方块标签（data/c/tags/block/...，如存在） */
+    private static final TagKey<Block> BUDDING_BLOCKS_BLOCK_TAG =
+            TagKey.create(Registries.BLOCK, ResourceLocation.parse("c:budding_blocks"));
+    /** c:budding_blocks 物品标签（data/c/tags/item/...，当前实际生效的那份） */
+    private static final TagKey<Item> BUDDING_BLOCKS_ITEM_TAG =
+            TagKey.create(Registries.ITEM, ResourceLocation.parse("c:budding_blocks"));
 
     public SmartDrillBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.SMART_DRILL.get(), pos, state);
@@ -66,6 +76,18 @@ public class SmartDrillBlockEntity extends DrillBlockEntity {
                 || filtering.test(BlockHelper.getRequiredItem(stateToBreak));
     }
 
+    /**
+     * 命中 c:budding_blocks（物品标签或方块标签任一）→ 精准模式直接掉落方块自身。
+     * 注意：钻头破坏的是方块状态，若只存在物品标签，必须通过方块对应的物品去匹配。
+     */
+    private static boolean isBuddingBlock(BlockState state) {
+        if (state.is(BUDDING_BLOCKS_BLOCK_TAG)) {
+            return true;
+        }
+        Item item = state.getBlock().asItem();
+        return item != Items.AIR && new ItemStack(item).is(BUDDING_BLOCKS_ITEM_TAG);
+    }
+
     @Override
     public void onBlockBroken(BlockState stateToBreak) {
         if (filtering == null || filtering.getMode() == DrillMode.NORMAL) {
@@ -78,10 +100,10 @@ public class SmartDrillBlockEntity extends DrillBlockEntity {
 
         BlockPos target = breakingPos != null ? breakingPos : getBreakingPos();
 
-        // 母岩不遵循原版掉落表（原版精准采集也挖不掉）：精准模式下先真正破坏方块，再手动掉落母岩
-        if (stateToBreak.getBlock() instanceof BuddingAmethystBlock) {
+        // 命中 c:budding_blocks 的方块不遵循原版掉落表：精准模式下先真正破坏方块，再手动掉落方块自身
+        if (isBuddingBlock(stateToBreak)) {
             level.destroyBlock(target, false);                            // 真正移除方块（不产生掉落）
-            dropItem(target, new ItemStack(stateToBreak.getBlock()));     // 补发母岩掉落物
+            dropItem(target, new ItemStack(stateToBreak.getBlock()));     // 补发方块自身掉落物
             return;
         }
 

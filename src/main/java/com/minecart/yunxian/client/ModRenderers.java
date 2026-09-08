@@ -6,6 +6,7 @@ import com.minecart.yunxian.Yunxian;
 import com.minecart.yunxian.client.model.NightVisionGogglesModel;
 
 import com.minecart.yunxian.integration.curios.CuriosClientIntegration;
+import dev.engine_room.flywheel.lib.model.baked.PartialModel;
 import dev.engine_room.flywheel.lib.visualization.SimpleBlockEntityVisualizer;
 
 import net.minecraft.client.renderer.entity.player.PlayerRenderer;
@@ -54,9 +55,25 @@ public class ModRenderers {
     }
 
     private static void onRegisterAdditional(ModelEvent.RegisterAdditional event) {
+        // 关键修复：强制渲染器类在此刻加载（触发 PartialModel.of），并把其模型位置
+        // 登记进本次烘焙，保证冷启动首次烘焙就包含这些 partial（替代手动 F3+T）。
+        registerPartial(event, SmartDrillRenderer.HEAD);
+        registerPartial(event, SmartDrillRenderer.SHAFT);
+        registerPartial(event, SmartDrillRenderer.HEAD_FULL);
+        registerPartial(event, MechanicalAcceleratorRenderer.SHAFT);
+        registerPartial(event, MechanicalCleanerRenderer.SHAFT);
+        registerPartial(event, MechanicalCleanerRenderer.PROPELLER);
+
         event.register(NIGHT_VISION_GOGGLES_3D);
         event.register(NIGHT_VISION_GOGGLES_3D_ON);
         event.register(EchoSpyglassFrameRenderer.FLAT_MODEL);
+    }
+
+    private static void registerPartial(ModelEvent.RegisterAdditional event, PartialModel partial) {
+        if (partial != null) {
+            // NeoForge 强制要求 sideload 模型的变体必须是 "standalone"
+            event.register(new ModelResourceLocation(partial.modelLocation(), "standalone"));
+        }
     }
 
     private static void onModifyBakingResult(ModelEvent.ModifyBakingResult event) {
