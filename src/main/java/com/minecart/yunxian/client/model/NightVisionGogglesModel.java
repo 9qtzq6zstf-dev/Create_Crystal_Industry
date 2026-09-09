@@ -1,6 +1,6 @@
 package com.minecart.yunxian.client.model;
 
-import com.minecart.yunxian.EchoAttachments;
+import com.minecart.yunxian.attachment.EchoAttachments;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.world.entity.LivingEntity;

@@ -1,6 +1,6 @@
 package com.minecart.yunxian.item;
 
-import com.minecart.yunxian.ModTags;
+import com.minecart.yunxian.registry.ModTags;
 import com.minecart.yunxian.config.ModConfig;
 import com.simibubi.create.content.logistics.filter.FilterItemStack;
 import net.minecraft.core.BlockPos;

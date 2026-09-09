@@ -1,7 +1,7 @@
 package com.minecart.yunxian.mixin;
 
-import com.minecart.yunxian.MechanicalCleanerBlock;
-import com.minecart.yunxian.MechanicalCleanerBlockEntity;
+import com.minecart.yunxian.block.MechanicalCleanerBlock;
+import com.minecart.yunxian.blockentity.MechanicalCleanerBlockEntity;
 import com.simibubi.create.content.logistics.chute.ChuteBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;

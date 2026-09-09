@@ -1,6 +1,6 @@
 package com.minecart.yunxian.mixin;
 
-import com.minecart.yunxian.MechanicalCleanerBlockEntity;
+import com.minecart.yunxian.blockentity.MechanicalCleanerBlockEntity;
 import com.simibubi.create.content.kinetics.fan.AirCurrent;
 import com.simibubi.create.content.kinetics.fan.processing.AllFanProcessingTypes;
 import com.simibubi.create.content.kinetics.fan.processing.FanProcessingType;

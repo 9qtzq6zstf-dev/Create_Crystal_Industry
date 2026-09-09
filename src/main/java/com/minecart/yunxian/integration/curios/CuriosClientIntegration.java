@@ -1,6 +1,6 @@
 package com.minecart.yunxian.integration.curios;
 
-import com.minecart.yunxian.ModItems;
+import com.minecart.yunxian.registry.ModItems;
 import com.minecart.yunxian.client.GogglesCurioRenderer;
 import top.theillusivec4.curios.api.client.CuriosRendererRegistry;
 

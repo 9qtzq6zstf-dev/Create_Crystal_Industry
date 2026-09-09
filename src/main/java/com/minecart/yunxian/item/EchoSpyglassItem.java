@@ -1,6 +1,6 @@
 package com.minecart.yunxian.item;
 
-import com.minecart.yunxian.EchoAttachments;
+import com.minecart.yunxian.attachment.EchoAttachments;
 import com.minecart.yunxian.config.ModConfig;
 import com.minecart.yunxian.menu.EchoSpyglassFilterMenu;
 import com.minecart.yunxian.network.EchoRevealPayload;

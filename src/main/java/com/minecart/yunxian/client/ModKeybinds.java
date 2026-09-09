@@ -10,7 +10,7 @@ import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.client.settings.KeyConflictContext;
 import org.lwjgl.glfw.GLFW;
 
-@EventBusSubscriber(modid = Yunxian.MODID, bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
+@EventBusSubscriber(modid = Yunxian.MODID, value = Dist.CLIENT)
 public final class ModKeybinds {
     public static final KeyMapping TOGGLE_NIGHT_VISION = new KeyMapping(
             "key." + Yunxian.MODID + ".toggle_night_vision",

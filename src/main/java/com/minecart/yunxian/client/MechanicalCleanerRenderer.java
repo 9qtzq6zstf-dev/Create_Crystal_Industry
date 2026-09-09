@@ -1,7 +1,7 @@
 package com.minecart.yunxian.client;
 
-import com.minecart.yunxian.MechanicalCleanerBlockEntity;
-import com.minecart.yunxian.MechanicalCleanerBlockEntity.SuckPhantom;
+import com.minecart.yunxian.blockentity.MechanicalCleanerBlockEntity;
+import com.minecart.yunxian.blockentity.MechanicalCleanerBlockEntity.SuckPhantom;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntityRenderer;
 import com.simibubi.create.foundation.blockEntity.behaviour.filtering.FilteringRenderer;
 import com.mojang.blaze3d.vertex.PoseStack;

@@ -1,7 +1,7 @@
 package com.minecart.yunxian.worldgen;
 
 import com.mojang.serialization.Codec;
-import com.minecart.yunxian.ModBlocks;
+import com.minecart.yunxian.registry.ModBlocks;
 import com.minecart.yunxian.config.ModConfig;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;

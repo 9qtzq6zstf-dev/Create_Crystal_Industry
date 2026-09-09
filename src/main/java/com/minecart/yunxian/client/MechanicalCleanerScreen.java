@@ -1,10 +1,10 @@
 package com.minecart.yunxian.client;
 
 import com.google.common.collect.ImmutableList;
-import com.minecart.yunxian.MechanicalCleanerBlockEntity;
-import com.minecart.yunxian.MechanicalCleanerFilterBehaviour.RotationDirection;
-import com.minecart.yunxian.MechanicalCleanerMenu;
-import com.minecart.yunxian.ModBlocks;
+import com.minecart.yunxian.blockentity.MechanicalCleanerBlockEntity;
+import com.minecart.yunxian.behaviour.MechanicalCleanerFilterBehaviour.RotationDirection;
+import com.minecart.yunxian.menu.MechanicalCleanerMenu;
+import com.minecart.yunxian.registry.ModBlocks;
 import com.minecart.yunxian.Yunxian;
 import com.simibubi.create.foundation.gui.AllIcons;
 import com.simibubi.create.foundation.gui.menu.AbstractSimiContainerScreen;

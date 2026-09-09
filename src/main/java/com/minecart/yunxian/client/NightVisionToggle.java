@@ -1,15 +1,13 @@
 package com.minecart.yunxian.client;
 
-import com.minecart.yunxian.EchoAttachments;
-import com.minecart.yunxian.NightVisionWearHelper;
+import com.minecart.yunxian.attachment.EchoAttachments;
+import com.minecart.yunxian.util.NightVisionWearHelper;
 import com.minecart.yunxian.Yunxian;
-import com.minecart.yunxian.item.NightVisionGogglesItem;
 import com.minecart.yunxian.network.NightVisionTogglePayload;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
-import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;

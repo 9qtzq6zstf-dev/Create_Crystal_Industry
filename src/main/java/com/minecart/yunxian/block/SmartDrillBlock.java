@@ -1,0 +1,223 @@
+package com.minecart.yunxian.block;
+
+import com.minecart.yunxian.blockentity.SmartDrillBlockEntity;
+import com.minecart.yunxian.registry.ModBlockEntities;
+import com.minecart.yunxian.registry.ModBlocks;
+import com.simibubi.create.AllShapes;
+import com.simibubi.create.content.kinetics.base.DirectionalKineticBlock;
+import com.simibubi.create.foundation.block.IBE;
+import com.simibubi.create.foundation.damageTypes.CreateDamageSources;
+import net.createmod.catnip.placement.IPlacementHelper;
+import net.createmod.catnip.placement.PlacementHelpers;
+import net.createmod.catnip.placement.PlacementOffset;
+import net.minecraft.MethodsReturnNonnullByDefault;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.core.Direction.Axis;
+import net.minecraft.util.Mth;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.SimpleWaterloggedBlock;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.world.level.material.FluidState;
+import net.minecraft.world.level.material.Fluids;
+import net.minecraft.world.level.material.PushReaction;
+import net.minecraft.world.level.pathfinder.PathComputationType;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.VoxelShape;
+
+import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.List;
+import java.util.function.Predicate;
+
+@ParametersAreNonnullByDefault
+@MethodsReturnNonnullByDefault
+public class SmartDrillBlock extends DirectionalKineticBlock
+        implements IBE<SmartDrillBlockEntity>, SimpleWaterloggedBlock {
+    private static final int PLACEMENT_HELPER_ID = PlacementHelpers.register(new PlacementHelper());
+
+    /** 红石锁：true = 收到红石信号，停转停挖 */
+    public static final BooleanProperty POWERED = BooleanProperty.create("powered");
+
+    public SmartDrillBlock(Properties properties) {
+        super(properties);
+        registerDefaultState(super.defaultBlockState()
+                .setValue(BlockStateProperties.WATERLOGGED, false)
+                .setValue(POWERED, false));
+    }
+
+    @Override
+    public void entityInside(BlockState state, Level level, BlockPos pos, Entity entity) {
+        if (entity instanceof ItemEntity || !new AABB(pos).deflate(.1f).intersects(entity.getBoundingBox())) {
+            return;
+        }
+        withBlockEntityDo(level, pos, blockEntity -> {
+            if (blockEntity.getSpeed() != 0) {
+                entity.hurt(CreateDamageSources.drill(level), (float) getDamage(blockEntity.getSpeed()));
+            }
+        });
+    }
+
+    @Override
+    public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        return AllShapes.CASING_12PX.get(state.getValue(FACING));
+    }
+
+    @Override
+    public void neighborChanged(BlockState state, Level level, BlockPos pos, Block block, BlockPos fromPos,
+                                boolean isMoving) {
+        // 红石锁：同步信号状态，仅在变化时更新，避免递归（忽略前方信号）
+        boolean powered = hasLockingSignal(level, pos, state);
+        if (state.getValue(POWERED) != powered) {
+            level.setBlock(pos, state.setValue(POWERED, powered), 2);
+        }
+        withBlockEntityDo(level, pos, SmartDrillBlockEntity::destroyNextTick);
+    }
+
+    @Override
+    public Axis getRotationAxis(BlockState state) {
+        return state.getValue(FACING).getAxis();
+    }
+
+    @Override
+    public boolean hasShaftTowards(LevelReader level, BlockPos pos, BlockState state, Direction face) {
+        return face == state.getValue(FACING).getOpposite();
+    }
+
+    @Override
+    public PushReaction getPistonPushReaction(BlockState state) {
+        return PushReaction.NORMAL;
+    }
+
+    @Override
+    protected boolean isPathfindable(BlockState state, PathComputationType pathComputationType) {
+        return false;
+    }
+
+    @Override
+    public FluidState getFluidState(BlockState state) {
+        return state.getValue(BlockStateProperties.WATERLOGGED)
+                ? Fluids.WATER.getSource(false)
+                : Fluids.EMPTY.defaultFluidState();
+    }
+
+    @Override
+    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+        builder.add(BlockStateProperties.WATERLOGGED, POWERED);
+        super.createBlockStateDefinition(builder);
+    }
+
+    @Override
+    public BlockState updateShape(BlockState state, Direction direction, BlockState neighborState,
+                                  LevelAccessor level, BlockPos pos, BlockPos neighborPos) {
+        if (state.getValue(BlockStateProperties.WATERLOGGED)) {
+            level.scheduleTick(pos, Fluids.WATER, Fluids.WATER.getTickDelay(level));
+        }
+        return state;
+    }
+
+    @Override
+    public BlockState getStateForPlacement(BlockPlaceContext context) {
+        FluidState fluidState = context.getLevel().getFluidState(context.getClickedPos());
+        // 放置时若旁边已有红石信号，直接进入锁定状态（忽略前方信号）
+        BlockState state = super.getStateForPlacement(context);
+        boolean powered = hasLockingSignal(context.getLevel(), context.getClickedPos(), state);
+        return state
+                .setValue(BlockStateProperties.WATERLOGGED, fluidState.getType() == Fluids.WATER)
+                .setValue(POWERED, powered);
+    }
+    /**
+     * 红石锁判定：忽略钻头头部方向（FACING）的红石信号，只统计其余 5 个方向。
+     * 与 level.hasNeighborSignal 等价，仅排除前方邻居。
+     */
+    private boolean hasLockingSignal(Level level, BlockPos pos, BlockState state) {
+        Direction facing = state.getValue(FACING);
+        for (Direction side : Direction.values()) {
+            if (side == facing) {
+                continue;
+            }
+            if (level.getSignal(pos.relative(side), side) > 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static double getDamage(float speed) {
+        float speedAbs = Math.abs(speed);
+        double sub1 = Math.min(speedAbs / 16, 2);
+        double sub2 = Math.min(speedAbs / 32, 4);
+        double sub3 = Math.min(speedAbs / 64, 4);
+        return Mth.clamp(sub1 + sub2 + sub3, 1, 10);
+    }
+
+    @Override
+    public Class<SmartDrillBlockEntity> getBlockEntityClass() {
+        return SmartDrillBlockEntity.class;
+    }
+
+    @Override
+    public BlockEntityType<? extends SmartDrillBlockEntity> getBlockEntityType() {
+        return ModBlockEntities.SMART_DRILL.get();
+    }
+
+    @Override
+    protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos,
+                                              Player player, InteractionHand hand, BlockHitResult hitResult) {
+        IPlacementHelper placementHelper = PlacementHelpers.get(PLACEMENT_HELPER_ID);
+        if (!player.isShiftKeyDown() && player.mayBuild() && placementHelper.matchesItem(stack)) {
+            placementHelper.getOffset(player, level, state, pos, hitResult)
+                    .placeInWorld(level, (BlockItem) stack.getItem(), player, hand, hitResult);
+            return ItemInteractionResult.SUCCESS;
+        }
+        return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+    }
+
+    @MethodsReturnNonnullByDefault
+    private static class PlacementHelper implements IPlacementHelper {
+        @Override
+        public Predicate<ItemStack> getItemPredicate() {
+            return stack -> stack.is(ModBlocks.SMART_DRILL.get().asItem());
+        }
+
+        @Override
+        public Predicate<BlockState> getStatePredicate() {
+            return state -> state.is(ModBlocks.SMART_DRILL.get());
+        }
+
+        @Override
+        public PlacementOffset getOffset(Player player, Level level, BlockState state, BlockPos pos,
+                                         BlockHitResult ray) {
+            List<Direction> directions = IPlacementHelper.orderedByDistanceExceptAxis(
+                    pos,
+                    ray.getLocation(),
+                    state.getValue(FACING).getAxis(),
+                    direction -> level.getBlockState(pos.relative(direction)).canBeReplaced()
+            );
+            if (directions.isEmpty()) {
+                return PlacementOffset.fail();
+            }
+            return PlacementOffset.success(
+                    pos.relative(directions.getFirst()),
+                    placedState -> placedState.setValue(FACING, state.getValue(FACING))
+            );
+        }
+    }
+}

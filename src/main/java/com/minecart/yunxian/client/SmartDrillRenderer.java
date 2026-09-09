@@ -1,6 +1,6 @@
 package com.minecart.yunxian.client;
 
-import com.minecart.yunxian.SmartDrillBlockEntity;
+import com.minecart.yunxian.blockentity.SmartDrillBlockEntity;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntityRenderer;
 import com.simibubi.create.foundation.blockEntity.behaviour.filtering.FilteringRenderer;
 

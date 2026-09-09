@@ -1,6 +1,6 @@
 package com.minecart.yunxian.client;
 
-import com.minecart.yunxian.SmartDrillBlock;
+import com.minecart.yunxian.block.SmartDrillBlock;
 import com.simibubi.create.content.contraptions.behaviour.MovementContext;
 import com.simibubi.create.content.contraptions.render.ActorVisual;
 import com.simibubi.create.foundation.virtualWorld.VirtualRenderWorld;

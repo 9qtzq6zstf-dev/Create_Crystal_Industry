@@ -2,7 +2,7 @@ package com.minecart.yunxian.mixin;
 
 import java.util.List;
 
-import com.minecart.yunxian.FanImmunityHelper;
+import com.minecart.yunxian.util.FanImmunityHelper;
 import com.simibubi.create.content.kinetics.fan.AirCurrent;
 
 import net.minecraft.world.entity.Entity;

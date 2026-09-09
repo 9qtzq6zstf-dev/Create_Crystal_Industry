@@ -1,6 +1,6 @@
 package com.minecart.yunxian.menu;
 
-import com.minecart.yunxian.ModMenus;
+import com.minecart.yunxian.registry.ModMenus;
 import com.minecart.yunxian.item.EchoSpyglassItem;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.FriendlyByteBuf;

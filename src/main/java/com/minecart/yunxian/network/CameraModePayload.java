@@ -1,6 +1,6 @@
 package com.minecart.yunxian.network;
 
-import com.minecart.yunxian.EchoAttachments;
+import com.minecart.yunxian.attachment.EchoAttachments;
 import com.minecart.yunxian.Yunxian;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;

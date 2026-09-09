@@ -1,11 +1,13 @@
 package com.minecart.yunxian;
 
+import com.minecart.yunxian.attachment.EchoAttachments;
+import com.minecart.yunxian.behaviour.SmartDrillMovementBehaviour;
 import com.minecart.yunxian.client.ModRenderers;
-import com.minecart.yunxian.item.NightVisionGogglesItem;
+import com.minecart.yunxian.registry.*;
+import com.minecart.yunxian.util.NightVisionWearHelper;
 import com.simibubi.create.api.behaviour.movement.MovementBehaviour;
 import com.simibubi.create.api.stress.BlockStressValues;
 import com.simibubi.create.content.equipment.goggles.GogglesItem;
-import net.minecraft.world.entity.EquipmentSlot;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;

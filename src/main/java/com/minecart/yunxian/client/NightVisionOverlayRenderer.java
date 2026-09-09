@@ -1,6 +1,6 @@
 package com.minecart.yunxian.client;
 
-import com.minecart.yunxian.NightVisionWearHelper;
+import com.minecart.yunxian.util.NightVisionWearHelper;
 import com.minecart.yunxian.Yunxian;
 import com.minecart.yunxian.config.ModConfig;
 import com.mojang.blaze3d.systems.RenderSystem;

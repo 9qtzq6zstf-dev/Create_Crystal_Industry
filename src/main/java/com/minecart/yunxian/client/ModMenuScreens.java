@@ -1,6 +1,6 @@
 package com.minecart.yunxian.client;
 
-import com.minecart.yunxian.ModMenus;
+import com.minecart.yunxian.registry.ModMenus;
 import com.minecart.yunxian.Yunxian;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;

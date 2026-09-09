@@ -1,6 +1,6 @@
 package com.minecart.yunxian.integration.curios;
 
-import com.minecart.yunxian.ModItems;
+import com.minecart.yunxian.registry.ModItems;
 import net.minecraft.world.entity.player.Player;
 import top.theillusivec4.curios.api.CuriosApi;
 import top.theillusivec4.curios.api.type.capability.ICurioItem;

@@ -1,7 +1,7 @@
 package com.minecart.yunxian.client;
 
-import com.minecart.yunxian.ModBlockEntities;
-import com.minecart.yunxian.ModItems;
+import com.minecart.yunxian.registry.ModBlockEntities;
+import com.minecart.yunxian.registry.ModItems;
 import com.minecart.yunxian.Yunxian;
 import com.minecart.yunxian.client.model.NightVisionGogglesModel;
 

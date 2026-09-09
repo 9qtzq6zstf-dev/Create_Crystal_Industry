@@ -1,6 +1,6 @@
 package com.minecart.yunxian.client;
 
-import com.minecart.yunxian.MechanicalAcceleratorBlockEntity;
+import com.minecart.yunxian.blockentity.MechanicalAcceleratorBlockEntity;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntityRenderer;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
