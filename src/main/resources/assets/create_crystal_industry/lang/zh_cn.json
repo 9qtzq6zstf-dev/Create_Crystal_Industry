@@ -113,5 +113,49 @@
     "block.create_crystal_industry.fluix_cluster": "福鲁伊克斯晶簇",
     "create_crystal_industry.fluix_budding.powered": "ME网络：已供电且激活",
     "create_crystal_industry.fluix_budding.unpowered": "ME网络：未供电或无频道",
-    "create_crystal_industry.fluix_budding.cost": "每次生长消耗 %s AE"
+    "create_crystal_industry.fluix_budding.cost": "每次生长消耗 %s AE",
+    
+    "create_crystal_industry.ponder.tag.budding": "晶体母岩",
+    "create_crystal_industry.ponder.tag.budding.description": "会缓慢生长晶簇的方块，以及加速这一过程的催生器",
+    "create_crystal_industry.ponder.tag.accelerators": "催生器",
+    "create_crystal_industry.ponder.tag.accelerators.description": "会对相邻方块强制施加随机刻的机器",
+    "create_crystal_industry.ponder.tag.machines": "机械",
+    "create_crystal_industry.ponder.tag.machines.description": "用于采集和加工晶体的动力机器",
+    
+    "create_crystal_industry.ponder.budding_growth.header": "用催生器加速母岩生长",
+    "create_crystal_industry.ponder.budding_growth.text_1": "原版母岩只会在随机刻落在自己身上时生长：平均约 68 秒才轮到一次，而每次判定只有 1/5 的概率推进一级，因此自然生长极其缓慢。",
+    "create_crystal_industry.ponder.budding_growth.text_2": "晶簇工业的催生器改变了这一点：左侧的电力催生器消耗 FE 能量，右侧的动力催生器消耗旋转力。",
+    "create_crystal_industry.ponder.budding_growth.text_3": "催生器每游戏刻都会对每个相邻方块施加一次随机刻，原本需要数分钟才能推进的生长阶段，如今转瞬即至。",
+    "create_crystal_industry.ponder.budding_growth.text_4": "短短几秒内就能结成完整晶簇。围绕催生器布置母岩，可以快速、高效地批量获取晶体资源。",
+    "create_crystal_industry.ponder.budding_growth.text_5": "本模组部分母岩还有额外条件——回响母岩需要无光、可燃冰母岩需要水、福鲁伊克斯母岩需要 AE 供电——但生长本身始终由同一套随机刻机制驱动。",
+    
+    "create_crystal_industry.ponder.accelerator_electric.header": "电力催生器的使用",
+    "create_crystal_industry.ponder.accelerator_electric.text_1": "催生器有电力和动力两种类型：这台电力催生器消耗 FE 能量，而动力催生器消耗旋转力。",
+    "create_crystal_industry.ponder.accelerator_electric.text_2": "通入 FE 后它便会启动：每刻都会对六个相邻方块各施加一次随机刻。",
+    "create_crystal_industry.ponder.accelerator_electric.text_3": "随机刻驱动的远不止晶簇生长：作物、树苗、茎……一切依赖随机刻的机制都会被加速，而不只是母岩。",
+    "create_crystal_industry.ponder.accelerator_electric.text_4": "由于六个面会同时获得随机刻，一台催生器就能同时催生周围的多块母岩。",
+    
+    "create_crystal_industry.ponder.accelerator_mechanical.header": "动力催生器的使用",
+    "create_crystal_industry.ponder.accelerator_mechanical.text_1": "催生器有电力和动力两种类型：这台动力催生器消耗旋转力，而电力催生器消耗 FE 能量。",
+    "create_crystal_industry.ponder.accelerator_mechanical.text_2": "从背面接入旋转力——传动杆、齿轮怎么组合都可以。输入转速越快，它每秒施加的随机刻就越多。",
+    "create_crystal_industry.ponder.accelerator_mechanical.text_3": "每刻，它都会对六个相邻方块各施加一次随机刻——这里是两块母岩和一株普通小麦。",
+    "create_crystal_industry.ponder.accelerator_mechanical.text_4": "低转速下运行时，每次生长仍需耐心等待——目前只推进了一级。",
+    "create_crystal_industry.ponder.accelerator_mechanical.text_5": "提高输入转速，同样的生长阶段转瞬即成。它加速的是一切由随机刻驱动的机制——不止母岩，作物等同样受益。",
+    "create_crystal_industry.ponder.accelerator_mechanical.text_6": "六个面会同时获得随机刻，因此一台催生器就能同时催生它周围的多块母岩。",
+    
+    "create_crystal_industry.ponder.smart_drill.header": "使用智能钻头",
+    "create_crystal_industry.ponder.smart_drill.text_1": "这是智能钻头：一台拥有两种采集模式的机械钻头——普通采集与精准采集。",
+    "create_crystal_industry.ponder.smart_drill.text_2": "作为对照：左边是一台普通的机械钻头。两者都从背面接入旋转力，挖掘钻头正前方的方块。",
+    "create_crystal_industry.ponder.smart_drill.text_3": "普通采集模式下，智能钻头的采集速度是普通钻头的两倍。",
+    "create_crystal_industry.ponder.smart_drill.text_4": "随时可以通过侧面的设置槽切换模式。精准采集模式下，采集速度与普通钻头相同——但方块会像精准采集附魔那样完整掉落。",
+    "create_crystal_industry.ponder.smart_drill.text_5": "母岩是一个特例：普通钻头——以及普通采集模式下的智能钻头——只会把它打碎，无法采集方块本身。",
+    "create_crystal_industry.ponder.smart_drill.text_6": "精准采集模式下，智能钻头能完整采下母岩方块本身——这是晶簇工业提供的一种母岩获取方式。",
+    
+    "create_crystal_industry.ponder.mechanical_cleaner.header": "动力吸尘器的使用",
+    "create_crystal_industry.ponder.mechanical_cleaner.text_1": "动力吸尘器使用与鼓风机相同的气流——简而言之，鼓风机借助气流能做到的一切，它同样都能做到。",
+    "create_crystal_industry.ponder.mechanical_cleaner.text_2": "除此之外，它还是一台收集器：落入气流范围、或只是躺在它前方的物品，都会被吸入并存储进自带的库存。",
+    "create_crystal_industry.ponder.mechanical_cleaner.text_3": "摆在正前方的容器会被特殊对待：吸尘器直接与容器交换物品——全程不会向世界掉落任何物品。",
+    "create_crystal_industry.ponder.mechanical_cleaner.text_4": "吸气模式下，它可以直接从容器中抽取符合条件的物品，收进自己的库存。",
+    "create_crystal_industry.ponder.mechanical_cleaner.text_5": "吹气模式下，库存中的物品会被直接送回前方的容器——同样不会向世界洒落任何东西。",
+    "create_crystal_industry.ponder.mechanical_cleaner.text_6": "吹气/吸气模式、过滤条件与传输数量，都可以通过它的界面和侧面配置槽来设置。"
 }

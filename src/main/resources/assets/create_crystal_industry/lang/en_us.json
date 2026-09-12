@@ -113,5 +113,49 @@
     "block.create_crystal_industry.fluix_cluster": "Fluix Cluster",
     "create_crystal_industry.fluix_budding.powered": "ME Grid: Powered & Active",
     "create_crystal_industry.fluix_budding.unpowered": "ME Grid: Not powered / no channel",
-    "create_crystal_industry.fluix_budding.cost": "Each growth consumes %s AE"
+    "create_crystal_industry.fluix_budding.cost": "Each growth consumes %s AE",
+    
+    "create_crystal_industry.ponder.tag.budding": "Crystal Budding Blocks",
+    "create_crystal_industry.ponder.tag.budding.description": "Blocks that slowly grow crystals, and the Accelerators that speed them up",
+    "create_crystal_industry.ponder.tag.accelerators": "Accelerators",
+    "create_crystal_industry.ponder.tag.accelerators.description": "Machines which force random ticks onto adjacent blocks",
+    "create_crystal_industry.ponder.tag.machines": "Machines",
+    "create_crystal_industry.ponder.tag.machines.description": "Powered machines that harvest and process crystals",
+    
+    "create_crystal_industry.ponder.budding_growth.header": "Growing Budding Blocks with Accelerators",
+    "create_crystal_industry.ponder.budding_growth.text_1": "Vanilla budding blocks only grow when random ticks land on them. Each block receives one every ~68 seconds on average, and each roll only has a 1-in-5 chance to advance a growth stage.",
+    "create_crystal_industry.ponder.budding_growth.text_2": "Crystal Industry's Accelerators change this. The Electric Accelerator on the left runs on FE; the Mechanical Accelerator on the right runs on Rotational Force.",
+    "create_crystal_industry.ponder.budding_growth.text_3": "Each tick, an Accelerator forces one random tick onto every adjacent block. Growth stages that used to take minutes now take moments.",
+    "create_crystal_industry.ponder.budding_growth.text_4": "In a few seconds a fully-grown Cluster appears. Farming crystals around Accelerators becomes a fast, highly efficient way to gather them.",
+    "create_crystal_industry.ponder.budding_growth.text_5": "Some budding blocks in this mod have extra conditions - Echo needs darkness, Flammable Ice needs water, Fluix needs AE power - but the growth itself is always driven by the same random ticks.",
+    
+    "create_crystal_industry.ponder.accelerator_electric.header": "Using the Electric Accelerator",
+    "create_crystal_industry.ponder.accelerator_electric.text_1": "Accelerators come in two types: this Electric Accelerator runs on FE, while the Mechanical Accelerator runs on Rotational Force.",
+    "create_crystal_industry.ponder.accelerator_electric.text_2": "Supply it with FE and it activates. Every tick, it forces a random tick onto each of the six neighbouring blocks.",
+    "create_crystal_industry.ponder.accelerator_electric.text_3": "Random ticks drive far more than crystal growth: crops, saplings, stems - anything random-tick based will be accelerated, not only budding blocks.",
+    "create_crystal_industry.ponder.accelerator_electric.text_4": "And because all six sides are ticked at once, a single Accelerator can serve several budding blocks surrounding it.",
+    
+    "create_crystal_industry.ponder.accelerator_mechanical.header": "Using the Mechanical Accelerator",
+    "create_crystal_industry.ponder.accelerator_mechanical.text_1": "Accelerators come in two types: this Mechanical Accelerator runs on Rotational Force, while the Electric Accelerator runs on FE.",
+    "create_crystal_industry.ponder.accelerator_mechanical.text_2": "Supply Rotational Force at its back - through any combination of shafts and cogs. The faster the input spins, the more random ticks it applies each second.",
+    "create_crystal_industry.ponder.accelerator_mechanical.text_3": "Every tick, it forces a random tick onto each of the six neighbouring blocks - here, two budding blocks and an ordinary wheat crop.",
+    "create_crystal_industry.ponder.accelerator_mechanical.text_4": "Running at low speed, each stage still takes a while - so far only the first advancement has happened.",
+    "create_crystal_industry.ponder.accelerator_mechanical.text_5": "Raise the input speed and the same stages complete in moments. It accelerates anything driven by random ticks - not only budding blocks, but crops and more.",
+    "create_crystal_industry.ponder.accelerator_mechanical.text_6": "With all six sides ticked at once, one Accelerator can serve several budding blocks surrounding it.",
+    
+    "create_crystal_industry.ponder.smart_drill.header": "Using the Smart Drill",
+    "create_crystal_industry.ponder.smart_drill.text_1": "This is the Smart Drill: a Mechanical Drill with two harvesting modes - Normal Harvesting and Silk Touch Harvesting.",
+    "create_crystal_industry.ponder.smart_drill.text_2": "For comparison: a regular Mechanical Drill on the left. Both drills take Rotational Force at the back and mine the block in front of the head.",
+    "create_crystal_industry.ponder.smart_drill.text_3": "In Normal Harvesting, the Smart Drill mines twice as fast as a regular drill.",
+    "create_crystal_industry.ponder.smart_drill.text_4": "Switch modes at any time through the setting slot on its side. In Silk Touch Harvesting, the mining speed matches a regular drill - but blocks drop as if mined with Silk Touch.",
+    "create_crystal_industry.ponder.smart_drill.text_5": "Budding Blocks are a special case: a regular drill - or the Smart Drill in Normal Harvesting - shatters them, and the block itself cannot be collected.",
+    "create_crystal_industry.ponder.smart_drill.text_6": "In Silk Touch Harvesting, the Smart Drill collects the Budding Block itself - one of the ways Crystal Industry lets you obtain budding blocks.",
+    
+    "create_crystal_industry.ponder.mechanical_cleaner.header": "Using the Mechanical Cleaner",
+    "create_crystal_industry.ponder.mechanical_cleaner.text_1": "The Mechanical Cleaner drives the same airstream as an Encased Fan - in short, every airflow ability of the fan applies here as well.",
+    "create_crystal_industry.ponder.mechanical_cleaner.text_2": "On top of that, it is also a collector: items caught in its stream - or simply lying in front of it - are sucked in and stored in its built-in inventory.",
+    "create_crystal_industry.ponder.mechanical_cleaner.text_3": "A container placed directly in front is used in a special way: the Cleaner moves items in and out of it directly - nothing is dropped into the world.",
+    "create_crystal_industry.ponder.mechanical_cleaner.text_4": "While collecting, it can reach into that container and pull matching items straight into its own inventory.",
+    "create_crystal_industry.ponder.mechanical_cleaner.text_5": "While blowing, stored items are fed back into the container in front - again, without spilling anything into the world.",
+    "create_crystal_industry.ponder.mechanical_cleaner.text_6": "Blowing or sucking, filters, and transfer amounts are all configured through its interface and the side slot."
 }
