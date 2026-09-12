@@ -4,6 +4,8 @@ import com.minecart.yunxian.registry.ModBlockEntities;
 import com.minecart.yunxian.registry.ModItems;
 import com.minecart.yunxian.Yunxian;
 import com.minecart.yunxian.client.model.NightVisionGogglesModel;
+import com.minecart.yunxian.client.tooltip.GenericTooltipModifier;
+import net.minecraft.client.resources.language.I18n;
 
 import com.minecart.yunxian.integration.curios.CuriosClientIntegration;
 import dev.engine_room.flywheel.lib.model.baked.PartialModel;
@@ -113,6 +115,20 @@ public class ModRenderers {
                     (stack, level, entity, seed) ->
                             entity != null && entity.isUsingItem() && entity.getUseItem() == stack
                                     ? 1.0F : 0.0F);
+            // ===== 物品提示（机械动力风格，统一走 GenericTooltipModifier）=====
+            // 夜视仪护目镜：简介含当前按键名，动态求值
+            GenericTooltipModifier.register(ModItems.NIGHT_VISION_GOGGLES.get(),
+                    () -> I18n.get("item.create_crystal_industry.night_vision_goggles.tooltip.summary",
+                            ModKeybinds.TOGGLE_NIGHT_VISION.getTranslatedKeyMessage().getString()));
+
+            // 回响望远镜：两行静态简介（Shift 展开按此顺序显示）
+            GenericTooltipModifier.register(ModItems.ECHO_SPYGLASS.get(),
+                    "item.create_crystal_industry.echo_spyglass.tooltip.summary",
+                    "item.create_crystal_industry.echo_spyglass.tooltip.note");
+
+            // 可燃冰：单行静态简介
+            GenericTooltipModifier.register(ModItems.FLAMMABLE_ICE.get(),
+                    "item.create_crystal_industry.flammable_ice.tooltip.summary");
             // ★ 软依赖门控：客户端 + Curios 已加载才注册首饰栏渲染器
             if (ModList.get().isLoaded("curios")) {
                 CuriosClientIntegration.registerRenderers();
