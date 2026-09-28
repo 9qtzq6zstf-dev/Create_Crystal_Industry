@@ -165,6 +165,14 @@ public final class ModConfig {
         }
 
         /**
+         * 快档的默认成员：红石与青金石。
+         * <p>
+         * 必须是字段、且声明在 {@link #GROWTH_SPEEDS} <b>之前</b>——后者在类初始化时就会调用
+         * {@link #buildGrowthSpeeds()}，而该方法要读这个字段，声明在后面会读到 null。
+         */
+        private static final List<String> FAST_BY_DEFAULT = List.of("redstone", "lapis");
+
+        /**
          * 四档生长速度各一个配置项，由 {@link GrowthSpeed} 派生：
          * 键名 = {@code GrowthSpeed#configKey()}，值 = 母岩家族 id 列表。
          * 判定顺序见 {@link #speedFor(String)}。
@@ -191,15 +199,21 @@ public final class ModConfig {
             return Map.copyOf(speeds);
         }
 
-        /** 某档的默认成员：只有「正常」档默认把全部已注册的母岩写出来，其余三档默认空 */
+        /**
+         * 某档的默认成员：极慢/慢两档默认空；快档默认 {@link #FAST_BY_DEFAULT}；
+         * 「正常」档默认写出全部已注册的母岩，但跳过 {@link #FAST_BY_DEFAULT} 里的那几个——
+         * 否则同一个 id 会同时出现在 growthSpeedNormal 与 growthSpeedFast 里，读配置文件时像是写错了。
+         */
         private static List<String> defaultIds(GrowthSpeed speed) {
-            if (speed != GrowthSpeed.NORMAL) {
-                return List.of();
-            }
-            return BuddingFamilies.ALL.stream()
-                    .filter(RegisteredFamily::isRegistered)
-                    .map(family -> family.spec().id())
-                    .toList();
+            return switch (speed) {
+                case NORMAL -> BuddingFamilies.ALL.stream()
+                        .filter(RegisteredFamily::isRegistered)
+                        .map(family -> family.spec().id())
+                        .filter(id -> !FAST_BY_DEFAULT.contains(id))
+                        .toList();
+                case FAST -> FAST_BY_DEFAULT;
+                default -> List.of();
+            };
         }
 
         // 解析结果缓存。随机刻只在服务端主线程跑，这几个字段无需同步；Map 本身不可变。
@@ -303,7 +317,7 @@ public final class ModConfig {
                 .comment(
                         "Scan radius of the Echo Spyglass, in blocks.")
                 .translation(LANG_PREFIX + "scanRadius")
-                .defineInRange("scanRadius", 16, 4, 128);
+                .defineInRange("scanRadius", 64, 4, 128);
 
         public static final ModConfigSpec.IntValue SCAN_INTERVAL_TICKS = BUILDER
                 .comment(

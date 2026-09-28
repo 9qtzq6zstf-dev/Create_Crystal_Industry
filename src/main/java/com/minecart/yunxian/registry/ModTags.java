@@ -25,6 +25,25 @@ public final class ModTags {
     public static final TagKey<Item> BUDDING_BLOCKS_ITEM = TagKey.create(Registries.ITEM,
             ResourceLocation.fromNamespaceAndPath("c", "budding_blocks"));
 
+    /**
+     * 通用芽标签 c:buds（方块 / 物品两份）：小 / 中 / 大三档芽。
+     * <p>
+     * NeoForge 把「母岩 / 芽 / 晶簇」分成三类通用标签，所以芽与晶簇<strong>不</strong>进
+     * {@link #BUDDING_BLOCKS}——别的模组按类别筛方块（"所有芽"或"所有晶簇"）时读的是这两个。
+     */
+    public static final TagKey<Block> BUDS = TagKey.create(Registries.BLOCK,
+            ResourceLocation.fromNamespaceAndPath("c", "buds"));
+
+    public static final TagKey<Item> BUDS_ITEM = TagKey.create(Registries.ITEM,
+            ResourceLocation.fromNamespaceAndPath("c", "buds"));
+
+    /** 通用晶簇标签 c:clusters（方块 / 物品两份）：四个阶段里的终态 */
+    public static final TagKey<Block> CLUSTERS = TagKey.create(Registries.BLOCK,
+            ResourceLocation.fromNamespaceAndPath("c", "clusters"));
+
+    public static final TagKey<Item> CLUSTERS_ITEM = TagKey.create(Registries.ITEM,
+            ResourceLocation.fromNamespaceAndPath("c", "clusters"));
+
     // 新增：标记"免疫鼓风机/喷头风力"的盔甲
     public static final TagKey<Item> FAN_IMMUNE = TagKey.create(Registries.ITEM,
             ResourceLocation.fromNamespaceAndPath(Yunxian.MODID, "fan_immune"));

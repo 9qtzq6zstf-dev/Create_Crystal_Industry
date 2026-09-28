@@ -79,6 +79,12 @@ public final class CustomBudding {
     /** 通用母岩标签（与本模组自带母岩一致：智能钻头精准采集、AE2 晶体催生器都读它） */
     private static final ResourceLocation BUDDING_BLOCKS_TAG = ResourceLocation.fromNamespaceAndPath("c", "budding_blocks");
 
+    /** 通用芽标签：三档芽进这个（方块 + 物品） */
+    private static final ResourceLocation BUDS_TAG = ResourceLocation.fromNamespaceAndPath("c", "buds");
+
+    /** 通用晶簇标签：四阶段里的终态进这个（方块 + 物品） */
+    private static final ResourceLocation CLUSTERS_TAG = ResourceLocation.fromNamespaceAndPath("c", "clusters");
+
     /**
      * 认识的裸工具名——就是原版挖掘标签 {@code minecraft:mineable/<名字>} 的全部四个
      * （1.21.1 的 {@code BlockTags} 里只有这四个 {@code MINEABLE_WITH_*}，没有"剪刀""剑"那两个标签）。
@@ -158,12 +164,16 @@ public final class CustomBudding {
             // 只挂方块标签：挖掘工具与开采等级读的都是方块标签，顺带挂到物品上是没用的空标签
             tagTool(builder, stageToolTag);
             tagLevel(builder, stageLevelTag);
-            forceItem(builder, false);
+            // 通用芽 / 晶簇标签：三档芽进 c:buds、晶簇进 c:clusters，方块与物品两侧都要挂
+            // （与母岩本体自动进 c:budding_blocks 同一套做法）
+            boolean cluster = Stage.values()[i] == Stage.CLUSTER;
+            ResourceLocation stageCommonTag = cluster ? CLUSTERS_TAG : BUDS_TAG;
+            builder.tagBlock(new ResourceLocation[]{stageCommonTag});
+            forceItem(builder, stageCommonTag);
             registerBlock(event, builder);
 
             // 掉落规则交给运行时：精准采集掉本体，否则只有晶簇掉 Options.dropItem × dropCount（默认什么都不掉）。
             // KubeJS 的掉落 API 表达不了精准采集，覆写 generateLootTable() 又没人调用，见 ScriptedBlockDrops
-            boolean cluster = Stage.values()[i] == Stage.CLUSTER;
             ScriptedBlockDrops.register(stageId, cluster ? itemId(options.dropItem) : null,
                     cluster ? options.dropCount : 1);
         }
@@ -182,7 +192,7 @@ public final class CustomBudding {
         if (options.displayName != null) {
             budding.displayName(Component.literal(options.displayName));
         }
-        forceItem(budding, true);
+        forceItem(budding, BUDDING_BLOCKS_TAG);
         registerBlock(event, budding);
 
         // 护目镜信息挂在方块实体上：把母岩声明给共享展示 BE（按 id——此刻方块还没建出来）
@@ -206,15 +216,16 @@ public final class CustomBudding {
      * 会替它建好，而我们是手工构造 builder，显式调用一次 {@code item(...)} 最稳妥
      * （物品建不出来时，方块存在但 {@code /give} 与创造栏都找不到，很难排查）。
      *
-     * @param buddingItem 母岩的物品要额外进通用母岩标签（对应的方块标签在 {@code tagBlock(...)} 里加了）
-     *                     <p>
-     *                     注意 KubeJS 的 {@code tag(...)} 会<b>同时</b>挂方块与物品标签，
-     *                     而挖掘标签只该挂在方块上，所以调用方用的是 {@code tagBlock(...)}。
+     * @param itemTags 要挂到物品上的通用标签（母岩是 {@code c:budding_blocks}，芽 / 晶簇是
+     *                 {@code c:buds} / {@code c:clusters}）；对应的方块标签在调用处用 {@code tagBlock(...)} 加
+     *                 <p>
+     *                 注意 KubeJS 的 {@code tag(...)} 会<b>同时</b>挂方块与物品标签，
+     *                 而挖掘标签只该挂在方块上，所以调用方用的是 {@code tagBlock(...)}。
      */
-    private static void forceItem(BlockBuilder builder, boolean buddingItem) {
+    private static void forceItem(BlockBuilder builder, ResourceLocation... itemTags) {
         builder.item(item -> {
-            if (buddingItem) {
-                item.defaultTags.add(BUDDING_BLOCKS_TAG);
+            for (ResourceLocation tag : itemTags) {
+                item.defaultTags.add(tag);
             }
         });
     }

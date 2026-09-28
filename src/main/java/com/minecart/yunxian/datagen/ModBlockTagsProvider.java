@@ -25,8 +25,8 @@ import net.neoforged.neoforge.registries.DeferredBlock;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 生成方块标签：通用母岩标签 c:budding_blocks、挖掘工具标签、挖掘等级标签，
- * 以及水晶电池的晶体档位标签（内容由 {@link CrystalTier} 派生）。
+ * 生成方块标签：通用母岩标签 c:budding_blocks、通用芽 / 晶簇标签 c:buds / c:clusters、
+ * 挖掘工具标签、挖掘等级标签，以及水晶电池的晶体档位标签（内容由 {@link CrystalTier} 派生）。
  * 新增母岩家族时这里不需要改动，全部由 {@link BuddingFamilies#ALL} 派生。
  */
 public class ModBlockTagsProvider extends BlockTagsProvider {
@@ -40,6 +40,10 @@ public class ModBlockTagsProvider extends BlockTagsProvider {
     protected void addTags(HolderLookup.Provider provider) {
         // c:budding_blocks —— 智能钻头精准采集与 AE2 晶体催生器都认它
         IntrinsicTagAppender<Block> budding = tag(ModTags.BUDDING_BLOCKS);
+        // c:buds / c:clusters —— NeoForge 通用标签把「母岩 / 芽 / 晶簇」分三类，
+        // 三档芽进前者、晶簇进后者（物品侧见 ModItemTagsProvider）
+        IntrinsicTagAppender<Block> buds = tag(ModTags.BUDS);
+        IntrinsicTagAppender<Block> clusters = tag(ModTags.CLUSTERS);
         // 挖掘工具：全部家族方块 + 可燃冰装饰方块 + 四种机器 + 水晶电池
         IntrinsicTagAppender<Block> pickaxe = tag(BlockTags.MINEABLE_WITH_PICKAXE);
         pickaxe.add(ModBlocks.FLAMMABLE_ICE_BLOCK.get(), ModBlocks.ACCELERATOR.get(),
@@ -70,6 +74,11 @@ public class ModBlockTagsProvider extends BlockTagsProvider {
             // c:budding_blocks 只登记母岩本体：智能钻头用它判断"精准模式直接掉方块自身"，
             // AE2 晶体催生器用它决定哪些方块可以被加速——芽与晶簇不属于这个语义。
             add(budding, family.budding(), optional);
+            // 芽与晶簇各有自己的通用标签
+            add(buds, family.smallBud(), optional);
+            add(buds, family.mediumBud(), optional);
+            add(buds, family.largeBud(), optional);
+            add(clusters, family.cluster(), optional);
 
             for (DeferredBlock<Block> block : family.blocks()) {
                 add(pickaxe, block, optional);

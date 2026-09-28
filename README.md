@@ -284,7 +284,7 @@ ServerEvents.tags('block', event => {
 
 ### 行为说明
 
-- **自动挂标签**：母岩自动进入 `#c:budding_blocks`（方块与物品两份）。五个方块按 `buddingTool` / `stageTool` 进入对应的挖掘标签，按 `buddingLevel` / `stageLevel` 进入对应的等级标签（默认只有 `#minecraft:mineable/pickaxe`，不挂等级）。因此智能钻头的精准采集能直接采下你的母岩本体，AE2 的催生器也会加速它，不需要手写标签。
+- **自动挂标签**：母岩自动进入 `#c:budding_blocks`，三档芽进入 `#c:buds`、晶簇进入 `#c:clusters`（都是方块与物品两份，NeoForge 把这三类分开）。五个方块按 `buddingTool` / `stageTool` 进入对应的挖掘标签，按 `buddingLevel` / `stageLevel` 进入对应的等级标签（默认只有 `#minecraft:mineable/pickaxe`，不挂等级）。因此智能钻头的精准采集能直接采下你的母岩本体，AE2 的催生器也会加速它，不需要手写标签。
 - **护目镜**：戴上工程师护目镜看向自定义母岩，会显示当前生长倍率，以及生长速度、光照要求、含水要求、生长环境（维度 / 群系，只给「缓慢」「必须足够暗」这类定性说法，不报具体数值）。自带家族平时只显示倍率那一行；写了 `growthDimensions` / `growthBiomes` 的会多出一行「只在 X 生长得最快」。
 - **创造栏**：KubeJS 注册的方块默认不进任何标签页，容易让人误以为没注册成功，所以这里默认放进 KubeJS 那一页；`group(...)` 可改为原版标签页，`group(null)` 则完全不进标签页（只能用 `/give` 取）。
 - **名字与外观**走资源包与语言文件；不指定显示名时由 KubeJS 按 id 自动生成英文标题（`example_crystal_small_bud` → "Example Crystal Small Bud"）。方块物品与方块共用同一个语言键，背包、掉落物、创造栏会一起变。
@@ -341,7 +341,7 @@ event.create('my_budding').randomTick(ctx => {
 
 生成 JSON 资产：`./gradlew runData`。**运行前必须确保 `run/mods` 里有 AE2**，否则会直接中止——这是为了避免已生成的福鲁伊克斯资产被判定为过期文件而删除。输出目录 `src/generated/resources` 已纳入版本管理。
 
-以下文件由数据生成接管，请勿手写：`blockstates/`、`models/block/`、`models/item/`、母岩与芽的掉落表、`c:budding_blocks` 标签、`mineable/pickaxe` 与 `needs_*_tool` 标签。
+以下文件由数据生成接管，请勿手写：`blockstates/`、`models/block/`、`models/item/`、母岩与芽的掉落表、`c:budding_blocks` / `c:buds` / `c:clusters` 标签、`mineable/pickaxe` 与 `needs_*_tool` 标签。
 
 仍需手写的：材质（含 `.mcmeta`）、晶簇与福鲁伊克斯的掉落表（结构与模组条件无法由生成器等价复刻）、世界生成 JSON、语言文件。
 
@@ -389,6 +389,7 @@ BuddingGrowthEngine.tryGrow(serverLevel, pos, random, definition, gate);
 群系条目的判定顺序：命中任一**否定**项直接出局；否则至少命中一条**肯定**项才算满足；只写否定项时，肯定那一侧视为「全部群系」（`growthBiomes("!cold")` 即除了寒冷群系哪里都长）。
 
 其余资源自备：方块的注册与贴图、物品、掉落表，以及把方块加入 `#c:budding_blocks` 标签（智能钻头的精准采集与 AE2 的催生器读它）。
+芽与晶簇同理——要进 `#c:buds` 与 `#c:clusters`，别的模组按类别筛方块时才认得它们。
 
 ### 气候关键字
 

@@ -21,8 +21,9 @@ import org.jetbrains.annotations.Nullable;
 /**
  * 生成物品标签。
  * <p>
- * 母岩那一份（c:budding_blocks）逐个家族登记，而不是用 {@code copy(...)}：它带可选条目
- * （AE2 缺席时的福鲁伊克斯），经过 copy 之后的行为不易核对，逐条登记与手写原件完全一致。
+ * 母岩 / 芽 / 晶簇那三份（c:budding_blocks、c:buds、c:clusters）逐个家族登记，而不是用
+ * {@code copy(...)}：它们都带可选条目（AE2 缺席时的福鲁伊克斯），经过 copy 之后的行为不易核对，
+ * 逐条登记与手写原件完全一致。
  * <p>
  * 水晶电池的晶体档位标签则<b>正是</b>用 {@code copy(...)}：那几个列表里没有可选条目，
  * 而标签不能跨方块/物品互相引用，复制是唯一能避免"方块一份、物品一份"的做法。
@@ -40,16 +41,21 @@ public class ModItemTagsProvider extends net.minecraft.data.tags.ItemTagsProvide
     @Override
     protected void addTags(HolderLookup.Provider provider) {
         IntrinsicTagAppender<Item> budding = tag(ModTags.BUDDING_BLOCKS_ITEM);
+        // 物品侧的芽 / 晶簇标签：与方块侧逐条对应（标签不能跨方块/物品互相引用，
+        // 所以这里和 ModBlockTagsProvider 用同一份家族表各登记一遍）
+        IntrinsicTagAppender<Item> buds = tag(ModTags.BUDS_ITEM);
+        IntrinsicTagAppender<Item> clusters = tag(ModTags.CLUSTERS_ITEM);
         for (RegisteredFamily family : BuddingFamilies.ALL) {
             if (!family.isRegistered()) {
                 continue;
             }
-            DeferredBlock<Block> block = family.budding();
-            if (family.spec().ae2Gated()) {
-                budding.addOptional(block.getId());
-            } else {
-                budding.add(block.get().asItem());
-            }
+            boolean optional = family.spec().ae2Gated();
+
+            add(budding, family.budding(), optional);
+            add(buds, family.smallBud(), optional);
+            add(buds, family.mediumBud(), optional);
+            add(buds, family.largeBud(), optional);
+            add(clusters, family.cluster(), optional);
         }
 
         // 水晶电池的晶体：物品标签直接复制方块标签的内容，两个列表不会各写一份、也不会脱节
@@ -57,5 +63,13 @@ public class ModItemTagsProvider extends net.minecraft.data.tags.ItemTagsProvide
             copy(tier.tag(), tier.itemTag());
         }
         copy(ModTags.BATTERY_CRYSTAL, ModTags.BATTERY_CRYSTAL_ITEM);
+    }
+
+    private static void add(IntrinsicTagAppender<Item> tag, DeferredBlock<Block> block, boolean optional) {
+        if (optional) {
+            tag.addOptional(block.getId());
+        } else {
+            tag.add(block.get().asItem());
+        }
     }
 }

@@ -285,7 +285,7 @@ The value `create` returns, `family`, exposes five accessors for the block ids: 
 
 ### Behavior Notes
 
-- **Tags are attached automatically.** The budding block joins `#c:budding_blocks` (both the block and item tags). The five blocks join the matching mining tags via `buddingTool` / `stageTool` and the matching tier tags via `buddingLevel` / `stageLevel` (by default only `#minecraft:mineable/pickaxe`, with no tier). As a result the Smart Drill's Silk Touch mode collects your budding block directly and AE2's Growth Accelerator accelerates it, with no tags to write by hand.
+- **Tags are attached automatically.** The budding block joins `#c:budding_blocks`, the three buds join `#c:buds` and the cluster joins `#c:clusters` (block and item tags for all three — NeoForge keeps those categories separate). The five blocks join the matching mining tags via `buddingTool` / `stageTool` and the matching tier tags via `buddingLevel` / `stageLevel` (by default only `#minecraft:mineable/pickaxe`, with no tier). As a result the Smart Drill's Silk Touch mode collects your budding block directly and AE2's Growth Accelerator accelerates it, with no tags to write by hand.
 - **Goggles**: wearing Engineer's Goggles and looking at a custom budding block shows the current growth multiplier along with its growth speed, light requirement, water requirement and growth environment (dimension / biome, phrased qualitatively as "Slow" or "must be dark enough" without exact numbers). Built-in families normally show only the multiplier line; those with `growthDimensions` / `growthBiomes` gain an extra "fastest only in X" line.
 - **Creative tab**: KubeJS-registered blocks go into no tab by default, which makes people think registration failed, so these land in the KubeJS tab unless told otherwise. `group(...)` switches to a vanilla tab, and `group(null)` omits the tab entirely (reachable only via `/give`).
 - **Names and appearance** come from resource packs and language files. Without a display name, KubeJS derives an English title from the id (`example_crystal_small_bud` → "Example Crystal Small Bud"). The block item and the block share one translation key, so the inventory, dropped items and creative tab all change together.
@@ -342,7 +342,7 @@ Growth speed is the exception: it is a global four-tier setting (`BuddingFamily.
 
 Generate the JSON assets with `./gradlew runData`. **AE2 must be present in `run/mods` before running it**, otherwise the task aborts outright — this is what prevents the already-generated Fluix assets from being judged stale and deleted. The output directory `src/generated/resources` is under version control.
 
-Data generation owns the following files; do not write them by hand: `blockstates/`, `models/block/`, `models/item/`, the loot tables for budding blocks and buds, the `c:budding_blocks` tags, and the `mineable/pickaxe` and `needs_*_tool` tags.
+Data generation owns the following files; do not write them by hand: `blockstates/`, `models/block/`, `models/item/`, the loot tables for budding blocks and buds, the `c:budding_blocks` / `c:buds` / `c:clusters` tags, and the `mineable/pickaxe` and `needs_*_tool` tags.
 
 Still hand-written: textures (including `.mcmeta`), the loot tables for clusters and Fluix (their structure and mod conditions cannot be reproduced by the generator), world generation JSON, and language files.
 
@@ -390,6 +390,7 @@ A definition can take further gates: `growthDimensions(Level.NETHER)` restricts 
 Biome entries resolve in this order: hitting any **negation** drops the position immediately; otherwise at least one **positive** entry must match; when only negations are written, the positive side counts as "every biome" (`growthBiomes("!cold")` means anywhere but cold biomes).
 
 Everything else is yours to supply: block registration and textures, items, loot tables, and adding the block to the `#c:budding_blocks` tag (the Smart Drill's Silk Touch mode and AE2's Growth Accelerator read it).
+The same goes for your buds and clusters — add them to `#c:buds` and `#c:clusters` so other mods filtering by category recognise them.
 
 ### Climate Keywords
 
