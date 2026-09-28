@@ -9,7 +9,9 @@ import java.util.function.Supplier;
 import com.minecart.yunxian.advancement.YunxianAdvancements;
 import com.minecart.yunxian.blockentity.budding.BuddingGrowthBlockEntity;
 import com.minecart.yunxian.blockentity.budding.EchoConvertingBuddingBlockEntity;
+import com.minecart.yunxian.blockentity.budding.ArclightBuddingBlockEntity;
 import com.minecart.yunxian.blockentity.budding.FlammableIceBuddingBlockEntity;
+import com.minecart.yunxian.blockentity.budding.LavaBuddingBlockEntity;
 import com.minecart.yunxian.budding.BuddingFamily;
 import com.minecart.yunxian.budding.BuddingFamily.BlockConversion;
 import com.minecart.yunxian.budding.BuddingFamily.EnergyRequirement;
@@ -19,6 +21,7 @@ import com.minecart.yunxian.budding.BuddingFamily.Replacement;
 import com.minecart.yunxian.budding.BuddingGrowthEngine;
 import com.minecart.yunxian.budding.GrowthDefinition;
 import com.minecart.yunxian.config.ModConfig;
+import com.minecart.yunxian.effect.ArclightSource;
 import com.minecart.yunxian.integration.ae2.AE2Budding;
 import com.minecart.yunxian.registry.ModBlockEntities;
 
@@ -107,6 +110,8 @@ public class GenericBuddingBlock extends BuddingAmethystBlock implements EntityB
             case SHARED_GROWTH -> new BuddingGrowthBlockEntity(pos, state);
             case ECHO_DISPLAY -> new EchoConvertingBuddingBlockEntity(pos, state);
             case ICE_DISPLAY -> new FlammableIceBuddingBlockEntity(pos, state);
+            case LAVA_TANK -> new LavaBuddingBlockEntity(pos, state);
+            case FE_TANK -> new ArclightBuddingBlockEntity(pos, state);
             case AE2_GRID -> newFluixBlockEntity(pos, state);
         };
     }
@@ -134,6 +139,18 @@ public class GenericBuddingBlock extends BuddingAmethystBlock implements EntityB
     public void randomTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
         BuddingGrowthEngine.tryGrow(level, pos, random, definition(), energyGate);
         runConversions(level, pos, random);
+    }
+
+    /**
+     * 母岩周围的电火花（目前只有弧光石家族，见 {@code Appearance#sparkParticles()}）。
+     * 走原版的 {@code animateTick}：只在客户端、只对玩家附近的方块随机调用，
+     * 所以这里不需要判断距离，服务端也一次都不会执行。
+     */
+    @Override
+    public void animateTick(BlockState state, Level level, BlockPos pos, RandomSource random) {
+        if (family.appearance().sparkParticles()) {
+            ArclightSource.maybeSpark(level, pos, random);
+        }
     }
 
     // ==================== 生长定义 ====================
@@ -178,14 +195,20 @@ public class GenericBuddingBlock extends BuddingAmethystBlock implements EntityB
     }
 
     /**
-     * 生长能量钩子：真正放置下一阶段前调用，返回 false 表示本次放弃生长。
-     * 只有 {@link EnergyRequirement#AE2_GRID} 的家族会走进 AE2 联动类。
+     * 生长的付费钩子：真正放置下一阶段前调用，返回 false 表示本次放弃生长。
+     * <p>
+     * {@link EnergyRequirement#AE2_GRID} 走 AE2 联动类（那条路必须隔离，理由见 {@code AE2Budding}
+     * 的类注释）；{@link EnergyRequirement#LAVA_TANK} 直接问本方块自己的熔岩罐。
      */
     protected boolean payGrowthEnergy(ServerLevel level, BlockPos pos) {
-        if (family.growth().energy() == EnergyRequirement.FREE) {
-            return true;
-        }
-        return AE2Budding.tryConsumeGrowthEnergy(level, pos);
+        return switch (family.growth().energy()) {
+            case FREE -> true;
+            case AE2_GRID -> AE2Budding.tryConsumeGrowthEnergy(level, pos);
+            case LAVA_TANK -> level.getBlockEntity(pos) instanceof LavaBuddingBlockEntity tank
+                    && tank.tryConsumeGrowthCost();
+            case FE -> level.getBlockEntity(pos) instanceof ArclightBuddingBlockEntity cell
+                    && cell.tryConsumeGrowthCost();
+        };
     }
 
     // ==================== 随机刻副作用（转化/传播） ====================

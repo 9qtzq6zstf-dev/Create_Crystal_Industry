@@ -11,8 +11,11 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.material.MapColor;
+import net.minecraft.world.level.material.PushReaction;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredBlock;
 import net.neoforged.neoforge.registries.DeferredRegister;
@@ -38,6 +41,28 @@ public final class ModBlocks {
             () -> new Block(BlockBehaviour.Properties.ofFullCopy(Blocks.BLUE_ICE)
                     .sound(SoundType.GLASS)
                     .friction(0.989F)));
+
+    /**
+     * 电流浆的流体方块：存在的唯一理由是「桶倒下去得有东西可放」，不是给玩家挖的。
+     * 属性逐条照抄原版水（可替换、无碰撞、不可破坏、无掉落表、不导电），
+     * 只是地图颜色取电青色；真正的颜色与外观由流体类型（{@code ModFluidExtensions}）决定。
+     * <p>
+     * 刻意不走 {@link #registerBlock}：那个helper 会顺手注册一个 BlockItem，
+     * 而流体方块不该有物品形态——桶才是它的物品。
+     */
+    public static final DeferredBlock<LiquidBlock> CURRENT_SLURRY_BLOCK = BLOCKS.register("current_slurry",
+            () -> new LiquidBlock(ModFluids.CURRENT_SLURRY.get(), BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_CYAN)
+                    .replaceable()
+                    .noCollission()
+                    .strength(100.0F)
+                    // 世界里发光靠的是**方块**属性而不是流体类型：原版岩浆就是这么写的
+                    // （FluidType 那个 lightLevel 只管桶那一侧），两边都给 15
+                    .lightLevel(state -> 15)
+                    .pushReaction(PushReaction.DESTROY)
+                    .noLootTable()
+                    .liquid()
+                    .sound(SoundType.EMPTY)));
 
     //催生器
     public static final DeferredBlock<Block> ACCELERATOR = registerBlock("accelerator",

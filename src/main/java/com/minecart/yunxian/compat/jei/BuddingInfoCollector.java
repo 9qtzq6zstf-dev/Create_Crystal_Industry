@@ -239,6 +239,12 @@ public final class BuddingInfoCollector {
         if (growth.energy() == EnergyRequirement.AE2_GRID) {
             rows.add(Row.line(Component.translatable(LANG + "growth.energy")));
         }
+        if (growth.energy() == EnergyRequirement.LAVA_TANK) {
+            rows.add(Row.line(Component.translatable(LANG + "growth.lava")));
+        }
+        if (growth.energy() == EnergyRequirement.FE) {
+            rows.add(Row.line(Component.translatable(LANG + "growth.fe")));
+        }
 
         // 转化规则合并成一行：矿石族有两条（矿石 + 母岩再生），分行写会把版面撑满
         List<BlockConversion> conversions = growth.conversions();

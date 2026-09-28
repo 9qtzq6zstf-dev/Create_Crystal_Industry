@@ -455,7 +455,8 @@ public final class CustomBudding {
 
         @Override
         public Block createObject() {
-            return new YunxianClusterBlock(stage.height, stage.aabbOffset, createProperties(), stage.key);
+            // 脚本母岩不冒电火花（那是弧光石家族的专属外观，见 BuddingFamily.Appearance）
+            return new YunxianClusterBlock(stage.height, stage.aabbOffset, createProperties(), stage.key, false);
         }
 
         /**

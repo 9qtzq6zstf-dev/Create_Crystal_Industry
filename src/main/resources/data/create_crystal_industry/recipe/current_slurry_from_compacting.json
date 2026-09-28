@@ -1,0 +1,15 @@
+{
+    "type": "create:compacting",
+    "heat_requirement": "superheated",
+    "ingredients": [
+        {
+            "item": "create_crystal_industry:arclight"
+        }
+    ],
+    "results": [
+        {
+            "amount": 500,
+            "id": "create_crystal_industry:current_slurry"
+        }
+    ]
+}

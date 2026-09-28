@@ -4,6 +4,11 @@
     "create_crystal_industry:echo_small_bud",
     "create_crystal_industry:echo_medium_bud",
     "create_crystal_industry:echo_large_bud",
-    "create_crystal_industry:echo_cluster"
+    "create_crystal_industry:echo_cluster",
+    "create_crystal_industry:ancient_debris_budding",
+    "create_crystal_industry:ancient_debris_small_bud",
+    "create_crystal_industry:ancient_debris_medium_bud",
+    "create_crystal_industry:ancient_debris_large_bud",
+    "create_crystal_industry:ancient_debris_cluster"
   ]
 }

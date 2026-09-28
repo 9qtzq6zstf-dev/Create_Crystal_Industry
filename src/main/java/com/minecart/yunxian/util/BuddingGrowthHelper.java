@@ -170,8 +170,10 @@ public final class BuddingGrowthHelper {
      * <p>
      * 只在客户端调（维度与群系名走 {@link EnvironmentDisplay}，它读语言文件）。
      * <p>
-     * 目前只有共用的 {@code BuddingGrowthBlockEntity} 调它；回响 / 可燃冰 / 福鲁伊克斯那三个专用 BE
-     * 的家族都还没有环境要求，将来给它们加了要求，记得在那几个 {@code addToGoggleTooltip} 里也调一次。
+     * 共用的 {@code BuddingGrowthBlockEntity} 会调它；专用 BE 得各自记得——目前
+     * {@code LavaBuddingBlockEntity}（远古残骸母岩，下界特产）调了，
+     * 回响 / 可燃冰 / 福鲁伊克斯那三个专用 BE 的家族都还没有环境要求，
+     * 将来给它们加了要求，记得在那几个 {@code addToGoggleTooltip} 里也调一次。
      */
     public static void appendGrowthEnvironment(BlockState state, List<Component> tooltip) {
         GrowthEnvironment environment = growthEnvironmentOf(state);

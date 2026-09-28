@@ -1,6 +1,8 @@
 package com.minecart.yunxian;
 
 import com.minecart.yunxian.advancement.YunxianAdvancements;
+import com.minecart.yunxian.effect.ElectrifiedAura;
+import com.minecart.yunxian.effect.SlurryShock;
 import com.minecart.yunxian.attachment.EchoAttachments;
 import com.minecart.yunxian.behaviour.SmartDrillMovementBehaviour;
 import com.minecart.yunxian.battery.CrystalBatteryInteractions;
@@ -31,6 +33,8 @@ public class Yunxian {
 
         ModBlocks.register(modEventBus);
         ModItems.register(modEventBus);
+        ModFluids.register(modEventBus);
+        ModEffects.register(modEventBus);
         // 母岩家族由中央定义表注册：必须在这里触发一次类初始化，
         // 否则方块会晚于注册表事件才入表，启动后整批母岩缺失
         BuddingFamilies.bootstrap();
@@ -45,6 +49,10 @@ public class Yunxian {
         NeoForge.EVENT_BUS.addListener(ScriptedBlockDrops::onBlockDrops);
         // 玩家亲手挖掉一颗完整晶簇 → 「它真的会长」（按方块判，见 YunxianAdvancements.isCluster）
         NeoForge.EVENT_BUS.addListener(YunxianAdvancements::onBlockBroken);
+        // 「感电」：生物待在弧光石系列方块或电流浆附近就获得（见 ElectrifiedAura 的类注释）
+        NeoForge.EVENT_BUS.addListener(ElectrifiedAura::onEntityTick);
+        // 泡在电流浆里持续挨雷劈（见 SlurryShock 的类注释）
+        NeoForge.EVENT_BUS.addListener(SlurryShock::onEntityTick);
         // 潜行右键换晶体：只能挂在物品层（原版潜行时会跳过方块的 useItemOn），且手持的是任意晶体方块，
         // 所以走 UseItemOnBlockEvent 这个对任何物品都生效的钩子，见该类注释
         NeoForge.EVENT_BUS.addListener(CrystalBatteryInteractions::onUseItemOnBlock);

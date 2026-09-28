@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 
 import com.minecart.yunxian.block.budding.EchoConvertingBuddingBlock;
 import com.minecart.yunxian.block.budding.GenericBuddingBlock;
+import com.minecart.yunxian.block.budding.LavaBuddingBlock;
 import com.minecart.yunxian.block.budding.RedstoneClusterBlock;
 import com.minecart.yunxian.block.budding.YunxianClusterBlock;
 import com.minecart.yunxian.budding.BuddingFamily.Appearance;
@@ -107,7 +108,7 @@ public final class BuddingFamilies {
 
     /** 绝大多数母岩共用的外观：沿用原版亮度/音效，使用共享展示 BE */
     private static final Appearance PLAIN_APPEARANCE = new Appearance(INHERIT_BUD_LIGHT, null, null,
-            BlockEntityKind.SHARED_GROWTH, 0, null, null, List.of());
+            BlockEntityKind.SHARED_GROWTH, 0, null, null, List.of(), false);
 
     // ==================== 中央定义表 ====================
 
@@ -137,6 +138,8 @@ public final class BuddingFamilies {
 
             echo(),
             quartz(),
+            ancientDebris(),
+            arclight(),
             redstone(),
             glowstone(),
             flammableIce(),
@@ -152,6 +155,8 @@ public final class BuddingFamilies {
     public static final RegisteredFamily RAW_IRON = of("raw_iron");
     public static final RegisteredFamily RAW_GOLD = of("raw_gold");
     public static final RegisteredFamily ECHO = of("echo");
+    public static final RegisteredFamily ANCIENT_DEBRIS = of("ancient_debris");
+    public static final RegisteredFamily ARCLIGHT = of("arclight");
     public static final RegisteredFamily GLOWSTONE = of("glowstone");
     public static final RegisteredFamily FLAMMABLE_ICE = of("flammable_ice");
     public static final RegisteredFamily FLUIX = of("fluix");
@@ -215,7 +220,7 @@ public final class BuddingFamilies {
         // 芽/簇不自发光：一旦发光就会顶掉自己的生长位
         Appearance appearance = new Appearance(
                 List.of(DARK_LIGHT, DARK_LIGHT, DARK_LIGHT), DARK_LIGHT, null,
-                BlockEntityKind.ECHO_DISPLAY, 0, null, null, List.of());
+                BlockEntityKind.ECHO_DISPLAY, 0, null, null, List.of(), false);
         return register(new BuddingFamily("echo", BuddingModel.CUBE_ALL, ToolTier.DIAMOND, true,
                 WorldGen.of("echo_budding_in_sculk", "echo_budding_in_deep_dark"), false,
                 () -> Blocks.SCULK, growth, appearance));
@@ -236,6 +241,51 @@ public final class BuddingFamilies {
                 () -> Blocks.SMOOTH_QUARTZ, growth, PLAIN_APPEARANCE));
     }
 
+    /**
+     * 远古残骸母岩：下界特产（和石英母岩一样只在下界满速），挖掘等级同远古残骸（钻石），
+     * 模型也是柱体——原版远古残骸的顶面与侧面贴图不同。
+     * <p>
+     * 它是唯一<b>吃熔岩</b>的母岩：方块自己就是容量 1 B 的流体容器（见
+     * {@code LavaBuddingBlockEntity}），每次成功生长扣 250 mB，罐里不够就当这次生长没发生。
+     * 熔岩用管道（NeoForge 流体能力）或手持熔岩桶右键通入，空桶可以舀出来，容器里的熔岩不掉落。
+     * <p>
+     * 相邻转化同理<b>只有</b>「远古残骸 → 本母岩」这一条再生传播，<b>没有</b>「石头 → 矿石」那一档
+     * ——它不会把任何方块变成远古残骸，只是自己会从远古残骸里长出来；这条传播也标了
+     * {@code gated()}，一样要付 250 mB。因此想复制一块母岩，得拿远古残骸贴着它、罐里还得有熔岩。
+     */
+    private static RegisteredFamily ancientDebris() {
+        List<BlockConversion> conversions = List.of(
+                BlockConversion.of(SPREAD_CHANCE, 1, Replacement.toSelf(() -> Blocks.ANCIENT_DEBRIS)).gated());
+
+        Growth growth = new Growth(GrowthRule.STANDARD, LightRequirement.ANY,
+                EnergyRequirement.LAVA_TANK, conversions, ClusterKind.STANDARD, 0, NETHER_ONLY);
+        Appearance appearance = new Appearance(INHERIT_BUD_LIGHT, null, null,
+                BlockEntityKind.LAVA_TANK, 0, null, null, List.of(), false);
+        // 世界生成：下界 Y 8–22 的矿脉（与原版远古残骸同一高度带），自然是空罐，要用得自己浇，见
+        // data/create_crystal_industry/worldgen 与 neoforge/biome_modifier 下的同名 JSON
+        return register(new BuddingFamily("ancient_debris", BuddingModel.CUBE_COLUMN, ToolTier.DIAMOND, true,
+                WorldGen.of("ancient_debris_budding_vein", "ancient_debris_budding_vein"), false,
+                () -> Blocks.ANCIENT_DEBRIS, growth, appearance));
+    }
+
+    /**
+     * 弧光石母岩：吃 FE 的母岩——方块自己是个 1 M FE 的能量容器（见
+     * {@code ArclightBuddingBlockEntity}），每次成功生长扣 10 000 FE，电量不够就当这次生长没发生。
+     * <p>
+     * 它没有相邻转化（不会把任何方块变成弧光石），也<b>不自然生成</b>：获取方式还没定，
+     * 定下来之前在 JEI 里只显示「暂无自然生成与合成配方」。晶簇掉 1 个弧光石，
+     * 弧光石再拿去工作盆冲压成电流浆（配方见 data/create_crystal_industry/recipe）。
+     */
+    private static RegisteredFamily arclight() {
+        Growth growth = new Growth(GrowthRule.STANDARD, LightRequirement.ANY,
+                EnergyRequirement.FE, List.of(), ClusterKind.STANDARD, 0, GrowthEnvironment.ANY);
+        // 只在晶簇之后追加「弧光石」这一件物品：它是母岩的产物，不是一个方块家族
+        Appearance appearance = new Appearance(INHERIT_BUD_LIGHT, null, null,
+                BlockEntityKind.FE_TANK, 0, null, null, List.of(() -> ModItems.ARCLIGHT.get()), true);
+        return register(new BuddingFamily("arclight", BuddingModel.CUBE_ALL, ToolTier.IRON, false, null, false,
+                () -> ModItems.ARCLIGHT.get(), growth, appearance));
+    }
+
     /** 红石母岩：矿石母岩的转化规则 + 母岩与各级芽/簇都输出红石信号 */
     private static RegisteredFamily redstone() {
         List<BlockConversion> conversions = List.of(
@@ -254,7 +304,7 @@ public final class BuddingFamilies {
     /** 荧石母岩：母岩与各级芽/簇发光；与石英一样只在下界满速 */
     private static RegisteredFamily glowstone() {
         Appearance appearance = new Appearance(GLOWSTONE_BUD_LIGHT, GLOWSTONE_CLUSTER_LIGHT, null,
-                BlockEntityKind.SHARED_GROWTH, GLOWSTONE_BUDDING_LIGHT, null, null, List.of());
+                BlockEntityKind.SHARED_GROWTH, GLOWSTONE_BUDDING_LIGHT, null, null, List.of(), false);
         // 世界生成没有自己的 placed_feature：它替换的是原版荧石团（create_crystal_industry:glowstone_budding_blob
         // 覆写了 minecraft:glowstone_extra），所以这里传 null，页面改用语言文件里的手写说明
         return register(new BuddingFamily("glowstone", BuddingModel.CUBE_ALL, ToolTier.NONE, true, null, false,
@@ -267,7 +317,7 @@ public final class BuddingFamilies {
                 EnergyRequirement.FREE, List.of(), ClusterKind.STANDARD, 0, GrowthEnvironment.ANY);
         Appearance appearance = new Appearance(INHERIT_BUD_LIGHT, null, SoundType.GLASS,
                 BlockEntityKind.ICE_DISPLAY, 0, SoundType.GLASS, ICE_FRICTION,
-                List.of(() -> ModBlocks.FLAMMABLE_ICE_BLOCK.get(), () -> ModItems.FLAMMABLE_ICE.get()));
+                List.of(() -> ModBlocks.FLAMMABLE_ICE_BLOCK.get(), () -> ModItems.FLAMMABLE_ICE.get()), false);
         return register(new BuddingFamily("flammable_ice", BuddingModel.CUBE_ALL, ToolTier.NONE, true,
                 WorldGen.of("flammable_ice", "add_flammable_ice"), false,
                 () -> ModBlocks.FLAMMABLE_ICE_BLOCK.get(), growth, appearance));
@@ -282,7 +332,7 @@ public final class BuddingFamilies {
         Growth growth = new Growth(GrowthRule.STANDARD, LightRequirement.ANY,
                 EnergyRequirement.AE2_GRID, conversions, ClusterKind.STANDARD, 0, GrowthEnvironment.ANY);
         Appearance appearance = new Appearance(INHERIT_BUD_LIGHT, null, null,
-                BlockEntityKind.AE2_GRID, 0, null, null, List.of());
+                BlockEntityKind.AE2_GRID, 0, null, null, List.of(), false);
         return register(new BuddingFamily("fluix", BuddingModel.CUBE_ALL, ToolTier.STONE, false, null, true,
                 () -> externalBlock("ae2:fluix_block"), growth, appearance));
     }
@@ -322,17 +372,23 @@ public final class BuddingFamilies {
             return new EchoConvertingBuddingBlock(spec, properties,
                     smallBud.get(), mediumBud.get(), largeBud.get(), cluster.get());
         }
+        // 远古残骸母岩要管比较器输出与熔岩桶交互，同样只能由子类实现（见 LavaBuddingBlock）
+        if (spec.appearance().blockEntity() == BlockEntityKind.LAVA_TANK) {
+            return new LavaBuddingBlock(spec, properties,
+                    smallBud.get(), mediumBud.get(), largeBud.get(), cluster.get());
+        }
         return new GenericBuddingBlock(spec, properties,
                 smallBud.get(), mediumBud.get(), largeBud.get(), cluster.get());
     }
 
     private static YunxianClusterBlock newStageBlock(BuddingFamily spec, Stage stage) {
         BlockBehaviour.Properties properties = stageProperties(spec, stage);
+        boolean sparks = spec.appearance().sparkParticles();
         if (spec.growth().clusterKind() == ClusterKind.REDSTONE) {
             return new RedstoneClusterBlock(stage.height, stage.aabbOffset, properties, stage.key,
-                    REDSTONE_STAGE_SIGNAL[stage.ordinal()]);
+                    REDSTONE_STAGE_SIGNAL[stage.ordinal()], sparks);
         }
-        return new YunxianClusterBlock(stage.height, stage.aabbOffset, properties, stage.key);
+        return new YunxianClusterBlock(stage.height, stage.aabbOffset, properties, stage.key, sparks);
     }
 
     /** 芽/晶簇属性：从对应的原版紫水晶方块拷贝，再按家族覆盖亮度/音效 */

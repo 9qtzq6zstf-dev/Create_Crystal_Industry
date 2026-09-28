@@ -31,6 +31,18 @@ public final class ModCapabilities {
                 ModBlockEntities.CRYSTAL_BATTERY.get(),
                 (blockEntity, side) -> blockEntity.getEnergyCapability(side)
         );
+        // 远古残骸母岩：容量 1 B 的熔岩罐，管道/泵与手持熔岩桶都靠这个能力进出（六个面都通）
+        event.registerBlockEntity(
+                Capabilities.FluidHandler.BLOCK,
+                ModBlockEntities.ANCIENT_DEBRIS_BUDDING.get(),
+                (blockEntity, side) -> blockEntity
+        );
+        // 弧光石母岩：1 M FE 的能量容器，只吃不吐（见 ArclightBuddingBlockEntity 的类注释）
+        event.registerBlockEntity(
+                Capabilities.EnergyStorage.BLOCK,
+                ModBlockEntities.ARCLIGHT_BUDDING.get(),
+                (blockEntity, side) -> blockEntity.getEnergyCapability(side)
+        );
 
         // ★ 软依赖门控：只有 Curios 已加载才触碰 Curios 类
         if (ModList.get().isLoaded("curios")) {

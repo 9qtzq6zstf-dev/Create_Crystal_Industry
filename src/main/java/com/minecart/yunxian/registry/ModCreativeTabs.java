@@ -45,6 +45,8 @@ public final class ModCreativeTabs {
                         // 做完之后把这一行加回来即可
                         output.accept(ModItems.ECHO_SPYGLASS.get());
                         output.accept(ModItems.NIGHT_VISION_GOGGLES.get());
+                        // 电流浆桶：弧光石那条链的产物容器（弧光石本身跟在它家族的晶簇后面）
+                        output.accept(ModItems.CURRENT_SLURRY_BUCKET.get());
 
                         for (RegisteredFamily family : BuddingFamilies.ALL) {
                             if (family.isRegistered() && family.spec().ae2Gated()) {

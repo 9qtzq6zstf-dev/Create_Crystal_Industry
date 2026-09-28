@@ -10,8 +10,8 @@ public class RedstoneClusterBlock extends YunxianClusterBlock {
     private final int signalStrength;
 
     public RedstoneClusterBlock(float height, float aabbOffset, BlockBehaviour.Properties properties,
-                                String stageKey, int signalStrength) {
-        super(height, aabbOffset, properties, stageKey);
+                                String stageKey, int signalStrength, boolean sparks) {
+        super(height, aabbOffset, properties, stageKey, sparks);
         this.signalStrength = signalStrength;
     }
 

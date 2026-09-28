@@ -2,9 +2,11 @@ package com.minecart.yunxian.registry;
 
 import com.minecart.yunxian.*;
 import com.minecart.yunxian.blockentity.*;
+import com.minecart.yunxian.blockentity.budding.ArclightBuddingBlockEntity;
 import com.minecart.yunxian.blockentity.budding.BuddingGrowthBlockEntity;
 import com.minecart.yunxian.blockentity.budding.EchoConvertingBuddingBlockEntity;
 import com.minecart.yunxian.blockentity.budding.FlammableIceBuddingBlockEntity;
+import com.minecart.yunxian.blockentity.budding.LavaBuddingBlockEntity;
 import com.minecart.yunxian.budding.BuddingFamilies;
 import com.minecart.yunxian.budding.BuddingRegistration;
 import com.minecart.yunxian.integration.ae2.AE2BlockEntities;
@@ -66,6 +68,18 @@ public final class ModBlockEntities {
             BLOCK_ENTITIES.register("echo_budding", () -> BlockEntityType.Builder.of(
                     EchoConvertingBuddingBlockEntity::new,
                     BuddingFamilies.ECHO.budding().get()
+            ).build(null));
+    // 弧光石母岩：存 FE 的能量 BE（会落盘，也实现能量能力，见 ModCapabilities）
+    public static final Supplier<BlockEntityType<ArclightBuddingBlockEntity>> ARCLIGHT_BUDDING =
+            BLOCK_ENTITIES.register("arclight_budding", () -> BlockEntityType.Builder.of(
+                    ArclightBuddingBlockEntity::new,
+                    BuddingFamilies.ARCLIGHT.budding().get()
+            ).build(null));
+    // 远古残骸母岩：存熔岩的容器 BE（会落盘，也实现流体能力，见 ModCapabilities）
+    public static final Supplier<BlockEntityType<LavaBuddingBlockEntity>> ANCIENT_DEBRIS_BUDDING =
+            BLOCK_ENTITIES.register("ancient_debris_budding", () -> BlockEntityType.Builder.of(
+                    LavaBuddingBlockEntity::new,
+                    BuddingFamilies.ANCIENT_DEBRIS.budding().get()
             ).build(null));
     // 母岩共享的“生长速度”展示 BE：凡是没指定专用 BE 的家族都走这里。
     // 合法方块表见 goggleInfoBlocks()：BuddingRegistration 的汇总 + 原版紫水晶母岩

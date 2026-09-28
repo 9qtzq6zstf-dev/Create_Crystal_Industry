@@ -77,7 +77,7 @@ public record BuddingFamily(
             GrowthRule rule,
             /** 生长位的光照要求 */
             LightRequirement light,
-            /** 生长（及付费转化）是否需要 AE 能量 */
+            /** 生长（及付费转化）怎么付费：免费、AE 网格能量，或母岩自己罐里的熔岩 / FE */
             EnergyRequirement energy,
             /** 随机刻副作用：转化/传播规则，按顺序各消耗一次随机数 */
             List<BlockConversion> conversions,
@@ -116,7 +116,12 @@ public record BuddingFamily(
             /** 母岩摩擦系数，null 表示沿用原版 */
             @Nullable Float buddingFriction,
             /** 创造模式标签里紧跟在晶簇之后追加的物品（可燃冰的装饰方块与燃料） */
-            List<Supplier<? extends ItemLike>> tabExtras) {
+            List<Supplier<? extends ItemLike>> tabExtras,
+            /**
+             * 方块周围是否冒电火花粒子（弧光石家族为 true）。
+             * 走原版 {@code Block#animateTick}：只在客户端、只对玩家附近的方块调用，不需要自己扫区块。
+             */
+            boolean sparkParticles) {
     }
 
     // ==================== 嵌套枚举 ====================
@@ -224,7 +229,18 @@ public record BuddingFamily(
         /** 免费生长 */
         FREE,
         /** 需要 AE 网格供电（福鲁伊克斯母岩） */
-        AE2_GRID
+        AE2_GRID,
+        /**
+         * 需要母岩方块自己存的熔岩（远古残骸母岩）：方块是容量 1 B 的流体容器，
+         * 每次成功生长（以及标了 {@code gated()} 的付费转化）扣
+         * {@code LavaBuddingBlockEntity#COST_PER_GROWTH}，罐里不够就放弃这次生长。
+         */
+        LAVA_TANK,
+        /**
+         * 需要母岩方块自己存的 FE（弧光石母岩）：方块是 1 M FE 的能量容器，
+         * 每次成功生长扣 {@code ArclightBuddingBlockEntity#COST_PER_GROWTH}，电量不够就放弃这次生长。
+         */
+        FE
     }
 
     /** 芽/晶簇的方块类型 */
@@ -244,7 +260,11 @@ public record BuddingFamily(
         /** 可燃冰母岩专用展示 BE（多一行含水提示） */
         ICE_DISPLAY,
         /** 福鲁伊克斯母岩专用 BE（持 ME 网格节点，负责扣 AE） */
-        AE2_GRID
+        AE2_GRID,
+        /** 远古残骸母岩专用 BE（存 1 B 熔岩，负责扣熔岩；方块走 {@code LavaBuddingBlock}） */
+        LAVA_TANK,
+        /** 弧光石母岩专用 BE（存 1 M FE，负责扣电） */
+        FE_TANK
     }
 
     /**

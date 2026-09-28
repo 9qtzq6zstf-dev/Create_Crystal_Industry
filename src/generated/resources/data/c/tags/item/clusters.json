@@ -10,6 +10,8 @@
     "create_crystal_industry:emerald_cluster",
     "create_crystal_industry:echo_cluster",
     "create_crystal_industry:quartz_cluster",
+    "create_crystal_industry:ancient_debris_cluster",
+    "create_crystal_industry:arclight_cluster",
     "create_crystal_industry:redstone_cluster",
     "create_crystal_industry:glowstone_cluster",
     "create_crystal_industry:flammable_ice_cluster",

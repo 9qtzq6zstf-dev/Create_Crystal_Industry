@@ -145,7 +145,7 @@ public final class ModConfig {
         private static Set<String> knownBuddingIds;
 
         /**
-         * 全部已知的母岩 id：自带的 14 个家族 + 附属模组通过
+         * 全部已知的母岩 id：自带的 15 个家族 + 附属模组通过
          * {@link BuddingRegistration#declareKnownId} 声明的 id。
          * <p>
          * <b>延迟到首次使用</b>（首个随机刻解析生长档位时）才构建：附属模组是在自己构造器里声明的，
@@ -171,6 +171,14 @@ public final class ModConfig {
          * {@link #buildGrowthSpeeds()}，而该方法要读这个字段，声明在后面会读到 null。
          */
         private static final List<String> FAST_BY_DEFAULT = List.of("redstone", "lapis");
+
+        /**
+         * 极慢档的默认成员：远古残骸。
+         * <p>
+         * 它的晶簇掉落下界合金碎片，默认当稀缺资源处理；想让下界合金进入量产，把 id 挪到别的档即可。
+         * 声明位置的理由同 {@link #FAST_BY_DEFAULT}。
+         */
+        private static final List<String> VERY_SLOW_BY_DEFAULT = List.of("ancient_debris");
 
         /**
          * 四档生长速度各一个配置项，由 {@link GrowthSpeed} 派生：
@@ -200,18 +208,20 @@ public final class ModConfig {
         }
 
         /**
-         * 某档的默认成员：极慢/慢两档默认空；快档默认 {@link #FAST_BY_DEFAULT}；
-         * 「正常」档默认写出全部已注册的母岩，但跳过 {@link #FAST_BY_DEFAULT} 里的那几个——
-         * 否则同一个 id 会同时出现在 growthSpeedNormal 与 growthSpeedFast 里，读配置文件时像是写错了。
+         * 某档的默认成员：慢档默认空；极慢档默认 {@link #VERY_SLOW_BY_DEFAULT}；
+         * 快档默认 {@link #FAST_BY_DEFAULT}；
+         * 「正常」档默认写出全部已注册的母岩，但跳过上面两个列表里的那几个——
+         * 否则同一个 id 会同时出现在两个档位里，读配置文件时像是写错了。
          */
         private static List<String> defaultIds(GrowthSpeed speed) {
             return switch (speed) {
                 case NORMAL -> BuddingFamilies.ALL.stream()
                         .filter(RegisteredFamily::isRegistered)
                         .map(family -> family.spec().id())
-                        .filter(id -> !FAST_BY_DEFAULT.contains(id))
+                        .filter(id -> !FAST_BY_DEFAULT.contains(id) && !VERY_SLOW_BY_DEFAULT.contains(id))
                         .toList();
                 case FAST -> FAST_BY_DEFAULT;
+                case VERY_SLOW -> VERY_SLOW_BY_DEFAULT;
                 default -> List.of();
             };
         }

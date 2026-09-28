@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/cube_column",
+  "textures": {
+    "end": "create_crystal_industry:block/ancient_debris/ancient_debris_budding_top",
+    "side": "create_crystal_industry:block/ancient_debris/ancient_debris_budding_side"
+  }
+}

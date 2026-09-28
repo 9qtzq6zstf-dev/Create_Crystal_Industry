@@ -1,0 +1,6 @@
+{
+    "type": "neoforge:add_features",
+    "biomes": "#minecraft:is_nether",
+    "features": "create_crystal_industry:ancient_debris_budding_vein",
+    "step": "underground_ores"
+}

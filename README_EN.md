@@ -28,6 +28,8 @@ A budding block rolls for growth independently on each of its six faces. An empt
 | Lapis Lazuli | — | Lapis Lazuli ×4–9 | Lapis Lazuli Ore / Deepslate Lapis Lazuli Ore |
 | Redstone | — | Redstone | Redstone Ore / Deepslate Redstone Ore |
 | Quartz | Full speed only in the Nether; elsewhere a successful roll has a further 1-in-2 chance to fail | Nether Quartz | Netherrack → Nether Quartz Ore |
+| Ancient Debris | Full speed only in the Nether, as above, and every growth costs 250 mB of lava (the block is its own 1 B lava tank, see below) | Netherite Scrap ×1–3 | — (reproduction only, see below) |
+| Arclight | Every growth costs 10,000 FE (the block holds 1,000,000 FE internally, receive-only, see below) | Arclight | — |
 | Glowstone | Full speed only in the Nether, as above | Glowstone Dust | — |
 | Echo | Growth space must be at light level 0 | Echo Shard | Any of 12 blocks within a radius of 2 (dirt, sand, stone, tuff, …) → Sculk, 1-in-4 |
 | Flammable Ice | Target space must be a water source block | Flammable Ice | — |
@@ -39,15 +41,45 @@ Drop rules:
 | --- | --- | --- |
 | Cluster | The item in the "Cluster Output" column above, with Fortune applied | The cluster block itself |
 | Bud | Nothing | The bud block itself |
-| Budding Block | The block one tier below it (Budding Raw Iron drops a Block of Raw Iron, Budding Diamond drops a Block of Diamond) | The same; Silk Touch does not change this |
+| Budding Block | The block one tier below it (Budding Raw Iron drops a Block of Raw Iron, Budding Diamond drops a Block of Diamond; Budding Ancient Debris and Budding Arclight have no tier below them and drop 1 of their own item) | The same; Silk Touch does not change this |
 
 The budding block itself cannot be collected with ordinary tools. The Smart Drill's Silk Touch mode is the only way to obtain it, described in section 3.
 
 Three block properties are worth noting. Budding Redstone, its buds and its cluster all emit a redstone signal (15 from the budding block, then 3 / 7 / 11 from the buds and 15 from the cluster), so they work directly as a redstone source. Budding Glowstone, its buds and its cluster all emit light (15 from the budding block, then 3 / 7 / 11 from the buds and 15 from the cluster). Budding Echo's buds and cluster deliberately emit no light at all: any emission would occupy the very growth space they need.
 
+### The Lava Tank of Budding Ancient Debris
+
+Budding Ancient Debris is the only budding block that **burns lava**. The block itself is a fluid container holding **1 B (1000 mB)**, and lava is all it accepts — nothing else can be piped in or drawn out.
+
+- **Getting lava in**: pipes (Create pumps and fluid pipes, via the NeoForge fluid capability) or right-clicking with a lava bucket.
+- **Getting lava out**: right-clicking with an empty bucket. Buckets only work on an **empty** tank (pour in) or a **full** one (scoop out) — one bucket is exactly the tank's capacity, so the 750 / 500 / 250 leftovers have to be topped up by pipe.
+- **Cost**: **250 mB** per successful growth; with less than that in the tank, the growth simply does not happen (which is why the ones generated in the Nether start empty). 1 B = 4 growths.
+- **Reading the level**: Engineer's Goggles show the level and the per-growth cost; a comparator emits a 1–15 signal proportional to the level.
+
+The lava travels with the block but **not with the item**: breaking the block does not preserve it, and schematics always paste an empty tank (this block entity does not implement Create's `PartialSafeNBT`, so schematics skip its data by default).
+
+### Arclight and Current Slurry
+
+Budding Arclight is the only budding block that **runs on FE**. It holds **1,000,000 FE** internally and spends **10,000 FE** per successful growth; with less than that stored, nothing grows (so it never charges itself — wire it up first). It is **receive-only**: a converter that turns power into matter, not a battery. Use the Crystal Battery if you want to store FE.
+
+- **Powering it**: any NeoForge FE source works, on all six faces; it accepts at most 10,000 FE per tick (one growth's worth per second).
+- **Output**: the cluster drops 1 **Arclight** (Fortune applies). Arclight is an **item only** — it has no block form.
+- **Pressing**: put one Arclight in a Basin under a **Mechanical Press**, **superheated** (a Blaze Burner fed a Blaze Cake) → **500 mB of Current Slurry**. The recipe type is `create:compacting`, not `create:pressing` (the latter can only output items).
+- **Current Slurry and its bucket**: the mod's first fluid, registered the standard vanilla/NeoForge way as a **source fluid plus a flowing variant** (the same slot as Water, Chocolate or Seed Oil — which is why JEI shows a plain "Current Slurry"). It ships with a **Current Slurry Bucket**: fill it, pour it into the world, or scoop a placed source block back up. The fluid block itself is not meant to be mined (water-like properties: replaceable, no collision, unbreakable, no loot); its only reason to exist is that a bucket needs something to pour. How to turn the slurry back into FE is not decided yet, so that recipe is still missing.
+- **Light**: Current Slurry has a light level of **15** (the same as lava) — a poured pool doubles as a light source.
+- **Shock**: anything living standing in Current Slurry keeps taking **lightning damage** (**20 per hit — ten hearts** — using vanilla's `lightning_bolt` damage type, which **ignores armour**, so falling in is effectively instant death; that is deliberate). It works on contact, like lava — it does not require being fully submerged, since one bucket only gives you a single block of depth. Vanilla's hurt cooldown naturally limits it to about twice a second.
+- **Sparks**: everything goes through vanilla's **`animateTick`** (the same hook lava uses for its embers; client-side only, and only for blocks and fluid surfaces near the player), so there is no custom scanning:
+  - **Current Slurry** launches sparks up off its surface, plus a layer of small flickers sitting on the surface — the same "embers flying off lava" feel, with the particle swapped for an electric spark. Vanilla's crackle/pop sounds are deliberately not copied (there is no fitting electric sound on hand, and lava sounds would clash).
+  - **Arclight blocks** (budding block, buds, cluster) emit the occasional spark **above their top face**. The position is deliberately outside the block: a particle spawned inside the volume gets hidden by the crystal's own crossing planes, which is why a cluster could look spark-less from certain angles.
+- **Electrified**: a living entity within 3 blocks of an **arclight block** (budding block, buds or cluster) or of **Current Slurry** gains the "Electrified" status effect; it fades about 3 seconds after leaving (and keeps refreshing while you stay). The effect itself is a **placeholder** — whether it hurts, slows or powers machines is still undecided. Only slurry actually poured into the world counts; what sits in tanks and pipes does not.
+
+Budding Arclight currently **neither generates naturally nor has a crafting recipe**: how to obtain it is still undecided, so for now it is creative-only (its JEI info page says so too).
+
 ### Budding Block Reproduction
 
 Beyond converting ore, an ore budding block has a **1-in-25000** chance to "infect" an adjacent block of the matching ore block, turning it into another budding block. Budding Quartz infects Smooth Quartz Blocks instead, and Budding Fluix infects Fluix Blocks (that conversion additionally requires ME Grid power).
+
+Budding Ancient Debris is the one family with no Stone → Ore conversion at all: it turns nothing into Ancient Debris, it only infects an adjacent **block of Ancient Debris** to make another budding block (and that conversion costs 250 mB of lava too, same as a growth). Getting a second one therefore means hauling Ancient Debris over to sit next to it.
 
 | Budding Block | Block That Can Be Converted Into It |
 | --- | --- |
@@ -55,6 +87,7 @@ Beyond converting ore, an ore budding block has a **1-in-25000** chance to "infe
 | Diamond / Emerald / Lapis Lazuli | The matching block of the ore |
 | Redstone | Block of Redstone |
 | Quartz | Smooth Quartz Block |
+| Ancient Debris | Block of Ancient Debris (itself) |
 | Fluix | Fluix Block (requires power) |
 
 ### Growth Speed
@@ -66,7 +99,7 @@ Beyond converting ore, an ore budding block has a **1-in-25000** chance to "infe
 | Normal *(default)* | 1/5, the same as vanilla Budding Amethyst | `growthSpeedNormal` |
 | Fast | 1/1, a successful roll always advances | `growthSpeedFast` |
 
-Each of the four config keys takes a list of **budding family ids** — the `<id>` of the `generate_<id>` switches, such as `raw_iron`, `diamond` or `echo`. `growthSpeedNormal` lists every budding block by default; a budding block named in no list is treated as Normal, so emptying that list changes nothing. If a budding block appears in two of the non-Normal tiers, the slower tier wins and a warning is logged.
+Each of the four config keys takes a list of **budding family ids** — the `<id>` of the `generate_<id>` switches, such as `raw_iron`, `diamond` or `echo`. Defaults: Fast holds Redstone and Lapis Lazuli, Very Slow holds Ancient Debris, Slow is empty, and every other budding block is listed under Normal. A budding block named in no list is treated as Normal, so emptying the Normal list changes nothing. If a budding block appears in two of the non-Normal tiers, the slower tier wins and a warning is logged.
 
 ---
 
@@ -120,10 +153,12 @@ Each budding block generates at the depth of its corresponding ore, usually embe
 | Lapis Lazuli | Overworld | −64 – 64 | Vein, rarity 1/16 |
 | Redstone | Overworld | −63 – 15 | Vein, rarity 1/16 |
 | Quartz | Nether | 10 above bedrock to 10 below the top | Vein, rarity 1/8 |
+| Ancient Debris | Nether | 8 – 22 | Vein, rarity 1/16, with 2 Ancient Debris next to the budding block; the tank generates empty |
 | Glowstone | Nether | At natural glowstone blobs | Replaces the lowest block of a glowstone blob, at a chance set by `glowstoneBuddingChance` (default 0.5); `glowstoneGenerateBuds` and related keys control the buds that come with it |
 | Echo | Overworld | −64 – 0 | Deep Dark, generated inside Sculk |
 | Flammable Ice | Overworld | Below the deep-ocean seafloor | Structure, 1-in-256 per chunk (`flammableIceChance`), with soul sand scattered around it |
 | Rose Quartz | — | — | Does not generate naturally |
+| Arclight | — | — | Does not generate naturally (how to obtain it is undecided; creative-only for now) |
 | Fluix | — | — | Does not generate naturally |
 
 Each one can be toggled individually in the config file (`generate_<budding id>`). The Flammable Ice structure and Budding Glowstone have their own additional chance settings.
@@ -336,7 +371,7 @@ A runnable example also ships in the local development directory: `run/kubejs/st
 Every trait of a budding block — light, water and power requirements, growth rules, block conversion, light and sound, drops — lives in a single table in
 `src/main/java/com/minecart/yunxian/budding/BuddingFamilies.java`. **Adding a budding family amounts to adding one entry to that table**; block registration, growth logic, Goggles readouts, creative tabs, world generation switches and Ponder entries are all derived from it.
 
-Growth speed is the exception: it is a global four-tier setting (`BuddingFamily.GrowthSpeed`) driven by the four id lists in the config file, and the default membership of the Normal tier is likewise derived from that table, so a new family needs no extra configuration.
+Growth speed is the exception: it is a global four-tier setting (`BuddingFamily.GrowthSpeed`) driven by the four id lists in the config file. The default membership of the Normal tier is derived from that table, but it skips the defaults hard-coded in `ModConfig` for the Fast tier (Redstone, Lapis Lazuli) and the Very Slow tier (Ancient Debris); add a family to those lists to have it default to another tier.
 
 ### Data Generation
 
@@ -344,7 +379,9 @@ Generate the JSON assets with `./gradlew runData`. **AE2 must be present in `run
 
 Data generation owns the following files; do not write them by hand: `blockstates/`, `models/block/`, `models/item/`, the loot tables for budding blocks and buds, the `c:budding_blocks` / `c:buds` / `c:clusters` tags, and the `mineable/pickaxe` and `needs_*_tool` tags.
 
-Still hand-written: textures (including `.mcmeta`), the loot tables for clusters and Fluix (their structure and mod conditions cannot be reproduced by the generator), world generation JSON, and language files.
+Still hand-written: textures (including `.mcmeta`), the loot tables for clusters and Fluix (their structure and mod conditions cannot be reproduced by the generator), world generation JSON, language files, plain-item models (`models/item/`) and recipes.
+
+> The generator **validates that textures exist** (model generation reads `ExistingFileHelper`), so while a new family's textures are still being drawn you have to drop placeholder images into the target paths, run `runData`, then delete the placeholders and keep only the folders. Fluid textures and tint are not the generator's business: their paths are hard-coded in `client/ModFluidExtensions`.
 
 ### Wiring a Block Into the Growth Engine
 
