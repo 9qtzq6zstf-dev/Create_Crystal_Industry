@@ -7,6 +7,7 @@ import com.minecart.yunxian.effect.SlurryShock;
 import com.minecart.yunxian.attachment.EchoAttachments;
 import com.minecart.yunxian.behaviour.SmartDrillMovementBehaviour;
 import com.minecart.yunxian.battery.CrystalBatteryInteractions;
+import com.minecart.yunxian.blockentity.CleanerDropAbsorption;
 import com.minecart.yunxian.budding.BuddingFamilies;
 import com.minecart.yunxian.budding.BuddingGrowthEngine;
 import com.minecart.yunxian.client.ModRenderers;
@@ -50,6 +51,8 @@ public class Yunxian {
         NeoForge.EVENT_BUS.addListener(ScriptedBlockDrops::onBlockDrops);
         // 玩家亲手挖掉一颗完整晶簇 → 「它真的会长」（按方块判，见 YunxianAdvancements.isCluster）
         NeoForge.EVENT_BUS.addListener(YunxianAdvancements::onBlockBroken);
+        // 风场内生成的掉落物直接进吸尘器库存，不生成实体（见 CleanerDropAbsorption 的类注释）
+        NeoForge.EVENT_BUS.addListener(CleanerDropAbsorption::onEntityJoinLevel);
         // 「感电」：生物待在弧光石系列方块或电流浆附近就获得（见 ElectrifiedAura 的类注释）
         NeoForge.EVENT_BUS.addListener(ElectrifiedAura::onEntityTick);
         // 泡在电流浆里持续挨雷劈（见 SlurryShock 的类注释）

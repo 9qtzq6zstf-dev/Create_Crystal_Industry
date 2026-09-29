@@ -354,6 +354,16 @@ public final class ModConfig {
                 .translation(LANG_PREFIX + "crystalBatteryMaxWidth")
                 .defineInRange("crystalBatteryMaxWidth", 3, 1, 16);
 
+        // ===== 动力吸尘器 =====
+        public static final ModConfigSpec.BooleanValue CLEANER_DIRECT_ABSORB = BUILDER
+                .comment(
+                        "Whether drops appearing inside a sucking Mechanical Cleaner's airstream go straight into its inventory instead of spawning as item entities.",
+                        "Saves entities in farms; the item ends up in the same place either way.",
+                        "Anything that would not be picked up right away anyway (inventory full, filtered out,",
+                        "or a washing/smelting airstream) still spawns as a normal drop entity.")
+                .translation(LANG_PREFIX + "cleanerDirectAbsorb")
+                .define("cleanerDirectAbsorb", true);
+
         public static final ModConfigSpec.IntValue CRYSTAL_BATTERY_MAX_HEIGHT = BUILDER
                 .comment(
                         "Maximum height of a Crystal Battery multiblock, in blocks.")
@@ -380,6 +390,14 @@ public final class ModConfig {
                         "Overall opacity of the night vision goggles screen overlay (0.0 = invisible, 1.0 = fully opaque).")
                 .translation(LANG_PREFIX + "gogglesOverlayAlpha")
                 .defineInRange("gogglesOverlayAlpha", 0.75, 0.0, 1.0);
+
+        // ===== 动力吸尘器 =====
+        public static final ModConfigSpec.BooleanValue CLEANER_SUCK_ANIMATION = BUILDER
+                .comment(
+                        "Whether items play the fly-into-the-cleaner animation when the Mechanical Cleaner sucks them in.",
+                        "Visual only: items enter the inventory at the same instant either way.")
+                .translation(LANG_PREFIX + "cleanerSuckAnimation")
+                .define("cleanerSuckAnimation", true);
 
         public static final ModConfigSpec SPEC = BUILDER.build();
     }

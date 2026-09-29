@@ -792,6 +792,52 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
     }
 
     /**
+     * 掉落物"直接入库存"：物品实体即将进入世界时由 {@link CleanerDropAbsorption} 调用，
+     * 判定通过就把整份物品收进库存并返回 {@code true}（调用方会取消这次实体生成）。
+     * <p>
+     * 只在"这一 tick 本来就会被 {@link #collectItemsInFlow} 收走"时才接管，逐条对齐：
+     * <ul>
+     *   <li>{@code getSpeed() != 0}：与 tick 里的 {@code hasPower && !locked} 等价
+     *       （红石锁与无动力都汇报 0）。少了这一条，红石锁切换后风场边界还没重建的那几 tick
+     *       会把物品收进来，而那几 tick 吸尘器其实是不吸的。</li>
+     *   <li>点在 {@code airCurrent.bounds} 内：这正是 {@link #collectItemsInFlow} 用的范围。</li>
+     *   <li>该点所在的气流段没有加工催化剂（熔岩、营火等）：那一段气流会把物品洗涤、熔炼，
+     *       接管就跳过了加工。留给实体流程，它被吸走时拿到的才是加工后的产物。</li>
+     *   <li>过滤通过、且库存放得下整份：放不下就整份不收，掉落物照常生成，
+     *       随后由 {@link #suckItem} 按实际空间收走——不吞物品。</li>
+     * </ul>
+     */
+    public boolean tryAbsorbDrop(Vec3 point, ItemStack stack) {
+        if (stack.isEmpty() || airCurrent == null || getSpeed() == 0 || !isPulling())
+            return false;
+        if (!airCurrent.bounds.contains(point))
+            return false;
+        if (hasFlowProcessing(point))
+            return false;
+        if (!canSuck(stack))
+            return false;
+        if (getMaxInsertable(stack) < stack.getCount())
+            return false;
+
+        // getMaxInsertable 已确认整份放得下，这里的剩余量必然为空
+        insertAll(stack.copy());
+        setChanged();
+
+        // 幻影动画照旧：接管的只是实体，客户端看到的仍是"物品飞进吸尘器"
+        pendingPhantoms.add(new SuckPhantom(stack.copy(), point));
+        if (pendingPhantoms.size() > 8)
+            pendingPhantoms.remove(0);
+        sendData();
+        return true;
+    }
+
+    /** 该点所在的气流段是否有加工催化剂（熔岩、营火、含水吹气等），有则不能跳过实体 */
+    private boolean hasFlowProcessing(Vec3 point) {
+        float offset = (float) VecHelper.alignedDistanceToFace(point, worldPosition, getAirflowOriginSide());
+        return airCurrent.getTypeAt(offset) != null;
+    }
+
+    /**
      * 尝试把一个掉落物吸入容器。
      * 依次尝试放入每个槽位；放不下的部分留在掉落物中（不吞物品）。
      * 物品仍会瞬间进库存；同时记录一条"吸入事件"，让客户端播放幻影飞入动画。

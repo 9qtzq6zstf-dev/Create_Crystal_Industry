@@ -2,6 +2,7 @@ package com.minecart.yunxian.client.mechanical;
 
 import com.minecart.yunxian.blockentity.MechanicalCleanerBlockEntity;
 import com.minecart.yunxian.blockentity.MechanicalCleanerBlockEntity.SuckPhantom;
+import com.minecart.yunxian.config.ModConfig;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntityRenderer;
 import com.simibubi.create.foundation.blockEntity.behaviour.filtering.FilteringRenderer;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -79,11 +80,20 @@ public class MechanicalCleanerRenderer extends KineticBlockEntityRenderer<Mechan
     /**
      * 渲染"吸入幻影"：物品从被吸位置飞向方块中心，越近越小并自旋，到终点消失。
      * 纯视觉，不影响实际库存逻辑（库存仍是瞬间进入）。
+     * <p>
+     * 动画可在客户端配置里关掉（cleanerSuckAnimation）：关闭时直接把队列清空，
+     * 既不出画面，也不让幻影在队列里越积越多。服务端照常发包——它读不到客户端的配置。
      */
     private void renderSuckPhantoms(MechanicalCleanerBlockEntity be, float partialTicks, PoseStack ms,
                                     MultiBufferSource buffer, int light) {
         List<SuckPhantom> phantoms = be.getActivePhantoms();
-        if (phantoms == null || phantoms.isEmpty())
+        if (phantoms == null)
+            return;
+        if (!ModConfig.Client.CLEANER_SUCK_ANIMATION.get()) {
+            phantoms.clear();
+            return;
+        }
+        if (phantoms.isEmpty())
             return;
 
         Minecraft mc = Minecraft.getInstance();
