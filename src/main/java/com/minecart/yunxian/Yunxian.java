@@ -2,6 +2,7 @@ package com.minecart.yunxian;
 
 import com.minecart.yunxian.advancement.YunxianAdvancements;
 import com.minecart.yunxian.effect.ElectrifiedAura;
+import com.minecart.yunxian.fluid.FluidInteractions;
 import com.minecart.yunxian.effect.SlurryShock;
 import com.minecart.yunxian.attachment.EchoAttachments;
 import com.minecart.yunxian.behaviour.SmartDrillMovementBehaviour;
@@ -84,6 +85,8 @@ public class Yunxian {
             );
             GogglesItem.addIsWearingPredicate(player ->
                     NightVisionWearHelper.isWearingGoggles(player));
+            // 熔岩 + 下方黑曜石 + 旁边岩浆块 → 深板岩：必须等注册表绑定后再注册（见该类注释）
+            FluidInteractions.register();
         });
     }
 }

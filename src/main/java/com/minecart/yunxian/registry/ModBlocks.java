@@ -44,6 +44,8 @@ public final class ModBlocks {
 
     /**
      * 电流浆的流体方块：存在的唯一理由是「桶倒下去得有东西可放」，不是给玩家挖的。
+     * 它与岩浆块的交互不在本类，而在 {@code ModFluids#registerInteractions()} 里用
+     * NeoForge 的流体交互 API 注册（照着原版玄武岩那条写的）。
      * 属性逐条照抄原版水（可替换、无碰撞、不可破坏、无掉落表、不导电），
      * 只是地图颜色取电青色；真正的颜色与外观由流体类型（{@code ModFluidExtensions}）决定。
      * <p>
