@@ -31,17 +31,11 @@ public final class ModCapabilities {
                 ModBlockEntities.CRYSTAL_BATTERY.get(),
                 (blockEntity, side) -> blockEntity.getEnergyCapability(side)
         );
-        // 远古残骸母岩：容量 1 B 的熔岩罐，管道/泵与手持熔岩桶都靠这个能力进出（六个面都通）
+        // 母岩的流体罐（远古残骸的熔岩罐、脚本用 needfluid 声明的那些）：管道/泵与手持容器
+        // 都靠这个能力进出（六个面都通）。罐的容量与认哪种流体由方块自己的定义给出
         event.registerBlockEntity(
                 Capabilities.FluidHandler.BLOCK,
-                ModBlockEntities.ANCIENT_DEBRIS_BUDDING.get(),
-                (blockEntity, side) -> blockEntity
-        );
-        // 脚本母岩的流体罐（KubeJS 的 needfluid）：罐的容量与认哪种流体由脚本定义给出，
-        // 进出管道与手持容器的手感与远古残骸母岩一致
-        event.registerBlockEntity(
-                Capabilities.FluidHandler.BLOCK,
-                ModBlockEntities.SCRIPTED_FLUID_BUDDING.get(),
+                ModBlockEntities.FLUID_TANK_BUDDING.get(),
                 (blockEntity, side) -> blockEntity
         );
         // 弧光石母岩：1 M FE 的能量容器，只吃不吐（见 ArclightBuddingBlockEntity 的类注释）

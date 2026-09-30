@@ -2,7 +2,7 @@ package com.minecart.yunxian.blockentity.budding;
 
 import java.util.List;
 
-import com.minecart.yunxian.block.budding.ScriptedBuddingBlock;
+import com.minecart.yunxian.block.budding.FluidTankBudding;
 import com.minecart.yunxian.budding.FluidRequirement;
 import com.minecart.yunxian.registry.ModBlockEntities;
 import com.minecart.yunxian.util.BuddingGrowthHelper;
@@ -25,25 +25,33 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import net.neoforged.neoforge.fluids.capability.templates.FluidTank;
+import org.jetbrains.annotations.Nullable;
 
 /**
- * 脚本（KubeJS）母岩的流体罐：容量、每次生长的消耗、认哪种流体<b>全部由脚本定义给出</b>
- * （{@code CustomBuddingOptions#needfluid} → {@code GrowthDefinition#fluid()}），
- * 所以同一个方块实体类型能服务任意多个脚本母岩。
+ * 母岩的流体罐：容量、每次生长的消耗、认哪种流体<b>全部由方块自己的定义给出</b>
+ * （{@code CustomBuddingOptions#needfluid} 或家族表里的 {@code Growth.fluid} →{@code GrowthDefinition#fluid()}），
+ * 所以同一个方块实体类型能服务任意多块母岩——脚本注册的与自带家族（远古残骸的熔岩罐）共用它。
  * <p>
- * 与远古残骸母岩的 {@link LavaBuddingBlockEntity} 是同一套做法，区别只有两点：
- * 那边的参数是写死的常量（只认熔岩、1 B / 250 mB），这边每块母岩各读各的定义。
+ * 参数每块母岩各读各的定义，所以既没有写死的常量、也不用为每个家族注册一个专用类型。
  * 实现 {@link IFluidHandler} 之后，Create 的流体管道、泵，或任何认 NeoForge 流体能力的机器
  * 都能直接灌进来（能力注册见 {@code ModCapabilities}），手持流体容器的右键交互在方块侧
- * （见 {@link ScriptedBuddingBlock}）。
+ * （见 {@code FluidTankInteraction}，两块方块类共用）。
  * <p>
  * <b>客户端同步</b>：罐里的量是护目镜浮窗要读的，而方块实体数据只有在方块更新时才会发给客户端，
  * 所以每次罐体变动都必须自己顶一次 {@code sendBlockUpdated}，光 {@code setChanged()} 是不够的
- * （理由同 {@link LavaBuddingBlockEntity} 的类注释）。
+ * （不顶这一次的话，护目镜会一直显示旧数值）。
  */
-public class ScriptedFluidBuddingBlockEntity extends BlockEntity implements IHaveGoggleInformation, IFluidHandler {
+public class FluidTankBuddingBlockEntity extends BlockEntity implements IHaveGoggleInformation, IFluidHandler {
 
-    /** 本母岩的流体需求：罐容量、每次生长的消耗、认哪种流体 */
+    /**
+     * 本母岩的流体需求：罐容量、每次生长的消耗、认哪种流体。
+     * <p>
+     * 可能为 {@code null}：脚本用 {@code CustomBudding.modify} 取消了流体需求之后，世界上早先放下的
+     * 方块里存的仍是本实体类型，区块重载时原版会按存档里的类型 id 重新构造它（不走
+     * {@code ScriptedBuddingBlock#newBlockEntity}），那一刻已经没有流体需求了。
+     * 那种情况下这个罐退化成"容量 0、什么都不收"的空罐——不崩，也不影响新放下的方块。
+     */
+    @Nullable
     private final FluidRequirement requirement;
 
     /**
@@ -53,12 +61,16 @@ public class ScriptedFluidBuddingBlockEntity extends BlockEntity implements IHav
      */
     private final FluidTank tank;
 
-    public ScriptedFluidBuddingBlockEntity(BlockPos pos, BlockState state) {
-        super(ModBlockEntities.SCRIPTED_FLUID_BUDDING.get(), pos, state);
-        // 方块只会给配了流体需求的母岩建这个实体（见 ScriptedBuddingBlock#newBlockEntity），
-        // 所以这里拿不到需求就是本模组的 bug，直接报出来而不是建一个装不进东西的空罐
-        this.requirement = ScriptedBuddingBlock.fluidRequirementOf(state);
-        this.tank = new FluidTank(requirement.capacity(), requirement::matches) {
+    public FluidTankBuddingBlockEntity(BlockPos pos, BlockState state) {
+        super(ModBlockEntities.FLUID_TANK_BUDDING.get(), pos, state);
+        this.requirement = FluidTankBudding.requirementOf(state);
+        this.tank = createTank(requirement);
+    }
+
+    /** 需求为 {@code null} 时建一个容量 0、什么都不收的空罐（见 {@link #requirement} 的注释） */
+    private FluidTank createTank(@Nullable FluidRequirement requirement) {
+        return new FluidTank(requirement == null ? 0 : requirement.capacity(),
+                stack -> requirement != null && requirement.matches(stack)) {
             @Override
             protected void onContentsChanged() {
                 setChanged();
@@ -69,11 +81,6 @@ public class ScriptedFluidBuddingBlockEntity extends BlockEntity implements IHav
                 }
             }
         };
-    }
-
-    /** 本母岩要消耗的流体（容量 / 每次消耗 / 认哪种流体） */
-    public FluidRequirement requirement() {
-        return requirement;
     }
 
     /** 罐里现有多少流体（护目镜与比较器都读它） */
@@ -87,7 +94,7 @@ public class ScriptedFluidBuddingBlockEntity extends BlockEntity implements IHav
      * @return 罐里不足 {@link FluidRequirement#costPerGrowth()} 时返回 false，表示放弃这次生长
      */
     public boolean tryConsumeGrowthCost() {
-        if (level == null || level.isClientSide()) {
+        if (requirement == null || level == null || level.isClientSide()) {
             return false;
         }
         if (tank.getFluidAmount() < requirement.costPerGrowth() || !requirement.matches(tank.getFluid())) {
@@ -103,7 +110,7 @@ public class ScriptedFluidBuddingBlockEntity extends BlockEntity implements IHav
      * （{@code BuddingGrowthEngine.GrowthGate} 的形状正好是静态方法引用，不产生额外对象）。
      */
     public static boolean consumeGrowthCost(ServerLevel level, BlockPos pos) {
-        return level.getBlockEntity(pos) instanceof ScriptedFluidBuddingBlockEntity tank
+        return level.getBlockEntity(pos) instanceof FluidTankBuddingBlockEntity tank
                 && tank.tryConsumeGrowthCost();
     }
 
@@ -114,7 +121,8 @@ public class ScriptedFluidBuddingBlockEntity extends BlockEntity implements IHav
      * 不像护目镜那样依赖同步包。没配流体需求的脚本母岩（没有罐）返回 0。
      */
     public static int comparatorSignal(Level level, BlockPos pos) {
-        if (!(level.getBlockEntity(pos) instanceof ScriptedFluidBuddingBlockEntity tank)) {
+        if (!(level.getBlockEntity(pos) instanceof FluidTankBuddingBlockEntity tank)
+                || tank.requirement == null) {
             return 0;
         }
         int amount = tank.fluidAmount();
@@ -192,9 +200,9 @@ public class ScriptedFluidBuddingBlockEntity extends BlockEntity implements IHav
      * 流体的名称与液位都直接给数字：这是方块自己的燃料表，玩家得按它决定什么时候再补一桶
      * ——与「方块固有参数只说定性话」的规矩不冲突，因为液位是状态，不是参数。
      * <p>
-     * 脚本母岩的生长参数（速度 / 光照 / 含水）与生长环境也在这里一起补上：
-     * 那几行本来是共享展示 BE（{@code BuddingGrowthBlockEntity}）代劳的，配了流体的母岩用的是本类，
-     * 得自己记得调，否则护目镜上会少几行（与 {@code LavaBuddingBlockEntity} 同一个理由）。
+     * 生长参数（速度 / 光照 / 含水）与生长环境也在这里一起补上：那几行本来是共享展示 BE
+     * （{@code BuddingGrowthBlockEntity}）代劳的，带罐的母岩用的是本类，得自己记得调，
+     * 否则护目镜上会少几行。
      */
     @Override
     public boolean addToGoggleTooltip(List<Component> tooltip, boolean isPlayerSneaking) {
@@ -203,8 +211,16 @@ public class ScriptedFluidBuddingBlockEntity extends BlockEntity implements IHav
             BuddingGrowthHelper.appendScriptedInfo(getBlockState(), tooltip);
             BuddingGrowthHelper.appendGrowthEnvironment(getBlockState(), tooltip);
         }
+        // 脚本取消过流体需求（旧罐退化来的空罐）：没有"花多少 / 认哪种流体"可讲，不显示流体那两行
+        if (requirement == null) {
+            return true;
+        }
         int amount = fluidAmount();
-        boolean enough = amount >= requirement.costPerGrowth();
+        // 罐里的东西不对也算"不够"：脚本可能用 modify 把这块母岩的流体换过，
+        // 而罐是方块实体创建时建的——里面留着的旧流体既不会被消耗、管道也抽得出来，
+        // 所以这里如实报红，别让玩家对着 1000/1000 的绿字纳闷它为什么不长
+        boolean rightFluid = amount <= 0 || requirement.matches(tank.getFluid());
+        boolean enough = rightFluid && amount >= requirement.costPerGrowth();
         CreateLang.builder()
                 .add(Component.translatable("create_crystal_industry.goggles.scripted.fluid",
                                 requirement.displayName(), amount, requirement.capacity())
@@ -215,10 +231,12 @@ public class ScriptedFluidBuddingBlockEntity extends BlockEntity implements IHav
                                 requirement.costPerGrowth())
                         .withStyle(ChatFormatting.GRAY))
                 .forGoggles(tooltip, 1);
-        // 不够一次生长时把"所以现在不会长"明说出来，别让玩家从 100/1000 这个数字自己推
+        // 现在不会长的话把原因明说出来，别让玩家从 100 / 1000 这个数字自己推
         if (!enough) {
             CreateLang.builder()
-                    .add(Component.translatable("create_crystal_industry.goggles.scripted.fluid_too_little")
+                    .add(Component.translatable(rightFluid
+                                    ? "create_crystal_industry.goggles.scripted.fluid_too_little"
+                                    : "create_crystal_industry.goggles.scripted.fluid_wrong")
                             .withStyle(ChatFormatting.RED))
                     .forGoggles(tooltip, 1);
         }

@@ -25,7 +25,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * 弧光石母岩的能量方块实体：内部 1 M FE 的「电池 + 生长燃料箱」。
  * <p>
- * 与 {@code LavaBuddingBlockEntity} 同一套路，只是燃料从熔岩换成 FE：能力注册见
+ * 与流体罐（{@code FluidTankBuddingBlockEntity}）同一套路，只是燃料从流体换成 FE：能力注册见
  * {@code ModCapabilities}（Create Addition 的电缆、任何认 NeoForge 能量能力的机器都能灌进来），
  * 每次成功生长扣 {@link #COST_PER_GROWTH}。
  * <p>

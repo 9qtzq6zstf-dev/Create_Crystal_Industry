@@ -8,7 +8,6 @@ import java.util.stream.Collectors;
 
 import com.minecart.yunxian.block.budding.EchoConvertingBuddingBlock;
 import com.minecart.yunxian.block.budding.GenericBuddingBlock;
-import com.minecart.yunxian.block.budding.LavaBuddingBlock;
 import com.minecart.yunxian.block.budding.RedstoneClusterBlock;
 import com.minecart.yunxian.block.budding.YunxianClusterBlock;
 import com.minecart.yunxian.budding.BuddingFamily.Appearance;
@@ -19,16 +18,19 @@ import com.minecart.yunxian.budding.BuddingFamily.ClusterKind;
 import com.minecart.yunxian.budding.BuddingFamily.EnergyRequirement;
 import com.minecart.yunxian.budding.BuddingFamily.Growth;
 import com.minecart.yunxian.budding.BuddingFamily.GrowthRule;
+import com.minecart.yunxian.budding.BuddingFamily.GrowthSpeed;
 import com.minecart.yunxian.budding.BuddingFamily.LightRequirement;
 import com.minecart.yunxian.budding.BuddingFamily.Replacement;
 import com.minecart.yunxian.budding.BuddingFamily.ToolTier;
 import com.minecart.yunxian.budding.BuddingFamily.WorldGen;
+import com.minecart.yunxian.budding.FluidRequirement;
 import com.minecart.yunxian.registry.ModBlocks;
 import com.minecart.yunxian.registry.ModItems;
 import com.minecart.yunxian.registry.ModTags;
 
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.FluidTags;
 import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -62,7 +64,9 @@ public final class BuddingFamilies {
 
     // ==================== 每型数值常量 ====================
     // 原先散落在各个母岩子类里，集中在此：调整任何一个母岩的手感都只改这一处。
-    // 例外：生长概率不在本类，由配置文件按 GrowthSpeed 四档决定（默认全部「正常」）。
+    // 生长速度也在这一节：写在每个家族自己的 Growth.speed 里（见各工厂方法），
+    // 红石与青金石是快档、远古残骸是极慢档，其余都是正常档——脚本还能用
+    // CustomBudding.modify(...) 单独改某一块母岩。
 
     /** 石头/深板岩 → 对应矿石 */
     private static final int ORE_CONVERSION_CHANCE = 20;
@@ -90,21 +94,34 @@ public final class BuddingFamilies {
     /** 可燃冰：与蓝冰相同的摩擦系数 */
     private static final float ICE_FRICTION = 0.989F;
 
+    /**
+     * 远古残骸母岩的熔岩罐：只认熔岩（按流体标签判定，静止与流动变体都算），
+     * 每次成功生长（以及标了 {@code gated()} 的再生传播）扣 250 mB，罐最多存 1 B（正好一桶）。
+     * <p>
+     * 这是"给母岩加流体消耗"的样板：脚本用 {@code CustomBuddingOptions#needfluid} 声明的是同一个
+     * {@link FluidRequirement}，方块实体、付费钩子、护目镜与比较器全都共用同一条路。
+     * 脚本还能用 {@code CustomBudding.modify} 给别的母岩加一个、或者把它取消掉。
+     */
+    private static final FluidRequirement LAVA_TANK =
+            FluidRequirement.ofTag(FluidTags.LAVA, 250, 1000);
+
     /** 沿用原版紫水晶芽/簇亮度的占位（null = 不显式设置） */
     private static final List<Integer> INHERIT_BUD_LIGHT = Arrays.asList(null, null, null);
 
     // ==================== 常用组合 ====================
 
-    /** 绝大多数母岩共用的生长特点：无光照/能量要求，无转化，不输出信号，所有维度同速 */
+    /** 绝大多数母岩共用的生长特点：无光照/能量要求，无转化，不输出信号，所有维度同速，正常速度 */
     private static final Growth PLAIN_GROWTH = new Growth(GrowthRule.STANDARD,
-            LightRequirement.ANY, EnergyRequirement.FREE, List.of(), ClusterKind.STANDARD, 0, GrowthEnvironment.ANY);
+            LightRequirement.ANY, EnergyRequirement.FREE, List.of(), ClusterKind.STANDARD, 0,
+            GrowthEnvironment.ANY, GrowthSpeed.NORMAL, null);
 
     /** 下界特产母岩（石英、荧石）的生长环境：只在下界满速，别的地方每次判定还剩一半的概率生长 */
     private static final GrowthEnvironment NETHER_ONLY = GrowthEnvironment.of(0.5, List.of(Level.NETHER));
 
     /** 下界特产母岩（石英、荧石）的生长特点：和 {@link #PLAIN_GROWTH} 一样从简，但只在下界满速 */
     private static final Growth NETHER_GROWTH = new Growth(GrowthRule.STANDARD,
-            LightRequirement.ANY, EnergyRequirement.FREE, List.of(), ClusterKind.STANDARD, 0, NETHER_ONLY);
+            LightRequirement.ANY, EnergyRequirement.FREE, List.of(), ClusterKind.STANDARD, 0,
+            NETHER_ONLY, GrowthSpeed.NORMAL, null);
 
     /** 绝大多数母岩共用的外观：沿用原版亮度/音效，使用共享展示 BE */
     private static final Appearance PLAIN_APPEARANCE = new Appearance(INHERIT_BUD_LIGHT, null, null,
@@ -120,20 +137,20 @@ public final class BuddingFamilies {
             plain("rose_quartz", BuddingModel.CUBE_COLUMN, ToolTier.STONE,
                     () -> externalBlock("create:rose_quartz_block")),
 
-            ore("raw_iron", ToolTier.STONE,
+            ore("raw_iron", ToolTier.STONE, GrowthSpeed.NORMAL,
                     () -> Blocks.IRON_ORE, () -> Blocks.DEEPSLATE_IRON_ORE, () -> Blocks.RAW_IRON_BLOCK),
-            ore("raw_gold", ToolTier.IRON,
+            ore("raw_gold", ToolTier.IRON, GrowthSpeed.NORMAL,
                     () -> Blocks.GOLD_ORE, () -> Blocks.DEEPSLATE_GOLD_ORE, () -> Blocks.RAW_GOLD_BLOCK),
-            ore("raw_copper", ToolTier.STONE,
+            ore("raw_copper", ToolTier.STONE, GrowthSpeed.NORMAL,
                     () -> Blocks.COPPER_ORE, () -> Blocks.DEEPSLATE_COPPER_ORE, () -> Blocks.RAW_COPPER_BLOCK),
-            ore("raw_zinc", ToolTier.IRON,
+            ore("raw_zinc", ToolTier.IRON, GrowthSpeed.NORMAL,
                     () -> externalBlock("create:zinc_ore"), () -> externalBlock("create:deepslate_zinc_ore"),
                     () -> externalBlock("create:raw_zinc_block")),
-            ore("diamond", ToolTier.IRON,
+            ore("diamond", ToolTier.IRON, GrowthSpeed.NORMAL,
                     () -> Blocks.DIAMOND_ORE, () -> Blocks.DEEPSLATE_DIAMOND_ORE, () -> Blocks.DIAMOND_BLOCK),
-            ore("lapis", ToolTier.IRON,
+            ore("lapis", ToolTier.IRON, GrowthSpeed.FAST,
                     () -> Blocks.LAPIS_ORE, () -> Blocks.DEEPSLATE_LAPIS_ORE, () -> Blocks.LAPIS_BLOCK),
-            ore("emerald", ToolTier.IRON,
+            ore("emerald", ToolTier.IRON, GrowthSpeed.NORMAL,
                     () -> Blocks.EMERALD_ORE, () -> Blocks.DEEPSLATE_EMERALD_ORE, () -> Blocks.EMERALD_BLOCK),
 
             echo(),
@@ -189,9 +206,10 @@ public final class BuddingFamilies {
      * 矿石母岩：相邻石头/深板岩 → 对应矿石；相邻粗矿块（钻石/绿宝石/青金石为矿物块）→ 本母岩。
      * 被打碎时掉落的也是同一档矿物块。
      *
+     * @param speed     生长速度档位；青金石是快档（它的晶簇掉 4–9 个，产量起点高但级别低），其余是正常档
      * @param veinBlock 会再生出本母岩的方块，同时是它的掉落物
      */
-    private static RegisteredFamily ore(String id, ToolTier tier, Supplier<Block> stoneOre,
+    private static RegisteredFamily ore(String id, ToolTier tier, GrowthSpeed speed, Supplier<Block> stoneOre,
                                         Supplier<Block> deepslateOre, Supplier<Block> veinBlock) {
         List<BlockConversion> conversions = List.of(
                 BlockConversion.of(ORE_CONVERSION_CHANCE, 1,
@@ -200,7 +218,7 @@ public final class BuddingFamilies {
                 BlockConversion.of(SPREAD_CHANCE, 1, Replacement.toSelf(veinBlock)));
 
         Growth growth = new Growth(GrowthRule.STANDARD, LightRequirement.ANY,
-                EnergyRequirement.FREE, conversions, ClusterKind.STANDARD, 0, GrowthEnvironment.ANY);
+                EnergyRequirement.FREE, conversions, ClusterKind.STANDARD, 0, GrowthEnvironment.ANY, speed, null);
         // 矿石族的 placed_feature 一律是 <id>_budding_vein，生物群系统一来自 ore_budding_veins
         // （见 data/create_crystal_industry 下的 worldgen/placed_feature 与 neoforge/biome_modifier）
         return register(new BuddingFamily(id, BuddingModel.CUBE_ALL, tier, true,
@@ -216,7 +234,7 @@ public final class BuddingFamilies {
 
         Growth growth = new Growth(GrowthRule.STANDARD,
                 LightRequirement.below(ECHO_GROWTH_LIGHT_THRESHOLD), EnergyRequirement.FREE,
-                conversions, ClusterKind.STANDARD, 0, GrowthEnvironment.ANY);
+                conversions, ClusterKind.STANDARD, 0, GrowthEnvironment.ANY, GrowthSpeed.NORMAL, null);
         // 芽/簇不自发光：一旦发光就会顶掉自己的生长位
         Appearance appearance = new Appearance(
                 List.of(DARK_LIGHT, DARK_LIGHT, DARK_LIGHT), DARK_LIGHT, null,
@@ -235,7 +253,7 @@ public final class BuddingFamilies {
 
         // 石英是下界特产：只有在下界才满速，搬到别的维度每次判定通过后再掷 1/2 失败
         Growth growth = new Growth(GrowthRule.STANDARD, LightRequirement.ANY,
-                EnergyRequirement.FREE, conversions, ClusterKind.STANDARD, 0, NETHER_ONLY);
+                EnergyRequirement.FREE, conversions, ClusterKind.STANDARD, 0, NETHER_ONLY, GrowthSpeed.NORMAL, null);
         return register(new BuddingFamily("quartz", BuddingModel.CUBE_COLUMN, ToolTier.STONE, true,
                 WorldGen.of("quartz_budding_vein", "quartz_budding_vein"), false,
                 () -> Blocks.SMOOTH_QUARTZ, growth, PLAIN_APPEARANCE));
@@ -245,9 +263,9 @@ public final class BuddingFamilies {
      * 远古残骸母岩：下界特产（和石英母岩一样只在下界满速），挖掘等级同远古残骸（钻石），
      * 模型也是柱体——原版远古残骸的顶面与侧面贴图不同。
      * <p>
-     * 它是唯一<b>吃熔岩</b>的母岩：方块自己就是容量 1 B 的流体容器（见
-     * {@code LavaBuddingBlockEntity}），每次成功生长扣 250 mB，罐里不够就当这次生长没发生。
-     * 熔岩用管道（NeoForge 流体能力）或手持熔岩桶右键通入，空桶可以舀出来，容器里的熔岩不掉落。
+     * 它是自带家族里唯一<b>吃熔岩</b>的：方块自己就是容量 1 B 的流体容器（见 {@link #LAVA_TANK}），
+     * 每次成功生长扣 250 mB，罐里不够就当这次生长没发生。熔岩用管道（NeoForge 流体能力）或
+     * 手持熔岩桶右键通入，空桶可以舀出来，容器里的熔岩不掉落。
      * <p>
      * 相邻转化同理<b>只有</b>「远古残骸 → 本母岩」这一条再生传播，<b>没有</b>「石头 → 矿石」那一档
      * ——它不会把任何方块变成远古残骸，只是自己会从远古残骸里长出来；这条传播也标了
@@ -257,10 +275,15 @@ public final class BuddingFamilies {
         List<BlockConversion> conversions = List.of(
                 BlockConversion.of(SPREAD_CHANCE, 1, Replacement.toSelf(() -> Blocks.ANCIENT_DEBRIS)).gated());
 
+        // 极慢档：它的晶簇掉下界合金碎片，按稀缺资源处理（想让下界合金量产就把这里改掉，
+        // 或用脚本 CustomBudding.modify('create_crystal_industry:ancient_debris_budding', ...) 单独改）
         Growth growth = new Growth(GrowthRule.STANDARD, LightRequirement.ANY,
-                EnergyRequirement.LAVA_TANK, conversions, ClusterKind.STANDARD, 0, NETHER_ONLY);
+                EnergyRequirement.FREE, conversions, ClusterKind.STANDARD, 0, NETHER_ONLY, GrowthSpeed.VERY_SLOW,
+                LAVA_TANK);
+        // 方块实体按"定义里有没有流体需求"选（见 GenericBuddingBlock#newBlockEntity），
+        // 所以这里用不上专用的 BE 类型，共享展示 BE 只在没罐时才会被建出来
         Appearance appearance = new Appearance(INHERIT_BUD_LIGHT, null, null,
-                BlockEntityKind.LAVA_TANK, 0, null, null, List.of(), false);
+                BlockEntityKind.SHARED_GROWTH, 0, null, null, List.of(), false);
         // 世界生成：下界 Y 8–22 的矿脉（与原版远古残骸同一高度带），自然是空罐，要用得自己浇，见
         // data/create_crystal_industry/worldgen 与 neoforge/biome_modifier 下的同名 JSON
         return register(new BuddingFamily("ancient_debris", BuddingModel.CUBE_COLUMN, ToolTier.DIAMOND, true,
@@ -278,7 +301,7 @@ public final class BuddingFamilies {
      */
     private static RegisteredFamily arclight() {
         Growth growth = new Growth(GrowthRule.STANDARD, LightRequirement.ANY,
-                EnergyRequirement.FE, List.of(), ClusterKind.STANDARD, 0, GrowthEnvironment.ANY);
+                EnergyRequirement.FE, List.of(), ClusterKind.STANDARD, 0, GrowthEnvironment.ANY, GrowthSpeed.NORMAL, null);
         // 只在晶簇之后追加「弧光石」这一件物品：它是母岩的产物，不是一个方块家族
         Appearance appearance = new Appearance(INHERIT_BUD_LIGHT, null, null,
                 BlockEntityKind.FE_TANK, 0, null, null, List.of(() -> ModItems.ARCLIGHT.get()), true);
@@ -294,8 +317,10 @@ public final class BuddingFamilies {
                         Replacement.of(() -> Blocks.DEEPSLATE, () -> Blocks.DEEPSLATE_REDSTONE_ORE)),
                 BlockConversion.of(SPREAD_CHANCE, 1, Replacement.toSelf(() -> Blocks.REDSTONE_BLOCK)));
 
+        // 快档：红石是基础材料，且它的晶簇只掉 1 个红石，产量高一点才好用
         Growth growth = new Growth(GrowthRule.STANDARD, LightRequirement.ANY,
-                EnergyRequirement.FREE, conversions, ClusterKind.REDSTONE, REDSTONE_BUDDING_SIGNAL, GrowthEnvironment.ANY);
+                EnergyRequirement.FREE, conversions, ClusterKind.REDSTONE, REDSTONE_BUDDING_SIGNAL,
+                GrowthEnvironment.ANY, GrowthSpeed.FAST, null);
         return register(new BuddingFamily("redstone", BuddingModel.CUBE_ALL, ToolTier.IRON, true,
                 WorldGen.of("redstone_budding_vein", "ore_budding_veins"), false,
                 () -> Blocks.REDSTONE_BLOCK, growth, PLAIN_APPEARANCE));
@@ -314,7 +339,7 @@ public final class BuddingFamilies {
     /** 可燃冰母岩：只有目标格含水才生长；冰音效 + 蓝冰摩擦 */
     private static RegisteredFamily flammableIce() {
         Growth growth = new Growth(GrowthRule.SUBMERGED, LightRequirement.ANY,
-                EnergyRequirement.FREE, List.of(), ClusterKind.STANDARD, 0, GrowthEnvironment.ANY);
+                EnergyRequirement.FREE, List.of(), ClusterKind.STANDARD, 0, GrowthEnvironment.ANY, GrowthSpeed.NORMAL, null);
         Appearance appearance = new Appearance(INHERIT_BUD_LIGHT, null, SoundType.GLASS,
                 BlockEntityKind.ICE_DISPLAY, 0, SoundType.GLASS, ICE_FRICTION,
                 List.of(() -> ModBlocks.FLAMMABLE_ICE_BLOCK.get(), () -> ModItems.FLAMMABLE_ICE.get()), false);
@@ -330,7 +355,7 @@ public final class BuddingFamilies {
                         Replacement.toSelf(() -> externalBlock("ae2:fluix_block"))).gated());
 
         Growth growth = new Growth(GrowthRule.STANDARD, LightRequirement.ANY,
-                EnergyRequirement.AE2_GRID, conversions, ClusterKind.STANDARD, 0, GrowthEnvironment.ANY);
+                EnergyRequirement.AE2_GRID, conversions, ClusterKind.STANDARD, 0, GrowthEnvironment.ANY, GrowthSpeed.NORMAL, null);
         Appearance appearance = new Appearance(INHERIT_BUD_LIGHT, null, null,
                 BlockEntityKind.AE2_GRID, 0, null, null, List.of(), false);
         return register(new BuddingFamily("fluix", BuddingModel.CUBE_ALL, ToolTier.STONE, false, null, true,
@@ -370,11 +395,6 @@ public final class BuddingFamilies {
         // 回响母岩需要 CAN_SUMMON 状态，只能由子类注册（见 EchoConvertingBuddingBlock 的类注释）
         if (spec.appearance().blockEntity() == BlockEntityKind.ECHO_DISPLAY) {
             return new EchoConvertingBuddingBlock(spec, properties,
-                    smallBud.get(), mediumBud.get(), largeBud.get(), cluster.get());
-        }
-        // 远古残骸母岩要管比较器输出与熔岩桶交互，同样只能由子类实现（见 LavaBuddingBlock）
-        if (spec.appearance().blockEntity() == BlockEntityKind.LAVA_TANK) {
-            return new LavaBuddingBlock(spec, properties,
                     smallBud.get(), mediumBud.get(), largeBud.get(), cluster.get());
         }
         return new GenericBuddingBlock(spec, properties,

@@ -14,9 +14,10 @@ import org.jetbrains.annotations.Nullable;
  * 生长要消耗的流体：母岩方块自己带一个小罐（容量 {@link #capacity()} mB），
  * 每次成功生长扣 {@link #costPerGrowth()} mB，罐里不够就放弃这次生长。
  * <p>
- * 与远古残骸母岩的熔岩罐是同一套做法（见 {@code LavaBuddingBlockEntity}），差别只在参数从哪来：
- * 自带家族的罐写死在专用方块实体里（走 {@code BuddingFamily.EnergyRequirement.LAVA_TANK}），
- * 脚本与附属模组的罐由这条定义给出——KubeJS 里就是 {@code CustomBuddingOptions#needfluid}。
+ * 参数从哪来有两种：自带家族写在家族表里（远古残骸母岩的熔岩罐就是 {@code BuddingFamilies} 里的
+ * 一个常量），脚本与附属模组由这条定义给出——KubeJS 里就是 {@code CustomBuddingOptions#needfluid}。
+ * 两者跑的是同一条路：方块实体是 {@code FluidTankBuddingBlockEntity}，付费钩子在
+ * {@code GenericBuddingBlock#payGrowthCost}，脚本还能用 {@code CustomBudding.modify} 后改。
  * <p>
  * 认哪种流体有两种写法：
  * <ul>

@@ -194,8 +194,8 @@ public record GrowthDefinition(
         return growthEnvironment.allows(level, pos);
     }
 
-    /** 光照门槛的写法：负数表示"这一端不限制" */
-    private static OptionalInt lightBound(int bound) {
+    /** 光照门槛的写法：负数表示"这一端不限制"（脚本覆盖也用它，见 {@link BuddingOverrides.Override#apply}） */
+    static OptionalInt lightBound(int bound) {
         return bound < 0 ? OptionalInt.empty() : OptionalInt.of(bound);
     }
 

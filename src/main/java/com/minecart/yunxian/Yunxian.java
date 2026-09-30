@@ -11,6 +11,7 @@ import com.minecart.yunxian.battery.CrystalBatteryInteractions;
 import com.minecart.yunxian.blockentity.CleanerDropAbsorption;
 import com.minecart.yunxian.budding.BuddingFamilies;
 import com.minecart.yunxian.budding.BuddingGrowthEngine;
+import com.minecart.yunxian.budding.BuddingOverrides;
 import com.minecart.yunxian.client.ModRenderers;
 import com.minecart.yunxian.datagen.YunxianDataGen;
 import com.minecart.yunxian.registry.*;
@@ -50,6 +51,8 @@ public class Yunxian {
         modEventBus.addListener(ModCreativeTabs::addScriptedEntries);
         // 脚本注册的芽/簇的掉落规则（精准采集掉本体、否则掉配置物品）：KubeJS 的掉落 API 表达不了，运行时接管
         NeoForge.EVENT_BUS.addListener(ScriptedBlockDrops::onBlockDrops);
+        // 脚本给母岩设的开采等级：方块标签在注册期就固定了，改只能改"这一步判定"（见 ScriptedMiningLevels）
+        NeoForge.EVENT_BUS.addListener(ScriptedMiningLevels::onHarvestCheck);
         // 玩家亲手挖掉一颗完整晶簇 → 「它真的会长」（按方块判，见 YunxianAdvancements.isCluster）
         NeoForge.EVENT_BUS.addListener(YunxianAdvancements::onBlockBroken);
         // 风场内生成的掉落物直接进吸尘器库存，不生成实体（见 CleanerDropAbsorption 的类注释）
@@ -81,6 +84,9 @@ public class Yunxian {
 
     private static void commonSetup(FMLCommonSetupEvent event) {
         event.enqueueWork(() -> {
+            // 脚本用 CustomBudding.modify 改过的母岩：方块注册完了，这时才查得出目标写没写错
+            // （写错只会静默不生效，所以这里逐个核一遍、打警告）
+            BuddingOverrides.verifyTargets();
             // 成就：母岩每长出一级都会回调一次，用来判定「被催生出来的」那些时刻
             BuddingGrowthEngine.setGrowthListener(YunxianAdvancements::onBuddingGrown);
             BlockStressValues.IMPACTS.register(ModBlocks.SMART_DRILL.get(), () -> 8.0);

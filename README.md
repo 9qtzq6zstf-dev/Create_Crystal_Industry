@@ -49,7 +49,9 @@
 
 ### 远古残骸母岩的熔岩罐
 
-远古残骸母岩是自带家族里唯一**吃熔岩**的：方块本体就是一个容量 **1 B（1000 mB）** 的流体容器，且只认熔岩（灌不进、也抽不走别的液体）。（脚本注册的母岩也能烧流体，流体、消耗与容量都能自己写，见「六、用 KubeJS 添加母岩」里的「流体消耗」。）
+远古残骸母岩是自带家族里唯一**吃熔岩**的：方块本体就是一个容量 **1 B（1000 mB）** 的流体容器，且只认熔岩（灌不进、也抽不走别的液体）。
+
+它的罐参数写在家族表里（`BuddingFamilies` 的 `LAVA_TANK` 常量：熔岩、250 mB、1 B），而**脚本注册的母岩用的是同一个罐**——`needfluid` 声明的就是同一份 `FluidRequirement`，方块实体、扣费、护目镜、比较器全走同一条路。所以脚本也能给**任何一块已有母岩**加流体消耗、改参数、或者把远古残骸这份取消掉，见「六、用 KubeJS 添加与修改母岩」里的「流体消耗」与「修改已有的母岩」。
 
 - **通入熔岩**：管道（Create 的泵与流体管道，走 NeoForge 流体能力）或手持熔岩桶右键。
 - **取出熔岩**：手持空桶右键。桶只在**空罐**（倒进去）或**满罐**（舀出来）时管用——一桶正好是罐的满容量，750 / 500 / 250 这些零头只能用管道补。
@@ -107,14 +109,18 @@
 
 ### 生长速度
 
-| 档位 | 每次随机刻的推进概率 | 配置项 |
-| --- | --- | --- |
-| 极慢 | 1/50 | `growthSpeedVerySlow` |
-| 慢 | 1/20 | `growthSpeedSlow` |
-| 正常（默认） | 1/5，与原版紫水晶母岩同速 | `growthSpeedNormal` |
-| 快 | 1/1，抽中必定推进 | `growthSpeedFast` |
+概率写在**家族表**里（`BuddingFamilies` 里各家族自己的 `Growth.speed`），不再有配置项：
 
-四个配置项各填一串**母岩家族 id**（即世界生成开关里 `generate_<id>` 的 `<id>`，如 `raw_iron`、`diamond`、`echo`）。默认值：快档是红石与青金石，极慢档是远古残骸，慢档为空，其余母岩全部列在「正常」档；未被任何列表提到的母岩按「正常」处理，因此把「正常」列表清空也不会改变行为。同一母岩同时出现在两个非「正常」档时取更慢的一档，并在日志中告警。
+| 档位 | 每次随机刻的推进概率 | 哪些母岩 |
+| --- | --- | --- |
+| 快 | 1/1，抽中必定推进 | 红石、青金石 |
+| 正常 | 1/5，与原版紫水晶母岩同速 | 其余全部 |
+| 慢 | 1/20 | 出厂成员为空（留给脚本与附属模组用） |
+| 极慢 | 1/50 | 远古残骸（它的晶簇掉下界合金碎片，按稀缺资源处理） |
+
+想单独调某一块母岩的概率，用 KubeJS 的 `CustomBudding.modify(...)`（见第六节），不必改源码重编译；整族一起调就直接改家族表。
+
+> 旧版本的配置里有四个 `growthSpeed*` id 列表，已经删掉。老存档的 `config/create_crystal_industry-common.toml` 里那几个键会原样留着，但不再被读取，下次保存配置时自然消失。
 
 ---
 
@@ -199,11 +205,104 @@
 
 ---
 
-## 六、用 KubeJS 添加母岩
+## 六、用 KubeJS 添加与修改母岩
 
-本模组的生长引擎是公开的，可以用 KubeJS 注册自定义母岩，数量不限，不需要写 Java、也不需要数据包。
+本模组的生长引擎是公开的，可以用 KubeJS 注册自定义母岩（数量不限），也可以改**已经存在**的母岩——自带的、别的脚本做的、附属模组的都行。两种用法共用同一套选项，都不需要写 Java、也不需要数据包。
 
-**一行注册一整族**：母岩本体、小芽、中芽、大芽、晶簇五个方块一次全部生成。脚本放在 `kubejs/startup_scripts/` 下，文件名随意，以 `.js` 结尾即可。
+脚本统一放在游戏目录的 `kubejs/startup_scripts/` 下，文件名随意、以 `.js` 结尾；`CustomBudding` 与 `CustomBuddingOptions` 直接是脚本里的全局对象，不用 `Java.loadClass`。
+
+### 教程一：从零做一块自己的母岩
+
+**第 1 步 · 先让它存在。** 建一个脚本文件，最小内容就一行：
+
+```js
+// kubejs/startup_scripts/my_crystal.js
+StartupEvents.registry('block', event => {
+  CustomBudding.create(event, 'my_crystal', 20)   // 概率 1/20
+})
+```
+
+进游戏用 `/give @s kubejs:my_crystal_budding` 验证（不写命名空间就落在 `kubejs` 下）。**方块没出现先看日志**：`logs/kubejs/startup.log` 会写 `Loaded N/N KubeJS startup scripts ... with 0 errors`，报错也在同一个文件里（脚本写错是整段不执行，不是只错一行）。
+
+**第 2 步 · 摆到世界里看它长。** 母岩的随机刻已经接好，放下来就会自己长芽、再长成晶簇。原版随机刻很慢（平均几十秒才轮到一次），想快点看效果就在旁边放一台催生器，或把概率调大：`.chance(1)` 是每次抽中必推进。
+
+**第 3 步 · 给它加条件。** 加什么、怎么写见下方「选项参考」，一行一项、可混用：
+
+```js
+StartupEvents.registry('block', event => {
+  CustomBudding.create(event, 'my_crystal', new CustomBuddingOptions()
+    .chance(10)                                // 每次随机刻 1/10 推进一级
+    .minLight(4).maxLight(12)                  // 只在亮度 4–12 的生长格长
+    .growthDimensions('minecraft:overworld')    // 只在主世界满速，别处按下一行的概率
+    .growthBiomes('warm')
+    .outsideGrowthChance(0.1))                  // 出了自己的地盘只剩一成概率
+})
+```
+
+验证靠**工程师护目镜**：看向自己这块母岩会列出当前生效的这几项（只给「缓慢」「必须足够暗」这类定性说法）；JEI 的母岩信息页同样有一页。
+
+**第 4 步 · 让它烧流体。** `needfluid` 会同时给母岩配一个流体罐：
+
+```js
+    .needfluid('minecraft:lava', 250, 1000)    // 认熔岩，每次成功生长扣 250 mB，罐最多 1 B
+```
+
+罐要先用管道灌、或手持桶右键灌（罐空时正好灌满一桶）：**罐里不够一次消耗就不长**（不是减速）。护目镜会显示液位与每次消耗，比较器读液位；拿错液体或倒不进去时不会把液体洒在母岩旁边（潜行右键才会照原版倒出去）。
+
+**第 5 步 · 让它掉东西。** 晶簇普通破坏的掉落由 `dropItem` 决定（不写就什么都不掉；精准采集始终掉晶簇本体）：
+
+```js
+    .dropItem('mypack:my_shard', 2)             // 掉 2 个，受时运加成
+    .buddingLevel('stone').stageLevel('iron')   // 母岩要石镐、芽/簇要铁镐才拿得到掉落
+```
+
+**第 6 步 · 换外观与名字。** 上面几步都用默认贴图（原版紫水晶那套），所以零资源就能跑。要自己的外观就准备 5 张 16×16 贴图，放进
+
+```
+kubejs/assets/<命名空间>/textures/block/<文件名>.png
+```
+
+（命名空间就是方块 id 里 `:` 前那段，不写命名空间就是 `kubejs`），再用 `buddingTexture('mypack:block/my_budding')` / `stageTextures(...)` 指过去。显示名最省事的是 `.displayName('我的母岩').stageDisplayNames('小芽', '中芽', '大芽', '晶簇')`（一次设好、所有语言都显示它）；不写就由 KubeJS 按 id 自动生成英文名，要按语言分别翻就在 `kubejs/assets/<命名空间>/lang/zh_cn.json` 里写 `block.<命名空间>.<方块 id>`。音效不用资源文件，写原版音效名即可（`'stone'` / `'amethyst'` / `'crop'` …）。
+
+### 教程二：改一块自带母岩（以可燃冰母岩为例）
+
+需求：**可燃冰母岩要通入水才能生长，概率改成 1，生长格亮度至少 12**。用 `modify` 一行一行加：
+
+```js
+// kubejs/startup_scripts/modify_flammable_ice.js
+StartupEvents.registry('block', event => {
+  CustomBudding.modify('create_crystal_industry:flammable_ice_budding', new CustomBuddingOptions()
+    .needfluid('minecraft:water', 250, 1000)  // 加一个水罐：每次成功生长扣 250 mB，最多存 1 B
+    .chance(1)                                // 每次随机刻必推进一级（出厂是 1/5）
+    .minLight(12))                            // 生长格亮度至少 12（原本不限）
+})
+```
+
+要点：
+
+- **合并语义**：没写到的项保持方块现状。上面只动了水罐、概率、亮度下限——可燃冰原本的「生长格必须是水源」等设定一个没变。想显式清掉某项也有写法：`maxLight(-1)` / `minLight(-1)` = 那一端不限制、`requiresWater(false)` = 不再要求水、`growthDimensions()`（不给参数）= 清掉维度限制、`needfluid('none')` = 取消流体需求、`buddingLevel('none')` = 取消开采等级。
+- **id 写母岩方块 id**（`..._budding`），末尾的 `_budding` 可省；裸 id 落在 `kubejs` 命名空间。目标写错不会静默：启动日志里会有一条 `modify 的目标 ... 不是本模组驱动的母岩方块` 的警告。
+- **水罐与含水要求是两回事**：后者是它本来的规则，前者是这次新加的门槛，两个都得满足。
+- **改完要重载区块**（或重新放一块）才会换上新参数：罐是建方块实体时读定义的。换过流体的罐里若还留着旧流体（比如远古残骸的熔岩被改成水），护目镜会显示「罐里的流体不对」，用管道或桶抽掉即可。
+- **验证**：罐空时贴着水也不长 → 灌一桶水后立刻开始长；生长格亮度低于 12 不长；JEI 与护目镜上显示的是改后的概率/亮度/液位。
+- 带 AE 付费（福鲁伊克斯）或 FE 付费（弧光石）的母岩**不能加流体罐**——它们的方块实体要持网络节点/储罐，脚本里写了会当场报错（那会让付费被静默跳过）。
+
+### 教程三 · 部署与排错速查
+
+| 症状 | 先看这里 |
+| --- | --- |
+| 脚本整段没生效 | `logs/kubejs/startup.log` 的 `with N errors`；脚本报错是整段不执行 |
+| 方块找不到 | 用 `/give` 验证，别只看创造栏（脚本方块默认进 `kubejs` 页，`group` 可改） |
+| 母岩长不出来 | 护目镜看它当前的条件；催生器只催**会吃随机刻**的方块（本模组注册的母岩都吃） |
+| 晶簇不掉东西 | 看有没有写 `dropItem`；不写就是什么都不掉（精准采集另算） |
+| `modify` 没效果 | 启动日志里的目标警告；以及"改完要重载区块"这一条 |
+| 服务器上行为不一致 | 脚本两端各跑一遍，服务端与客户端脚本要一致（否则只是显示对不上） |
+
+两条硬性要求：`create` 与 `modify` **必须写在启动脚本里**（`kubejs/startup_scripts/`）；**启动脚本只在游戏启动时跑一次**（`/reload` 不会重跑它们），JEI 的母岩信息页也只在启动时构建一次——所以改了脚本要重启游戏，删掉的那一行也就随之撤销。
+
+### 一行注册一整族
+
+母岩本体、小芽、中芽、大芽、晶簇五个方块一次全部生成。
 
 ```js
 StartupEvents.registry('block', event => {
@@ -333,7 +432,7 @@ StartupEvents.registry('block', event => {
 
 罐里的流体不会随方块带走：破坏母岩时（含精准采集）罐就没了，流体一并丢失，挪地方前先用管道抽出来。
 
-> 流体需求要配上「能存流体的方块实体」，脚本母岩自带这个实体（`CustomBudding` 自动接好）。自己拼低阶接口的方块写了 `fluidRequirement(...)` 只是一条参数，罐与扣费得自己实现——见下方「低阶接口」。
+> 流体需求要配上「能存流体的方块实体」，本模组自带家族与 `create` 注册的母岩都自动接好了（同一个通用罐，见「一、母岩」里的『远古残骸母岩的熔岩罐』）。自己拼低阶接口的方块写了 `fluidRequirement(...)` 只是一条参数，罐与扣费得自己实现——见下方「低阶接口」。
 
 ### 掉落、工具与开采等级
 
@@ -342,6 +441,40 @@ StartupEvents.registry('block', event => {
 - **开采等级**决定「什么工具才拿得到掉落」。裸名字取原版三档标签 `#minecraft:needs_<名字>_tool`：`'stone'` / `'iron'` / `'diamond'`；也可以写完整标签 id（如 `'neoforge:needs_netherite_tool'`）。不写或写 `'none'` 表示不设等级。
 
   设了等级会连带给方块加上 `requiresCorrectToolForDrops`（只挂标签是没人读的），因此设完之后有两个后果：**等级不够的工具挖下来什么都不掉**，精准采集也一并失效；而且**工具种类必须对**——母岩设为斧头加 `'stone'` 时，石斧掉、石镐不掉。想要徒手也能拿到掉落就不要设等级，本模组自带的芽与晶簇正是如此。
+
+### 修改已有的母岩
+
+同一套选项也能改**已经注册好的**母岩——自带的家族、别的脚本注册的、附属模组的都行：
+
+```js
+// kubejs/startup_scripts/my_tweaks.js
+StartupEvents.registry('block', event => {
+  CustomBudding.modify('create_crystal_industry:ancient_debris_budding', new CustomBuddingOptions()
+    .chance(20)                                 // 极慢档（1/50）改快
+    .growthDimensions('minecraft:overworld')    // 顺手解掉"只在下界满速"
+    .needfluid('none'))                         // 不再扣熔岩
+})
+```
+
+**没写到的项保持方块现状**（合并，不是替换）：上面这段只动了概率、维度与流体，远古残骸原本的其它参数一个没变。想显式清掉某一项也有写法：`maxLight(-1)` / `minLight(-1)` = 那一端不限制、`requiresWater(false)` = 不再要求水、`growthDimensions()`（不给参数）= 清掉维度限制（`growthBiomes()` 同理）、`needfluid('none')` = 取消流体需求、`buddingLevel('none')` = 取消开采等级。
+
+母岩 id 写**方块 id**（`..._budding`），末尾的 `_budding` 可省；裸 id 落在 `kubejs` 命名空间（与 `create` 一致）。目标不存在、或者不是本模组引擎驱动的母岩，启动日志里会有一条警告——脚本跑在方块注册事件里，那时别的模组的方块还没入表，当场校验不了。
+
+| 能改 | 说明 |
+| --- | --- |
+| 概率、光照上下限、含水、生长维度 / 群系、地盘外概率 | 生长参数的常规项 |
+| `needfluid(...)` | 给**任何一块**母岩加、改、取消流体消耗——罐是通用的（`FluidTankBuddingBlockEntity`），远古残骸那份熔岩也是它 |
+| `dropItem(...)` / `dropCount(...)` | 改的是晶簇的掉落；自带家族也会被这条规则接管（原本的战利品表不再生效），`.dropItem('none')` = 什么都不掉。只写 `.dropCount(...)` 会报错——改掉落是整条规则接管战利品表，得连物品一起写。JEI 母岩信息页左上角那栏与对着产物按 R 都跟着新掉落走 |
+| `buddingLevel(...)` / `stageLevel(...)` | 开采等级改在运行时判定：只认原版三档（`stone` / `iron` / `diamond`），只影响"拿不拿得到掉落"这一步，方块标签本身不变 |
+
+**改不了**的项（在方块注册时就固定下来，脚本里写了会当场报错）：材质 `buddingTexture` / `stageTextures`、破坏音效 `buddingSound` / `stageSound`、破坏工具 `buddingTool` / `stageTool`、翻译名 `displayName` / `stageDisplayNames`，以及**创造栏归属 `group`**——前四样是烘进方块属性与资源里的身份，`group` 是"这块母岩属于哪一页"，而 `modify` 只管**给母岩加特性**，不改它的身份。要换这些请用 `create` 注册一块新的母岩。
+
+两条注意事项：
+
+- **必须写在启动脚本里**（与 `create` 同一个 `StartupEvents.registry`）：它改的是注册期定下来的东西，而且 JEI 的母岩信息页只在启动时构建一次。
+- 脚本在**两端各跑一遍**（客户端一份、专用服务端一份），所以两端看到的参数一致；服务端与客户端脚本不同时，护目镜与 JEI 的显示会跟服务端的实际行为对不上（只影响显示）。
+
+> 用 `needfluid` 改过参数（或加罐、取消罐）的母岩，罐是在**方块实体创建时**按新参数建的：世界上已经摆下的方块要等区块重载（或者重新放一块）才会换成新参数。
 
 ### 后续操作
 
@@ -363,13 +496,13 @@ ServerEvents.tags('block', event => {
 ### 行为说明
 
 - **自动挂标签**：母岩自动进入 `#c:budding_blocks`，三档芽进入 `#c:buds`、晶簇进入 `#c:clusters`（都是方块与物品两份，NeoForge 把这三类分开）。五个方块按 `buddingTool` / `stageTool` 进入对应的挖掘标签，按 `buddingLevel` / `stageLevel` 进入对应的等级标签（默认只有 `#minecraft:mineable/pickaxe`，不挂等级）。因此智能钻头的精准采集能直接采下你的母岩本体，AE2 的催生器也会加速它，不需要手写标签。
-- **护目镜**：戴上工程师护目镜看向自定义母岩，会显示当前生长倍率，以及生长速度、光照要求、含水要求、生长环境（维度 / 群系，只给「缓慢」「必须足够暗」这类定性说法，不报具体数值）；写了 `needfluid` 的还会显示罐里的流体量与每次生长的消耗（液位是状态不是参数，所以这里给具体数字）。自带家族平时只显示倍率那一行；写了 `growthDimensions` / `growthBiomes` 的会多出一行「只在 X 生长得最快」。
+- **护目镜**：戴上工程师护目镜看向自定义母岩，会显示当前生长倍率，以及生长速度、光照要求、含水要求、生长环境（维度 / 群系，只给「缓慢」「必须足够暗」这类定性说法，不报具体数值）；写了 `needfluid` 的还会显示罐里的流体量与每次生长的消耗（液位是状态不是参数，所以这里给具体数字）。自带家族平时只显示倍率那一行（写了 `growthDimensions` / `growthBiomes` 的会多一行「只在 X 生长得最快」）；**被 `modify` 改过的家族母岩**会按改后的值多显示那几行——参数被脚本改过之后，游戏里看得见。
 - **创造栏**：KubeJS 注册的方块默认不进任何标签页，容易让人误以为没注册成功，所以这里默认放进 KubeJS 那一页；`group(...)` 可改为原版标签页，`group(null)` 则完全不进标签页（只能用 `/give` 取）。
 - **名字与外观**走资源包与语言文件；不指定显示名时由 KubeJS 按 id 自动生成英文标题（`example_crystal_small_bud` → "Example Crystal Small Bud"）。方块物品与方块共用同一个语言键，背包、掉落物、创造栏会一起变。
 
 ### 已知限制
 
-- 不进配置文件的四档生长速度，概率完全由脚本里的 `chance` 决定。
+- 脚本母岩的概率完全由脚本里的 `chance` 决定，不参与任何全局档位；想改一块**已有**母岩的概率就用 `CustomBudding.modify(...)`（自带家族同样能改）。
 - 自发光、红石信号这类**烘焙在方块属性里**的特性不可通过脚本配置。需要这类特性应走附属模组的 Java 路线，见下节。
 
 ### 低阶接口
@@ -418,7 +551,9 @@ event.create('my_budding').randomTick(ctx => {
 母岩的全部特点——光照/含水/充能要求、生长规则、方块转化、亮度与音效、掉落物——集中在
 `src/main/java/com/minecart/yunxian/budding/BuddingFamilies.java` 这一张表里。**新增一个母岩家族等于在表里加一条**，方块注册、生长逻辑、护目镜提示、创造模式标签、世界生成开关与 Ponder 条目都会自动派生。
 
-例外是生长速度：它是全局四档（`BuddingFamily.GrowthSpeed`），由配置文件的四个 id 列表决定；「正常」档的默认成员列表由本表自动派生，但会跳过 `ModConfig` 里写死的快档（红石、青金石）与极慢档（远古残骸）默认成员——想让新家族默认落在别的档位，把它们加进那两个列表即可。
+生长速度也在这张表里：给那一条的 `Growth(...)` 传一个 `GrowthSpeed` 档位即可（`NORMAL` / `FAST` / `SLOW` / `VERY_SLOW`，见 `BuddingFamily.GrowthSpeed`）；不写就是「正常」。红石与青金石是快档、远古残骸是极慢档，其余都是正常档。想改**已经存在**的母岩（含自带家族）的概率与其它生长参数，不必动这张表——脚本用 `CustomBudding.modify(...)` 就行。
+
+流体消耗同样是表里的一项：给 `Growth(...)` 传一个 `FluidRequirement`（如远古残骸的 `FluidRequirement.ofTag(FluidTags.LAVA, 250, 1000)`），方块就会自带流体罐——通用罐的合法方块表是按"家族表里声明了流体"自动算出来的，不必再登记什么。
 
 ### 数据生成
 
@@ -444,10 +579,11 @@ DeferredBlock<Block> myBudding = MY_BLOCKS.register("my_budding",
 
 // 2) 在自己的 @Mod 构造器里声明（必须在方块注册事件之前）：
 BuddingRegistration.declareBuddingBlock(myBudding.get());   // 用共享护目镜 BE
-BuddingRegistration.declareKnownId("my_budding");           // 让配置文件的四档能列出它
+// 家族若声明了流体需求（Growth 的最后一项传 FluidRequirement），再补这一句：
+// BuddingRegistration.declareFluidBuddingBlock(myBudding.getId());
 ```
 
-`declareBuddingBlock` 不是可有可无的礼貌调用：区块从 NBT 恢复方块实体时会校验 `BlockEntityType#isValid`（`LevelChunk:392`），不在共享 BE 合法方块表里的方块，其方块实体会在**区块重载后被丢弃**，护目镜随即失效。
+`declareBuddingBlock` 不是可有可无的礼貌调用：区块从 NBT 恢复方块实体时会校验 `BlockEntityType#isValid`（`LevelChunk:392`），不在共享 BE 合法方块表里的方块，其方块实体会在**区块重载后被丢弃**，护目镜随即失效。流体罐同理——本模组自带家族的罐表是按家族表自动算出来的，**你的家族不在那张表里**，所以带流体必须自己声明一次。
 
 使用了 `GenericBuddingBlock` 的方块到这里就齐了：它自带家族定义，JEI 的母岩信息页能直接读出它的参数。**自己拼低阶接口**（自己实现 `randomTick` 调引擎）的方块没有定义可读，需要再补一次声明——另外别忘了方块属性里的 `.randomTicks()`：不写的话，原版的随机刻与催生器都不会碰它（`GenericBuddingBlock` 是从原版紫水晶母岩整体拷贝属性的，自带这一项）。
 
@@ -470,6 +606,8 @@ BuddingGrowthEngine.tryGrow(serverLevel, pos, random, definition, gate);
 ```
 
 定义本身还能继续追加门槛：`growthDimensions(Level.NETHER)` 让方块只在列出的维度正常生长，`growthBiomes("minecraft:lush_caves")` 再按群系收一道。两者都写时取交集；出了地盘每次判定通过后再掷一次，只剩 `outsideGrowthChance(0.5)` 的概率继续生长（0.5 正是石英与荧石母岩的写法，写 0 则出了那些地方再也长不动）。
+
+自己拼低阶接口的方块还有一个可选项：**接上脚本的 `modify` 覆盖**，让服务器主也能像调本模组母岩那样调它——在自己的定义外面套一层 `BuddingOverrides.apply(this, definition)` 即可（本模组两个母岩方块类就是这么做的）。不套也没什么，只是脚本对它的 `CustomBudding.modify` 只能改掉落、创造栏与开采等级，改不动生长参数。
 
 群系条目的判定顺序：命中任一**否定**项直接出局；否则至少命中一条**肯定**项才算满足；只写否定项时，肯定那一侧视为「全部群系」（`growthBiomes("!cold")` 即除了寒冷群系哪里都长）。
 

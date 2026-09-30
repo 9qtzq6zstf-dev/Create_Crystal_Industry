@@ -15,11 +15,11 @@ import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * 一个母岩家族的「全部特点」——光照要求、含水要求、充能要求、生长规则、方块转化，
+ * 一个母岩家族的「全部特点」——生长速度、光照要求、含水要求、充能要求、生长规则、方块转化，
  * 以及各级芽与晶簇的亮度/音效、用哪个方块实体、进不进创造标签、要不要世界生成开关。
  * <p>
- * 生长概率<b>不在</b>这张表里：它由配置文件按 {@link GrowthSpeed} 四档决定（见
- * {@code config.ModConfig.Common#growthChance}），全部母岩默认「正常」。
+ * 生长概率写在 {@link Growth#speed()} 里（曾经在配置文件的四张 id 列表里，已挪回本表）；
+ * 脚本可以用 {@code CustomBudding.modify(...)} 改掉某一块母岩的档位。
  * <p>
  * 新增一个母岩家族 = 在 {@link BuddingFamilies} 的表里加一条；方块注册、生长逻辑、
  * 护目镜提示、创造模式标签、配置开关、ponder 条目都由这一条派生。
@@ -68,16 +68,22 @@ public record BuddingFamily(
     // ==================== 生长特点 ====================
 
     /**
-     * 生长特点：规则、光照/能量门槛、随机刻副作用、信号。
+     * 生长特点：规则、光照/能量门槛、随机刻副作用、信号、生长速度、流体消耗。
      * <p>
-     * 生长概率不在这里——它由配置文件的四档（{@link GrowthSpeed}）决定。
+     * 生长概率就在这一条里（{@link #speed()}），不再由配置文件决定；脚本还能用
+     * {@code CustomBudding.modify} 单独改某一块方块。
      */
     public record Growth(
             /** 通用，或「只有目标格含水才生长」的可燃冰式 */
             GrowthRule rule,
             /** 生长位的光照要求 */
             LightRequirement light,
-            /** 生长（及付费转化）怎么付费：免费、AE 网格能量，或母岩自己罐里的熔岩 / FE */
+            /**
+             * 生长（及付费转化）怎么付费：免费、AE 网格能量，或 FE。
+             * <p>
+             * <b>烧流体不在这里</b>：那是 {@link #fluid()}，与免费/电费可以叠加判断（见
+             * {@code GenericBuddingBlock#payGrowthCost}）。
+             */
             EnergyRequirement energy,
             /** 随机刻副作用：转化/传播规则，按顺序各消耗一次随机数 */
             List<BlockConversion> conversions,
@@ -92,7 +98,28 @@ public record BuddingFamily(
              * <p>
              * 石英母岩与荧石母岩写「只在下界、其它地方一半被打回」——它们是下界特产，搬去主世界就该减产。
              */
-            GrowthEnvironment growthEnvironment) {
+            GrowthEnvironment growthEnvironment,
+            /**
+             * 生长速度档位：每次随机刻有 {@code 1/speed().chance()} 的概率推进一级。
+             * 这里给的是<b>出厂设置</b>——脚本能用 {@code CustomBudding.modify(...)}
+             * 把它改成别的档位（或任意整数概率），所以运行时以 {@code GrowthDefinition#chance()} 为准。
+             */
+            GrowthSpeed speed,
+            /**
+             * 生长要消耗的流体（母岩自带一个小罐）；{@code null} = 不烧流体。
+             * <p>
+             * 远古残骸母岩（熔岩，1 B 罐、每次 250 mB）走的就是这一项；脚本母岩用
+             * {@code CustomBuddingOptions#needfluid} 声明，两者运行时是同一条路——方块实体是
+             * {@code FluidTankBuddingBlockEntity}，付费钩子在 {@code GenericBuddingBlock#payGrowthCost}。
+             * 脚本还能用 {@code CustomBudding.modify} 给别的母岩加、改、取消它
+             * （运行时以 {@code GrowthDefinition#fluid()} 为准）。
+             * <p>
+             * <b>附属模组注意</b>：罐的合法方块表只按本模组自己的家族表生成，所以自己的家族声明了
+             * 流体之后还得在自己的构造器里补一次
+             * {@code BuddingRegistration.declareFluidBuddingBlock(方块 id)}，否则区块重载时
+             * 方块实体会被 {@code isValid} 丢掉。
+             */
+            @Nullable FluidRequirement fluid) {
     }
 
     // ==================== 外观与注册特点 ====================
@@ -158,25 +185,27 @@ public record BuddingFamily(
     /**
      * 生长速度档位：随机刻抽中母岩时，有 {@code 1/chance()} 的概率推进一级。
      * <p>
-     * 一个母岩属于哪一档由配置文件的四个列表决定（{@link #configKey()} 就是列表的键名），
-     * 与家族定义表无关；未被任何列表提到的母岩按 {@link #NORMAL} 处理。
+     * 一个母岩属于哪一档由家族表的 {@link Growth#speed()} 声明——红石与青金石是快档、
+     * 远古残骸是极慢档、其余都是正常档；脚本还能用 {@code CustomBudding.modify(...)}
+     * 把某一块母岩改成别的档位（甚至任意整数概率，那时界面改用 {@link #nearest(int)} 的定性说法）。
+     * <p>
+     * 本枚举同时也是<b>界面词汇</b>：护目镜与 JEI 的概率行只说「缓慢」「很快」这类话，
+     * {@link #langSuffix()} 就是那几个语言键的后缀。
      */
     public enum GrowthSpeed {
         /** 极慢：1/50 */
-        VERY_SLOW(50, "growthSpeedVerySlow"),
+        VERY_SLOW(50),
         /** 慢：1/20 */
-        SLOW(20, "growthSpeedSlow"),
-        /** 正常：1/5，与原版紫水晶母岩同速（默认档） */
-        NORMAL(5, "growthSpeedNormal"),
+        SLOW(20),
+        /** 正常：1/5，与原版紫水晶母岩同速（出厂默认档） */
+        NORMAL(5),
         /** 快：1/1，被抽中必定生长 */
-        FAST(1, "growthSpeedFast");
+        FAST(1);
 
         private final int chance;
-        private final String configKey;
 
-        GrowthSpeed(int chance, String configKey) {
+        GrowthSpeed(int chance) {
             this.chance = chance;
-            this.configKey = configKey;
         }
 
         /** 概率基数 n：每次随机刻有 1/n 的概率推进一级 */
@@ -184,14 +213,9 @@ public record BuddingFamily(
             return chance;
         }
 
-        /** 本档在配置文件里的键名（四个列表之一） */
-        public String configKey() {
-            return configKey;
-        }
-
         /**
-         * 把概率基数归到最接近的档位——给<b>不进配置文件</b>的母岩（脚本、附属模组声明的定义、原版紫水晶）
-         * 用：界面只报档位/档位的定性说法（「缓慢」「很快」），不写具体概率。
+         * 把概率基数归到最接近的档位——给<b>不是按档位声明</b>的概率（脚本给的具体数字、
+         * 附属模组声明的定义、原版紫水晶）用：界面只报定性说法（「缓慢」「很快」），不写具体概率。
          * <p>
          * 例如 2–5 归 {@link #NORMAL}、6–20 归 {@link #SLOW}、大于 50 归 {@link #VERY_SLOW}。
          */
@@ -224,18 +248,17 @@ public record BuddingFamily(
         SUBMERGED
     }
 
-    /** 生长能量来源 */
+    /**
+     * 生长能量来源。
+     * <p>
+     * <b>「烧流体」不在这里</b>：那种付费写在 {@link Growth#fluid()} 里（远古残骸母岩烧熔岩、
+     * 脚本用 {@code CustomBudding.modify} 给别的母岩加流体消耗，走的都是同一条路）。
+     */
     public enum EnergyRequirement {
         /** 免费生长 */
         FREE,
         /** 需要 AE 网格供电（福鲁伊克斯母岩） */
         AE2_GRID,
-        /**
-         * 需要母岩方块自己存的熔岩（远古残骸母岩）：方块是容量 1 B 的流体容器，
-         * 每次成功生长（以及标了 {@code gated()} 的付费转化）扣
-         * {@code LavaBuddingBlockEntity#COST_PER_GROWTH}，罐里不够就放弃这次生长。
-         */
-        LAVA_TANK,
         /**
          * 需要母岩方块自己存的 FE（弧光石母岩）：方块是 1 M FE 的能量容器，
          * 每次成功生长扣 {@code ArclightBuddingBlockEntity#COST_PER_GROWTH}，电量不够就放弃这次生长。
@@ -251,7 +274,12 @@ public record BuddingFamily(
         REDSTONE
     }
 
-    /** 母岩使用的方块实体类型 */
+    /**
+     * 母岩使用的方块实体类型。
+     * <p>
+     * <b>带流体罐的母岩不在这里</b>：罐由 {@link Growth#fluid()} 决定——定义里有流体需求就用通用罐
+     * （见 {@code FluidTankBuddingBlockEntity}），方块实体类型对"有没有罐"没有投票权。
+     */
     public enum BlockEntityKind {
         /** 共享的「生长速度」展示 BE（绝大多数母岩） */
         SHARED_GROWTH,
@@ -261,8 +289,6 @@ public record BuddingFamily(
         ICE_DISPLAY,
         /** 福鲁伊克斯母岩专用 BE（持 ME 网格节点，负责扣 AE） */
         AE2_GRID,
-        /** 远古残骸母岩专用 BE（存 1 B 熔岩，负责扣熔岩；方块走 {@code LavaBuddingBlock}） */
-        LAVA_TANK,
         /** 弧光石母岩专用 BE（存 1 M FE，负责扣电） */
         FE_TANK
     }

@@ -49,7 +49,9 @@ Three block properties are worth noting. Budding Redstone, its buds and its clus
 
 ### The Lava Tank of Budding Ancient Debris
 
-Budding Ancient Debris is the only built-in budding block that **burns lava**. The block itself is a fluid container holding **1 B (1000 mB)**, and lava is all it accepts — nothing else can be piped in or drawn out. (Scripted budding blocks can burn fluid too, with their own fluid, cost and capacity — see "Fluid Consumption" in section 6.)
+Budding Ancient Debris is the only built-in budding block that **burns lava**. The block itself is a fluid container holding **1 B (1000 mB)**, and lava is all it accepts — nothing else can be piped in or drawn out.
+
+Its tank parameters live in the family table (the `LAVA_TANK` constant in `BuddingFamilies`: lava, 250 mB, 1 B), and **scripted budding blocks use the very same tank** — `needfluid` declares the same `FluidRequirement`, and the block entity, the payment hook, the Goggles readout and the comparator all run through one code path. A script can therefore give **any existing budding block** a fluid cost, change its parameters, or drop Ancient Debris's own — see "Fluid Consumption" and "Modifying an Existing Budding Block" in section 6.
 
 - **Getting lava in**: pipes (Create pumps and fluid pipes, via the NeoForge fluid capability) or right-clicking with a lava bucket.
 - **Getting lava out**: right-clicking with an empty bucket. Buckets only work on an **empty** tank (pour in) or a **full** one (scoop out) — one bucket is exactly the tank's capacity, so the 750 / 500 / 250 leftovers have to be topped up by pipe.
@@ -107,14 +109,18 @@ Budding Ancient Debris is the one family with no Stone → Ore conversion at all
 
 ### Growth Speed
 
-| Tier | Chance to Advance per Random Tick | Config Key |
-| --- | --- | --- |
-| Very Slow | 1/50 | `growthSpeedVerySlow` |
-| Slow | 1/20 | `growthSpeedSlow` |
-| Normal *(default)* | 1/5, the same as vanilla Budding Amethyst | `growthSpeedNormal` |
-| Fast | 1/1, a successful roll always advances | `growthSpeedFast` |
+The chance lives in the **family table** (each family's own `Growth.speed` in `BuddingFamilies`); there is no config key for it any more:
 
-Each of the four config keys takes a list of **budding family ids** — the `<id>` of the `generate_<id>` switches, such as `raw_iron`, `diamond` or `echo`. Defaults: Fast holds Redstone and Lapis Lazuli, Very Slow holds Ancient Debris, Slow is empty, and every other budding block is listed under Normal. A budding block named in no list is treated as Normal, so emptying the Normal list changes nothing. If a budding block appears in two of the non-Normal tiers, the slower tier wins and a warning is logged.
+| Tier | Chance to Advance per Random Tick | Which budding blocks |
+| --- | --- | --- |
+| Fast | 1/1, a successful roll always advances | Redstone, Lapis Lazuli |
+| Normal | 1/5, the same as vanilla Budding Amethyst | everything else |
+| Slow | 1/20 | no member by default (it is there for scripts and addons) |
+| Very Slow | 1/50 | Ancient Debris (its cluster drops Netherite Scrap, so it is treated as a scarce resource) |
+
+To retune one specific budding block, use KubeJS `CustomBudding.modify(...)` (section 6) instead of editing and recompiling the source; to retune a whole family, edit the family table.
+
+> Older versions had four `growthSpeed*` id lists in the config file; those are gone. An existing `config/create_crystal_industry-common.toml` keeps the stale keys lying around, but nothing reads them and the next config save drops them.
 
 ---
 
@@ -199,11 +205,104 @@ The mod provides 31 advancements across five branches: budding blocks, accelerat
 
 ---
 
-## 6. Adding Budding Blocks with KubeJS
+## 6. Adding and Modifying Budding Blocks with KubeJS
 
-The growth engine is public, so you can register custom budding blocks with KubeJS — as many as you like, with no Java and no data pack.
+The growth engine is public, so you can register custom budding blocks with KubeJS — as many as you like — and you can retune budding blocks that **already exist** (built-in families, ones another script made, ones from an addon). Both uses share the same option object, and neither needs Java or a data pack.
 
-**One line registers a whole family**: the budding block plus its small bud, medium bud, large bud and cluster, five blocks in one call. Put the script under `kubejs/startup_scripts/`; the file name is free as long as it ends in `.js`.
+Scripts live in the game directory under `kubejs/startup_scripts/`; the file name is free as long as it ends in `.js`. `CustomBudding` and `CustomBuddingOptions` are plain globals in scripts — no `Java.loadClass` needed.
+
+### Tutorial 1: Building a Budding Block From Scratch
+
+**Step 1 — make it exist.** Create a script file whose whole content is one line:
+
+```js
+// kubejs/startup_scripts/my_crystal.js
+StartupEvents.registry('block', event => {
+  CustomBudding.create(event, 'my_crystal', 20)   // 1-in-20 chance
+})
+```
+
+Check it in game with `/give @s kubejs:my_crystal_budding` (without a namespace the id lands under `kubejs`). **If the block does not show up, read the log first**: `logs/kubejs/startup.log` reports `Loaded N/N KubeJS startup scripts ... with 0 errors`, and it is also where script errors appear (a broken script is skipped as a whole, not line by line).
+
+**Step 2 — place it and watch it grow.** The random tick is already wired up, so it grows buds and then clusters on its own. Vanilla random ticks are slow (tens of seconds on average), so either put an accelerator next to it or raise the chance: `.chance(1)` advances on every successful roll.
+
+**Step 3 — give it conditions.** Every option is one line, and they mix freely (see "Option Reference" below):
+
+```js
+StartupEvents.registry('block', event => {
+  CustomBudding.create(event, 'my_crystal', new CustomBuddingOptions()
+    .chance(10)                                // 1-in-10 per random tick
+    .minLight(4).maxLight(12)                  // only grows at light 4–12
+    .growthDimensions('minecraft:overworld')    // full speed in the Overworld only
+    .growthBiomes('warm')
+    .outsideGrowthChance(0.1))                  // a tenth of the chance outside your turf
+})
+```
+
+Verify with **Engineer's Goggles**: looking at your block lists the options in force (phrased qualitatively, "slow", "must be dark enough"). JEI has a page per budding block too.
+
+**Step 4 — make it burn fluid.** `needfluid` also gives the block a tank:
+
+```js
+    .needfluid('minecraft:lava', 250, 1000)    // lava only, 250 mB per growth, 1 B tank
+```
+
+Fill it with a pipe or by right-clicking with a bucket (a bucket fills it exactly when empty): **when the tank cannot pay the cost, nothing grows** (no slowdown). The Goggles show the level and the cost per growth, a comparator reads the level, and a bucket that cannot be used is swallowed instead of spilling next to the block (sneak-right-click to pour it out as usual).
+
+**Step 5 — make it drop something.** `dropItem` controls what the cluster drops on a normal break (omit it and it drops nothing; Silk Touch always drops the cluster itself):
+
+```js
+    .dropItem('mypack:my_shard', 2)             // 2 items, Fortune applies
+    .buddingLevel('stone').stageLevel('iron')   // stone pickaxe for the block, iron for buds/cluster
+```
+
+**Step 6 — give it a look and a name.** Up to here it uses the default textures (vanilla amethyst), which is why it works with no assets at all. For your own look, prepare five 16×16 textures and drop them into
+
+```
+kubejs/assets/<namespace>/textures/block/<file>.png
+```
+
+(the namespace is the part before the `:` in the block id; without one it is `kubejs`), then point `buddingTexture('mypack:block/my_budding')` / `stageTextures(...)` at them. The simplest way to name things is `.displayName('My Budding Block').stageDisplayNames('Small Bud', 'Medium Bud', 'Large Bud', 'Cluster')` — one call covers every language; omit it and KubeJS derives English names from the ids, or write per-language keys (`block.<namespace>.<block id>`) in `kubejs/assets/<namespace>/lang/zh_cn.json`. Sounds need no assets — just name a vanilla sound (`'stone'` / `'amethyst'` / `'crop'` …).
+
+### Tutorial 2: Retuning a Built-in Family (Budding Flammable Ice)
+
+Goal: **Budding Flammable Ice must be fed water before it grows, its chance becomes 1, and its growth space needs light 12.** Add it one line at a time with `modify`:
+
+```js
+// kubejs/startup_scripts/modify_flammable_ice.js
+StartupEvents.registry('block', event => {
+  CustomBudding.modify('create_crystal_industry:flammable_ice_budding', new CustomBuddingOptions()
+    .needfluid('minecraft:water', 250, 1000)  // add a water tank: 250 mB per growth, 1 B capacity
+    .chance(1)                                // every successful roll advances (was 1/5)
+    .minLight(12))                            // growth space needs light 12 (was unrestricted)
+})
+```
+
+What matters:
+
+- **This merges, it does not replace.** Only the tank, the chance and the light floor changed — everything else about Flammable Ice (including its "the growth space must be a water source" rule) is untouched. For clearing a single option there are explicit spellings: `maxLight(-1)` / `minLight(-1)` = that end unbounded, `requiresWater(false)` = no longer needs water, `growthDimensions()` with no arguments = drop the dimension restriction, `needfluid('none')` = drop the fluid requirement, `buddingLevel('none')` = drop the mining tier.
+- **The id is the budding block's block id** (`..._budding`); the trailing `_budding` may be omitted, and a bare id lands in the `kubejs` namespace. A target that does not exist is not silent: the startup log warns that the `modify` target is not a budding block driven by this mod.
+- **The water tank and the water-source rule are separate**: the latter is the family's own rule, the former is this new gate; both must be satisfied.
+- **Reload the chunk** (or place a fresh block) to pick up the new parameters: the tank is built from the definition when the block entity is created. If a tank switched fluids still holds the old one (say lava on a block a script turned into water), the Goggles say "wrong fluid in the tank" — pull it out with a pipe or a bucket.
+- **Verify**: with an empty tank it does not grow even while sitting in water → fill one bucket of water and it starts growing; below light 12 it does not grow; JEI and the Goggles show the retuned chance, light floor and level.
+- Budding blocks that run on AE (Fluix) or FE (Arclight) **cannot take a fluid tank** — their block entity has to hold a grid node / an FE buffer, and a script that tries throws on the spot (adding one would silently skip their power cost).
+
+### Tutorial 3 · Deployment and Troubleshooting Cheatsheet
+
+| Symptom | Look here first |
+| --- | --- |
+| The whole script did nothing | `logs/kubejs/startup.log`, the `with N errors` line — a script error skips the entire script |
+| Block not found | Check with `/give` rather than the creative tabs (scripted blocks go to the `kubejs` page by default; `group` changes that) |
+| Budding block will not grow | Goggles show its current conditions; accelerators only tick blocks that **take random ticks** (every budding block this mod registers does) |
+| Cluster drops nothing | Check `dropItem` — omitting it means nothing drops (Silk Touch is separate) |
+| A `modify` had no effect | The target warning in the startup log, and the "reload the chunk" rule above |
+| Server behaves differently from single-player | Scripts run on both sides; keep the server's and the client's scripts identical (a mismatch is display-only) |
+
+Two hard requirements: `create` and `modify` **must live in startup scripts** (`kubejs/startup_scripts/`), and startup scripts **run once when the game starts** (`/reload` does not re-run them) — JEI's budding pages are built at that same moment, so editing a script (or deleting a line) takes a game restart to take effect.
+
+### One Line Registers a Whole Family
+
+The budding block plus its small bud, medium bud, large bud and cluster, five blocks in one call.
 
 ```js
 StartupEvents.registry('block', event => {
@@ -334,7 +433,7 @@ How fluid gets in:
 
 The tank does not travel with the block: breaking it (Silk Touch included) discards the fluid, so drain it with a pipe before moving it.
 
-> A fluid requirement needs a block entity that can store fluid. Budding blocks created by `CustomBudding` carry one automatically. Writing `fluidRequirement(...)` on a hand-rolled low-level block only adds a parameter to the definition — the tank and the payment hook are yours to implement, see "Low-Level Interface" below.
+> A fluid requirement needs a block entity that can store fluid. Built-in families and blocks created by `CustomBudding` carry one automatically (the same generic tank, see "The Lava Tank of Budding Ancient Debris" in section 1). Writing `fluidRequirement(...)` on a hand-rolled low-level block only adds a parameter to the definition — the tank and the payment hook are yours to implement, see "Low-Level Interface" below.
 
 ### Drops, Tools and Mining Tiers
 
@@ -343,6 +442,40 @@ The tank does not travel with the block: breaking it (Silk Touch included) disca
 - **Mining tier** decides *what may collect the drop*. A bare name resolves to a vanilla tier tag, `#minecraft:needs_<name>_tool`: `'stone'` / `'iron'` / `'diamond'`. A full tag id also works (e.g. `'neoforge:needs_netherite_tool'`). Omitting it, or writing `'none'`, means no tier.
 
   Setting a tier also gives the block `requiresCorrectToolForDrops`, because a bare tag is read by nothing on its own. That has two consequences: **a tool below the tier drops nothing at all**, Silk Touch included, and **the tool type must match as well** — with the budding block set to axe plus `'stone'`, a stone axe collects it and a stone pickaxe does not. To allow bare-hand collection, leave the tier unset, which is what this mod's own buds and clusters do.
+
+### Modifying an Existing Budding Block
+
+The same options can retune a budding block that is **already registered** — a built-in family, one another script made, or one from an addon:
+
+```js
+// kubejs/startup_scripts/my_tweaks.js
+StartupEvents.registry('block', event => {
+  CustomBudding.modify('create_crystal_industry:ancient_debris_budding', new CustomBuddingOptions()
+    .chance(20)                                 // was the Very Slow tier (1/50)
+    .growthDimensions('minecraft:overworld')    // also drop the "Nether only" restriction
+    .needfluid('none'))                         // and stop burning lava
+})
+```
+
+**Options you leave out keep the block's current value** (this merges, it does not replace): the snippet above only touches the chance, the dimension and the fluid — nothing else about Ancient Debris changes. There are explicit spellings for clearing a single option too: `maxLight(-1)` / `minLight(-1)` = that end unbounded, `requiresWater(false)` = no longer needs water, `growthDimensions()` with no arguments = drop the dimension restriction (`growthBiomes()` likewise), `needfluid('none')` = drop the fluid requirement, `buddingLevel('none')` = drop the mining tier.
+
+The id is the **block id** (`..._budding`); the trailing `_budding` may be omitted, and a bare id lands in the `kubejs` namespace (same as `create`). A target that does not exist, or is not a budding block driven by this mod's engine, gets a warning in the startup log — the script runs during the block registration event, when other mods' blocks are not in the registry yet, so it cannot be checked on the spot.
+
+| Can be changed | Notes |
+| --- | --- |
+| Chance, light bounds, water requirement, growth dimension / biomes, outside-turf chance | The regular growth parameters |
+| `needfluid(...)` | Give **any** budding block a fluid cost, change it, or drop it — the tank is generic (`FluidTankBuddingBlockEntity`), and Ancient Debris' lava runs on it too |
+| `dropItem(...)` / `dropCount(...)` | Changes the cluster's drops; it takes over for built-in families too (their loot table no longer applies). `.dropItem('none')` = drop nothing. Writing `.dropCount(...)` alone throws — overriding drops replaces the loot table wholesale, so name the item too. JEI's budding page (the slot in the corner) and pressing R on the product follow the override |
+| `buddingLevel(...)` / `stageLevel(...)` | Mining tier, enforced at runtime: vanilla's three tiers only (`stone` / `iron` / `diamond`), and only the "do you get drops" step — the block tags themselves are unchanged |
+
+**Cannot be changed** (fixed at registration; a script that sets them throws on the spot): textures `buddingTexture` / `stageTextures`, break sounds `buddingSound` / `stageSound`, break tools `buddingTool` / `stageTool`, translated names `displayName` / `stageDisplayNames`, and the **creative tab `group`**. The first four are baked into block properties and resources; `group` is which page the block belongs to. `modify` exists to **add traits to a budding block**, not to change its identity — use `create` for that.
+
+Two things to keep in mind:
+
+- It **must live in a startup script** (the same `StartupEvents.registry` as `create`): it changes things fixed at registration time, and JEI's budding info page is built once at startup.
+- Scripts run **on both sides** (one pass on the client, one on a dedicated server), so both agree on the parameters; if a server's scripts differ from the client's, the Goggles and JEI will show values that do not match the server's actual behaviour (display only).
+
+> For a budding block whose fluid parameters were changed (or whose tank was added / removed), the tank is built with the new parameters when the **block entity is created**: blocks already placed in the world pick them up after a chunk reload (or when you place a fresh one).
 
 ### What Comes Next
 
@@ -364,13 +497,13 @@ The value `create` returns, `family`, exposes five accessors for the block ids: 
 ### Behavior Notes
 
 - **Tags are attached automatically.** The budding block joins `#c:budding_blocks`, the three buds join `#c:buds` and the cluster joins `#c:clusters` (block and item tags for all three — NeoForge keeps those categories separate). The five blocks join the matching mining tags via `buddingTool` / `stageTool` and the matching tier tags via `buddingLevel` / `stageLevel` (by default only `#minecraft:mineable/pickaxe`, with no tier). As a result the Smart Drill's Silk Touch mode collects your budding block directly and AE2's Growth Accelerator accelerates it, with no tags to write by hand.
-- **Goggles**: wearing Engineer's Goggles and looking at a custom budding block shows the current growth multiplier along with its growth speed, light requirement, water requirement and growth environment (dimension / biome, phrased qualitatively as "Slow" or "must be dark enough" without exact numbers); blocks with `needfluid` also report the tank level and the cost per growth (a level is state, not a parameter, so those get exact numbers). Built-in families normally show only the multiplier line; those with `growthDimensions` / `growthBiomes` gain an extra "fastest only in X" line.
+- **Goggles**: wearing Engineer's Goggles and looking at a custom budding block shows the current growth multiplier along with its growth speed, light requirement, water requirement and growth environment (dimension / biome, phrased qualitatively as "Slow" or "must be dark enough" without exact numbers); blocks with `needfluid` also report the tank level and the cost per growth (a level is state, not a parameter, so those get exact numbers). Built-in families normally show only the multiplier line; those with `growthDimensions` / `growthBiomes` gain an extra "fastest only in X" line, and **family blocks that a script has `modify`ed** show the lines above with their new values — a retuned block says so in game.
 - **Creative tab**: KubeJS-registered blocks go into no tab by default, which makes people think registration failed, so these land in the KubeJS tab unless told otherwise. `group(...)` switches to a vanilla tab, and `group(null)` omits the tab entirely (reachable only via `/give`).
 - **Names and appearance** come from resource packs and language files. Without a display name, KubeJS derives an English title from the id (`example_crystal_small_bud` → "Example Crystal Small Bud"). The block item and the block share one translation key, so the inventory, dropped items and creative tab all change together.
 
 ### Known Limitations
 
-- The four growth speed tiers in the config file do not apply; the chance comes entirely from `chance` in the script.
+- A scripted budding block's chance comes entirely from `chance` in the script and takes part in no global tier; to retune an **existing** budding block (built-in families included) use `CustomBudding.modify(...)`.
 - Features **baked into block properties**, such as light emission and redstone output, cannot be configured from a script. Those require the addon Java route described in section 7.
 
 ### Low-Level Interface
@@ -416,10 +549,10 @@ A runnable example also ships in the local development directory: `run/kubejs/st
 
 ### Adding a Budding Block
 
-Every trait of a budding block — light, water and power requirements, growth rules, block conversion, light and sound, drops — lives in a single table in
+Every trait of a budding block — light, water, power and fluid requirements, growth rules, block conversion, light and sound, drops — lives in a single table in
 `src/main/java/com/minecart/yunxian/budding/BuddingFamilies.java`. **Adding a budding family amounts to adding one entry to that table**; block registration, growth logic, Goggles readouts, creative tabs, world generation switches and Ponder entries are all derived from it.
 
-Growth speed is the exception: it is a global four-tier setting (`BuddingFamily.GrowthSpeed`) driven by the four id lists in the config file. The default membership of the Normal tier is derived from that table, but it skips the defaults hard-coded in `ModConfig` for the Fast tier (Redstone, Lapis Lazuli) and the Very Slow tier (Ancient Debris); add a family to those lists to have it default to another tier.
+Growth speed is in that table too: pass a `GrowthSpeed` tier to that entry's `Growth(...)` (`NORMAL` / `FAST` / `SLOW` / `VERY_SLOW`, see `BuddingFamily.GrowthSpeed`) — omitting it means Normal. Redstone and Lapis Lazuli are Fast, Ancient Debris is Very Slow, everything else is Normal. To retune an **existing** budding block (built-in families included) you do not have to touch the table: a script can call `CustomBudding.modify(...)`.
 
 ### Data Generation
 
@@ -445,10 +578,11 @@ DeferredBlock<Block> myBudding = MY_BLOCKS.register("my_budding",
 
 // 2) Declare it in your own @Mod constructor (must happen before the block registration event):
 BuddingRegistration.declareBuddingBlock(myBudding.get());   // use the shared Goggles block entity
-BuddingRegistration.declareKnownId("my_budding");           // let the four config tiers list it
+// If the family declares a fluid requirement (the last argument of Growth takes a FluidRequirement), add:
+// BuddingRegistration.declareFluidBuddingBlock(myBudding.getId());
 ```
 
-`declareBuddingBlock` is not a courtesy call you can skip: when a chunk restores block entities from NBT it validates `BlockEntityType#isValid` (`LevelChunk:392`), and a block absent from the shared block entity's valid-block list has its block entity **discarded after a chunk reload**, at which point the Goggles readout stops working.
+`declareBuddingBlock` is not a courtesy call you can skip: when a chunk restores block entities from NBT it validates `BlockEntityType#isValid` (`LevelChunk:392`), and a block absent from the shared block entity's valid-block list has its block entity **discarded after a chunk reload**, at which point the Goggles readout stops working. The same holds for the fluid tank: this mod derives its tank list from its own family table, and **your family is not in that table**, so a family with a fluid requirement must declare itself.
 
 A block built on `GenericBuddingBlock` is complete at this point: it carries its own family definition, which the JEI Budding Block Info page reads directly. Blocks that **assemble the low-level interface themselves** (implementing `randomTick` and calling the engine) have no definition to read, so they need one more declaration — and don't forget `.randomTicks()` in the block properties: without it neither vanilla nor an accelerator will ever touch the block (`GenericBuddingBlock` copies its properties wholesale from vanilla Budding Amethyst, so it carries the flag already):
 
@@ -473,6 +607,8 @@ BuddingGrowthEngine.tryGrow(serverLevel, pos, random, definition, gate);
 A definition can take further gates: `growthDimensions(Level.NETHER)` restricts normal growth to the listed dimensions, and `growthBiomes("minecraft:lush_caves")` adds a biome filter. Writing both intersects them; outside your turf each successful check makes a second roll and only grows with probability `outsideGrowthChance(0.5)` — 0.5 is exactly what Budding Quartz and Budding Glowstone use, and 0 stops growth there entirely.
 
 Biome entries resolve in this order: hitting any **negation** drops the position immediately; otherwise at least one **positive** entry must match; when only negations are written, the positive side counts as "every biome" (`growthBiomes("!cold")` means anywhere but cold biomes).
+
+A block wired up by hand through the low-level interface has one optional extra: **honour script `modify` overrides** so a pack author can retune it the same way they retune this mod's budding blocks — wrap your own definition in `BuddingOverrides.apply(this, definition)` (both of this mod's budding block classes do exactly that). Skipping it is fine too; a script's `CustomBudding.modify` can then still change its drops, creative tab and mining tier, but not its growth parameters.
 
 Everything else is yours to supply: block registration and textures, items, loot tables, and adding the block to the `#c:budding_blocks` tag (the Smart Drill's Silk Touch mode and AE2's Growth Accelerator read it).
 The same goes for your buds and clusters — add them to `#c:buds` and `#c:clusters` so other mods filtering by category recognise them.

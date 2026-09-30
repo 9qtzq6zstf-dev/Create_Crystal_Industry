@@ -19,9 +19,7 @@ import com.minecart.yunxian.budding.BuddingFamily;
 import com.minecart.yunxian.budding.BuddingFamily.BlockConversion;
 import com.minecart.yunxian.budding.BuddingFamily.EnergyRequirement;
 import com.minecart.yunxian.budding.BuddingFamily.Growth;
-import com.minecart.yunxian.budding.BuddingFamily.GrowthRule;
 import com.minecart.yunxian.budding.BuddingFamily.GrowthSpeed;
-import com.minecart.yunxian.budding.BuddingFamily.LightRequirement;
 import com.minecart.yunxian.budding.BuddingFamily.Replacement;
 import com.minecart.yunxian.budding.BuddingRegistration;
 import com.minecart.yunxian.budding.FluidRequirement;
@@ -29,7 +27,6 @@ import com.minecart.yunxian.budding.GrowthDefinition;
 import com.minecart.yunxian.budding.GrowthEnvironment;
 import com.minecart.yunxian.client.budding.EnvironmentDisplay;
 import com.minecart.yunxian.compat.jei.BuddingInfo.Row;
-import com.minecart.yunxian.config.ModConfig;
 import com.minecart.yunxian.registry.ModTags;
 import com.mojang.logging.LogUtils;
 
@@ -67,7 +64,7 @@ public final class BuddingInfoCollector {
 
     private static final String LANG = BuddingInfoText.LANG;
 
-    /** 原版紫水晶母岩的随机刻概率：与配置里的「正常」档同为 1/5（{@code GrowthSpeed.NORMAL}） */
+    /** 原版紫水晶母岩的随机刻概率：与本模组「正常」档同为 1/5（{@code GrowthSpeed.NORMAL}） */
     private static final int VANILLA_CHANCE = 5;
 
     private BuddingInfoCollector() {
@@ -162,13 +159,25 @@ public final class BuddingInfoCollector {
 
     /** 带家族特点的母岩：本模组的 13 个家族与附属模组用 {@link GenericBuddingBlock} 建的方块共用这一条路径 */
     private static BuddingInfo fromFamily(GenericBuddingBlock block, BuddingFamily spec, List<Block> stages) {
+        // 概率、光照、含水、生长环境一律从**解析后的定义**读（脚本的 modify 能改它们），
+        // 家族表里那几项只是出厂值；能量与转化脚本改不了，仍从家族表读
+        GrowthDefinition definition = block.growthDefinition();
+
         List<Row> rows = new ArrayList<>();
         rows.add(Row.header(section("growth")));
-        rows.addAll(conditions(spec.growth()));
+        List<Row> growthRows = new ArrayList<>(definitionConditions(definition));
+        growthRows.addAll(familyConditions(spec.growth()));
+        if (growthRows.isEmpty()) {
+            growthRows.add(Row.line(Component.translatable(LANG + "growth.none")));
+        }
+        rows.addAll(growthRows);
 
         rows.add(Row.header(section("speed")));
-        String id = spec.id();
-        rows.addAll(speedRows(ModConfig.Common.growthChance(id), ModConfig.Common.speedFor(id)));
+        // 概率被脚本改过就不再挂家族声明的档位名——否则页面会写着"正常档"而实际是 1/20
+        GrowthSpeed tier = definition.chance() == spec.growth().speed().chance()
+                ? spec.growth().speed()
+                : null;
+        rows.addAll(speedRows(definition.chance(), tier));
 
         rows.add(Row.header(section("generation")));
         rows.addAll(GenerationInfoReader.rows(spec));
@@ -180,7 +189,11 @@ public final class BuddingInfoCollector {
     private static BuddingInfo fromDefinition(Block block, GrowthDefinition definition, String originKey) {
         List<Row> rows = new ArrayList<>();
         rows.add(Row.header(section("growth")));
-        rows.addAll(conditions(definition));
+        List<Row> growthRows = new ArrayList<>(definitionConditions(definition));
+        if (growthRows.isEmpty()) {
+            growthRows.add(Row.line(Component.translatable(LANG + "growth.none")));
+        }
+        rows.addAll(growthRows);
 
         rows.add(Row.header(section("speed")));
         // 脚本/外部定义的概率不由配置文件四档决定，所以没有档位可写，只给一个最接近的定性词
@@ -222,30 +235,23 @@ public final class BuddingInfoCollector {
 
     // ==================== 生长条件 ====================
 
-    /** 家族定义里的生长条件：只列非默认项，一条都没有时写「无额外要求」 */
-    private static List<Row> conditions(Growth growth) {
+    /**
+     * 家族独有的生长条件行：能量与方块转化。
+     * <p>
+     * 光照、含水、生长环境这三样<b>不在这里</b>——它们在 {@link GrowthDefinition} 里，
+     * 脚本能改，所以由 {@link #definitionConditions} 出（两条路共用同一套判定与文案）。
+     */
+    private static List<Row> familyConditions(Growth growth) {
         List<Row> rows = new ArrayList<>(4);
 
-        LightRequirement light = growth.light();
-        if (light.kind() == LightRequirement.Kind.BELOW) {
-            // 只写定性说法：具体亮度阈值留在地图里自己试（below(t) 即"必须比 t 更暗"）
-            rows.add(Row.line(Component.translatable(LANG + "growth.light")));
-        }
-        if (growth.rule() == GrowthRule.SUBMERGED) {
-            rows.add(Row.line(Component.translatable(LANG + "growth.water")));
-        }
-        if (growth.growthEnvironment().restricts()) {
-            rows.addAll(environmentRows(growth.growthEnvironment()));
-        }
         if (growth.energy() == EnergyRequirement.AE2_GRID) {
             rows.add(Row.line(Component.translatable(LANG + "growth.energy")));
-        }
-        if (growth.energy() == EnergyRequirement.LAVA_TANK) {
-            rows.add(Row.line(Component.translatable(LANG + "growth.lava")));
         }
         if (growth.energy() == EnergyRequirement.FE) {
             rows.add(Row.line(Component.translatable(LANG + "growth.fe")));
         }
+        // 流体消耗（远古残骸的熔岩、脚本加的）不在这里：它是定义里的字段，由
+        // definitionConditions(...) 出一行带流体名与数字的，家族与脚本两条路共用
 
         // 转化规则合并成一行：矿石族有两条（矿石 + 母岩再生），分行写会把版面撑满
         List<BlockConversion> conversions = growth.conversions();
@@ -258,14 +264,16 @@ public final class BuddingInfoCollector {
                     BuddingInfoText.join(parts, BuddingInfoText.sentenceSeparator()))));
         }
 
-        if (rows.isEmpty()) {
-            rows.add(Row.line(Component.translatable(LANG + "growth.none")));
-        }
         return rows;
     }
 
-    /** 生长定义（脚本/外部声明）里的生长条件，与家族定义共用同一套文案键 */
-    private static List<Row> conditions(GrowthDefinition definition) {
+    /**
+     * 生长定义（家族方块解析后的定义、脚本/外部声明的定义）里的生长条件，与家族定义共用同一套文案键。
+     * <p>
+     * 不写「无额外要求」的兜底行：调用方可能还要在后面接家族独有的行（能量/转化），
+     * 由它们一起判断"到底有没有条件"。
+     */
+    private static List<Row> definitionConditions(GrowthDefinition definition) {
         List<Row> rows = new ArrayList<>(5);
         if (definition.minLight().isPresent()) {
             rows.add(Row.line(Component.translatable(LANG + "growth.light.min")));
@@ -277,7 +285,7 @@ public final class BuddingInfoCollector {
             rows.add(Row.line(Component.translatable(LANG + "growth.water")));
         }
         // 流体消耗：与家族母岩的「熔岩 / FE」同一层意思，只是流体名、消耗量、容量都是定义给的
-        // （家族那边写死在专用 BE 里，只能写一句固定文案，见上面 conditions(Growth)）
+        // （家族那边写死在专用 BE 里，只能写一句固定文案，见上面 familyConditions(Growth)）
         FluidRequirement fluid = definition.fluid();
         if (fluid != null) {
             rows.add(Row.line(Component.translatable(LANG + "growth.fluid",
@@ -285,9 +293,6 @@ public final class BuddingInfoCollector {
         }
         if (definition.growthEnvironment().restricts()) {
             rows.addAll(environmentRows(definition.growthEnvironment()));
-        }
-        if (rows.isEmpty()) {
-            rows.add(Row.line(Component.translatable(LANG + "growth.none")));
         }
         return rows;
     }

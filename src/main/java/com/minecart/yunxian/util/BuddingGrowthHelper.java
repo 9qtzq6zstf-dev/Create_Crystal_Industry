@@ -9,6 +9,7 @@ import com.minecart.yunxian.block.budding.ScriptedBuddingBlock;
 import com.minecart.yunxian.block.MechanicalAcceleratorBlock;
 import com.minecart.yunxian.blockentity.MechanicalAcceleratorBlockEntity;
 import com.minecart.yunxian.budding.BuddingFamily.GrowthSpeed;
+import com.minecart.yunxian.budding.BuddingOverrides;
 import com.minecart.yunxian.budding.GrowthDefinition;
 import com.minecart.yunxian.budding.GrowthEnvironment;
 import com.minecart.yunxian.client.budding.EnvironmentDisplay;
@@ -130,20 +131,22 @@ public final class BuddingGrowthHelper {
     }
 
     /**
-     * 脚本（KubeJS）注册的母岩额外显示它的生长要求（速度 / 光照 / 含水）；
+     * 脚本管着的母岩额外显示它的生长要求（速度 / 光照 / 含水）；
      * 生长环境（维度 / 群系）是两种母岩共用的，在 {@link #appendGrowthEnvironment} 里加。
      * <p>
-     * 客户端也能读到：这些参数是脚本随方块实例传进来的（{@code ScriptedBuddingBlock} 持有定义），
-     * 不需要服务端同步。自带家族不显示这几行（它们的档位在配置文件里，护目镜显示的倍率即为所需）。
+     * 「脚本管着」有两种：KubeJS 注册的母岩（参数随方块实例带进来，
+     * {@code ScriptedBuddingBlock} 持有定义）、以及<b>被 {@code CustomBudding.modify} 改过的自带家族母岩</b>
+     * ——没被改过的家族母岩不显示这几行（护目镜上只显示当前倍率，那才是玩家要的信息）。
+     * 客户端也能读到：这些参数跟着方块走，不需要服务端同步。
      * <p>
      * 一律只给<b>定性说法</b>（「缓慢」「必须足够暗」）：具体数值（1/n、亮度阈值）不写进浮窗，
      * 免得把方块变成一张参数表。
      */
     public static void appendScriptedInfo(BlockState state, List<Component> tooltip) {
-        if (!(state.getBlock() instanceof ScriptedBuddingBlock scripted)) {
+        GrowthDefinition definition = scriptedDefinitionOf(state);
+        if (definition == null) {
             return;
         }
-        GrowthDefinition definition = scripted.growthDefinition();
 
         // 概率基数归到最接近的档位，只说「缓慢 / 很快」
         addLine(tooltip, Component.translatable(SCRIPTED_SPEED_KEY,
@@ -161,6 +164,22 @@ public final class BuddingGrowthHelper {
     }
 
     /**
+     * 该按"脚本给的定义"显示参数的方块：脚本母岩一律显示；
+     * 自带家族母岩只在被脚本覆盖过时显示（没覆盖时它的参数就是家族表里的出厂值，护目镜不重复念）。
+     */
+    @Nullable
+    private static GrowthDefinition scriptedDefinitionOf(BlockState state) {
+        if (state.getBlock() instanceof ScriptedBuddingBlock scripted) {
+            return scripted.growthDefinition();
+        }
+        if (state.getBlock() instanceof GenericBuddingBlock generic
+                && BuddingOverrides.hasOverride(state.getBlock())) {
+            return generic.growthDefinition();
+        }
+        return null;
+    }
+
+    /**
      * 母岩的「生长环境」行（生长维度一行、生长群系一行）：<b>自带家族与脚本母岩共用</b>
      * ——家族母岩读家族表（{@code GenericBuddingBlock#family()}），脚本母岩读它自己的定义，
      * 所以石英母岩、荧石母岩这种自带家族也能显示（原先只有脚本母岩有这一行）。
@@ -171,7 +190,7 @@ public final class BuddingGrowthHelper {
      * 只在客户端调（维度与群系名走 {@link EnvironmentDisplay}，它读语言文件）。
      * <p>
      * 共用的 {@code BuddingGrowthBlockEntity} 会调它；专用 BE 得各自记得——目前
-     * {@code LavaBuddingBlockEntity}（远古残骸母岩，下界特产）调了，
+     * 带流体罐的方块（{@code FluidTankBuddingBlockEntity}）调了，
      * 回响 / 可燃冰 / 福鲁伊克斯那三个专用 BE 的家族都还没有环境要求，
      * 将来给它们加了要求，记得在那几个 {@code addToGoggleTooltip} 里也调一次。
      */
@@ -194,11 +213,15 @@ public final class BuddingGrowthHelper {
         }
     }
 
-    /** 家族母岩读家族表，脚本母岩读它的定义；别的母岩（原版紫水晶等）没有要求 */
+    /**
+     * 家族母岩与脚本母岩都读<b>各自解析后的定义</b>（家族表只是出厂值，
+     * 脚本的 {@code CustomBudding.modify} 能改生长环境，护目镜要跟着变）；
+     * 别的母岩（原版紫水晶等）没有要求。
+     */
     @Nullable
     private static GrowthEnvironment growthEnvironmentOf(BlockState state) {
         if (state.getBlock() instanceof GenericBuddingBlock generic) {
-            return generic.family().growth().growthEnvironment();
+            return generic.growthDefinition().growthEnvironment();
         }
         if (state.getBlock() instanceof ScriptedBuddingBlock scripted) {
             return scripted.growthDefinition().growthEnvironment();

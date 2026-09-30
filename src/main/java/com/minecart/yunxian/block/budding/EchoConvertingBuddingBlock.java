@@ -3,6 +3,7 @@ package com.minecart.yunxian.block.budding;
 import com.minecart.yunxian.advancement.YunxianAdvancements;
 import com.minecart.yunxian.budding.BuddingFamily;
 import com.minecart.yunxian.blockentity.budding.EchoConvertingBuddingBlockEntity;
+import com.minecart.yunxian.blockentity.budding.FluidTankBuddingBlockEntity;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -53,6 +54,12 @@ public class EchoConvertingBuddingBlock extends GenericBuddingBlock implements E
     @Nullable
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
+        // 脚本用 modify 给回响母岩加了流体需求时，实体要让给通用罐——与父类同一条规则
+        // （见 GenericBuddingBlock#newBlockEntity）。少了这一判，罐永远不会被建出来：
+        // 付费钩子问不到罐 → 恒失败 → 方块从此不再生长，而且不报任何错
+        if (fluidRequirement() != null) {
+            return new FluidTankBuddingBlockEntity(pos, state);
+        }
         return new EchoConvertingBuddingBlockEntity(pos, state);
     }
 

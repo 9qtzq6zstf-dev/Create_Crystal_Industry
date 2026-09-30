@@ -1,23 +1,12 @@
 package com.minecart.yunxian.config;
 
-import java.util.EnumMap;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import com.minecart.yunxian.budding.BuddingFamilies;
 import com.minecart.yunxian.budding.BuddingFamilies.RegisteredFamily;
-import com.minecart.yunxian.budding.BuddingFamily.GrowthSpeed;
-import com.minecart.yunxian.budding.BuddingRegistration;
 
 import net.neoforged.neoforge.common.ModConfigSpec;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public final class ModConfig {
     private ModConfig() {
@@ -136,174 +125,6 @@ public final class ModConfig {
         public static boolean enabled(String key) {
             ModConfigSpec.BooleanValue flag = GENERATE_BUDDING.get(key);
             return flag == null || flag.get();
-        }
-
-        // ===== 母岩生长速度（四档） =====
-        private static final Logger LOGGER = LoggerFactory.getLogger("create_crystal_industry.config");
-
-        /** {@link #knownBuddingIds()} 的缓存：只在首次使用时构建一次 */
-        private static Set<String> knownBuddingIds;
-
-        /**
-         * 全部已知的母岩 id：自带的 15 个家族 + 附属模组通过
-         * {@link BuddingRegistration#declareKnownId} 声明的 id。
-         * <p>
-         * <b>延迟到首次使用</b>（首个随机刻解析生长档位时）才构建：附属模组是在自己构造器里声明的，
-         * 而配置项本身在模组构造期就要建立，晚一点收集才收得全。
-         * AE2 缺席时福鲁伊克斯母岩不存在，但配置里写了也不算错。
-         */
-        private static Set<String> knownBuddingIds() {
-            Set<String> ids = knownBuddingIds;
-            if (ids == null) {
-                ids = Stream.concat(
-                                BuddingFamilies.ALL.stream().map(family -> family.spec().id()),
-                                BuddingRegistration.declaredIds().stream())
-                        .collect(Collectors.toUnmodifiableSet());
-                knownBuddingIds = ids;
-            }
-            return ids;
-        }
-
-        /**
-         * 快档的默认成员：红石与青金石。
-         * <p>
-         * 必须是字段、且声明在 {@link #GROWTH_SPEEDS} <b>之前</b>——后者在类初始化时就会调用
-         * {@link #buildGrowthSpeeds()}，而该方法要读这个字段，声明在后面会读到 null。
-         */
-        private static final List<String> FAST_BY_DEFAULT = List.of("redstone", "lapis");
-
-        /**
-         * 极慢档的默认成员：远古残骸。
-         * <p>
-         * 它的晶簇掉落下界合金碎片，默认当稀缺资源处理；想让下界合金进入量产，把 id 挪到别的档即可。
-         * 声明位置的理由同 {@link #FAST_BY_DEFAULT}。
-         */
-        private static final List<String> VERY_SLOW_BY_DEFAULT = List.of("ancient_debris");
-
-        /**
-         * 四档生长速度各一个配置项，由 {@link GrowthSpeed} 派生：
-         * 键名 = {@code GrowthSpeed#configKey()}，值 = 母岩家族 id 列表。
-         * 判定顺序见 {@link #speedFor(String)}。
-         */
-        private static final Map<GrowthSpeed, ModConfigSpec.ConfigValue<List<? extends String>>> GROWTH_SPEEDS =
-                buildGrowthSpeeds();
-
-        private static Map<GrowthSpeed, ModConfigSpec.ConfigValue<List<? extends String>>> buildGrowthSpeeds() {
-            Map<GrowthSpeed, ModConfigSpec.ConfigValue<List<? extends String>>> speeds =
-                    new EnumMap<>(GrowthSpeed.class);
-            for (GrowthSpeed speed : GrowthSpeed.values()) {
-                String path = speed.configKey();
-                speeds.put(speed, BUILDER
-                        .comment("Budding blocks that grow at " + speed.name() + " speed: a 1-in-"
-                                        + speed.chance() + " chance to advance a stage per random tick.",
-                                "Values are budding family ids (the part shared with the generate_<id> switches),",
-                                "e.g. raw_iron, diamond, echo. Budding blocks listed nowhere are treated as NORMAL.")
-                        .translation(LANG_PREFIX + path)
-                        // 宽松校验：只挡非字符串。拼错的 id 交给解析阶段记警告，
-                        // 若在这里剔除，空列表会被 NeoForge 整体回退成默认值，反而把错误藏了起来。
-                        .defineListAllowEmpty(path, defaultIds(speed), (Supplier<String>) () -> "",
-                                element -> element instanceof String));
-            }
-            return Map.copyOf(speeds);
-        }
-
-        /**
-         * 某档的默认成员：慢档默认空；极慢档默认 {@link #VERY_SLOW_BY_DEFAULT}；
-         * 快档默认 {@link #FAST_BY_DEFAULT}；
-         * 「正常」档默认写出全部已注册的母岩，但跳过上面两个列表里的那几个——
-         * 否则同一个 id 会同时出现在两个档位里，读配置文件时像是写错了。
-         */
-        private static List<String> defaultIds(GrowthSpeed speed) {
-            return switch (speed) {
-                case NORMAL -> BuddingFamilies.ALL.stream()
-                        .filter(RegisteredFamily::isRegistered)
-                        .map(family -> family.spec().id())
-                        .filter(id -> !FAST_BY_DEFAULT.contains(id) && !VERY_SLOW_BY_DEFAULT.contains(id))
-                        .toList();
-                case FAST -> FAST_BY_DEFAULT;
-                case VERY_SLOW -> VERY_SLOW_BY_DEFAULT;
-                default -> List.of();
-            };
-        }
-
-        // 解析结果缓存。随机刻只在服务端主线程跑，这几个字段无需同步；Map 本身不可变。
-        private static Map<String, GrowthSpeed> resolvedSpeeds;
-        private static List<? extends String> cachedVerySlow;
-        private static List<? extends String> cachedSlow;
-        private static List<? extends String> cachedNormal;
-        private static List<? extends String> cachedFast;
-
-        /**
-         * 某母岩家族每随机刻的生长概率基数 n（每次随机刻 1/n）。
-         * <p>
-         * 随机刻是热路径（催生器每 tick 就会给相邻母岩施加随机刻），所以这里只做一次档位查表，
-         * 判定与缓存都在 {@link #speedFor(String)} 里。
-         */
-        public static int growthChance(String familyId) {
-            return speedFor(familyId).chance();
-        }
-
-        /**
-         * 某母岩家族当前所属的生长档位；没有被任何列表提到时按「正常」。
-         * <p>
-         * 生长引擎只用得上概率（{@link #growthChance}），这个方法给 JEI 的母岩信息页显示档位名用。
-         * <p>
-         * 判定顺序：先看三个非「正常」档（极慢 → 慢 → 快），命中即用；都没命中再看「正常」档；
-         * 仍未命中按「正常」兜底，所以把「正常」列表删空也不会改变行为。
-         * 一个母岩同时出现在两个非「正常」档里时取更慢的一档，并记一条警告。
-         * <p>
-         * 解析结果带缓存：四个源列表只要还是原来那批对象就直接复用。配置重载时 NeoForge 会清掉
-         * {@code ConfigValue} 的缓存并重新解析出新的 List 实例，因此比较引用就足以判断过期。
-         */
-        public static GrowthSpeed speedFor(String familyId) {
-            List<? extends String> verySlow = speedList(GrowthSpeed.VERY_SLOW);
-            List<? extends String> slow = speedList(GrowthSpeed.SLOW);
-            List<? extends String> normal = speedList(GrowthSpeed.NORMAL);
-            List<? extends String> fast = speedList(GrowthSpeed.FAST);
-
-            Map<String, GrowthSpeed> speeds = resolvedSpeeds;
-            if (speeds == null || verySlow != cachedVerySlow || slow != cachedSlow
-                    || normal != cachedNormal || fast != cachedFast) {
-                speeds = resolveGrowthSpeeds();
-                cachedVerySlow = verySlow;
-                cachedSlow = slow;
-                cachedNormal = normal;
-                cachedFast = fast;
-                resolvedSpeeds = speeds;
-            }
-            return speeds.getOrDefault(familyId, GrowthSpeed.NORMAL);
-        }
-
-        private static List<? extends String> speedList(GrowthSpeed speed) {
-            return GROWTH_SPEEDS.get(speed).get();
-        }
-
-        /** id → 档位的解析结果；概率由 {@link GrowthSpeed#chance()} 现取，不再单独存一份 */
-        private static Map<String, GrowthSpeed> resolveGrowthSpeeds() {
-            Map<String, GrowthSpeed> assignment = new HashMap<>();
-            // 先按枚举声明顺序处理三个非「正常」档（极慢 → 慢 → 快，更慢者先占位），
-            // 「正常」档留到最后：它默认列出全部母岩，不该盖掉其它三档的显式分配。
-            for (GrowthSpeed speed : GrowthSpeed.values()) {
-                if (speed != GrowthSpeed.NORMAL) {
-                    assign(assignment, speed);
-                }
-            }
-            assign(assignment, GrowthSpeed.NORMAL);
-            return Map.copyOf(assignment);
-        }
-
-        private static void assign(Map<String, GrowthSpeed> assignment, GrowthSpeed speed) {
-            for (String id : speedList(speed)) {
-                if (!knownBuddingIds().contains(id)) {
-                    LOGGER.warn("[Config] {} 里的“{}”不是已知的母岩家族 id，已忽略", speed.configKey(), id);
-                    continue;
-                }
-                GrowthSpeed previous = assignment.putIfAbsent(id, speed);
-                if (previous != null && previous != GrowthSpeed.NORMAL && speed != GrowthSpeed.NORMAL) {
-                    LOGGER.warn("[Config] 母岩“{}”同时列在 {} 与 {} 两档里，按更慢的一档处理",
-                            id, previous.configKey(), speed.configKey());
-                }
-            }
         }
 
         // ===== 催生器 =====

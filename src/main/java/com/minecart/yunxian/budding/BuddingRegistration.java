@@ -24,7 +24,8 @@ import net.minecraft.world.level.block.Block;
  * 而方块实体的合法方块表是在注册事件里才组装的，所以时序天然安全。
  * <pre>
  * BuddingRegistration.declareBuddingBlock(MY_BUDDING.get());
- * BuddingRegistration.declareKnownId("my_budding");
+ * // 家族声明了流体需求（Growth 最后一项传 FluidRequirement）时再补这一句：
+ * BuddingRegistration.declareFluidBuddingBlock(MY_BUDDING.getId());
  * </pre>
  * 生长行为本身不需要在这里注册：让自己的方块在 {@code randomTick} 里调用
  * {@link BuddingGrowthEngine#tryGrow}，参数用 {@link GrowthDefinition} 给出即可。
@@ -40,8 +41,6 @@ public final class BuddingRegistration {
     private static final Set<ResourceLocation> DECLARED_BLOCK_IDS = new LinkedHashSet<>();
     /** 按 id 声明的「带流体罐的母岩」方块：它们进的是流体罐 BE，不进共享护目镜 BE */
     private static final Set<ResourceLocation> DECLARED_FLUID_TANK_IDS = new LinkedHashSet<>();
-    /** 外部声明的家族 id：让配置文件的四档能列出它们 */
-    private static final Set<String> DECLARED_IDS = new LinkedHashSet<>();
     /** 外部声明的生长定义（按方块）：自己实现 randomTick 的方块靠它让 JEI 信息页也能读到参数 */
     private static final Map<Block, Supplier<GrowthDefinition>> DECLARED_DEFINITIONS = new LinkedHashMap<>();
     /** 同上，但按方块 id 声明；首次查询时解析成上面的那张表 */
@@ -86,17 +85,15 @@ public final class BuddingRegistration {
     }
 
     /**
-     * 声明一个家族 id：配置文件 {@code growthSpeed*} 四档里写它时不会被判为"未知 id"，
-     * 服主就能像调自带母岩那样给你的母岩换档位（前提是你的方块走 {@code GenericBuddingBlock}，
-     * 概率取自家族 id）。
+     * <b>已废弃，什么都不做</b>：母岩的生长速度曾经由配置文件的四档 id 列表决定，那些列表已经删掉
+     * ——速度现在写在 {@code BuddingFamilies} 的家族表里（{@code BuddingFamily.Growth#speed}），
+     * 脚本可以用 {@code CustomBudding.modify(方块 id, options)} 单独改某一块母岩。
+     * <p>
+     * 方法留着只是为了不让已经调用它的附属模组在加载时崩（删掉会让它们
+     * {@code NoSuchMethodError}），下次大版本会移除。
      */
+    @Deprecated(forRemoval = true)
     public static void declareKnownId(String familyId) {
-        DECLARED_IDS.add(familyId);
-    }
-
-    /** 外部声明的家族 id；配置校验用它补全"已知 id"集合 */
-    public static Set<String> declaredIds() {
-        return Set.copyOf(DECLARED_IDS);
     }
 
     /**
@@ -167,14 +164,24 @@ public final class BuddingRegistration {
     }
 
     /**
-     * 流体罐方块实体（{@code ModBlockEntities.SCRIPTED_FLUID_BUDDING}）的合法方块：
-     * 声明过 {@link #declareFluidBuddingBlock(ResourceLocation)} 的那些。
-     * <p>
+     * 流体罐方块实体（{@code ModBlockEntities.FLUID_TANK_BUDDING}）的合法方块，两个来源：
+     * <ol>
+     *   <li><b>自带家族里声明了流体需求的那些</b>（远古残骸母岩的熔岩罐就是这么来的，
+     *       见 {@code BuddingFamily.Growth#fluid}）；</li>
+     *   <li>{@link #declareFluidBuddingBlock(ResourceLocation)} 声明的那些——
+     *       脚本 {@code create} 里写了 {@code needfluid} 的母岩，以及 {@code modify} 给
+     *       已有母岩加罐时补登记的那些。</li>
+     * </ol>
      * 与 {@link #sharedGogglesBlocks()} 同样由 {@code ModBlockEntities} 在方块实体类型注册时调用，
      * 那时方块已经全部入表，按 id 声明的在这里解析成方块。
      */
     public static Block[] fluidTankBlocks() {
-        List<Block> blocks = new ArrayList<>(DECLARED_FLUID_TANK_IDS.size());
+        List<Block> blocks = new ArrayList<>();
+        for (BuddingFamilies.RegisteredFamily family : BuddingFamilies.ALL) {
+            if (family.isRegistered() && family.spec().growth().fluid() != null) {
+                blocks.add(family.budding().get());
+            }
+        }
         for (ResourceLocation blockId : DECLARED_FLUID_TANK_IDS) {
             Block block = BuiltInRegistries.BLOCK.get(blockId);
             if (block != null) {

@@ -6,8 +6,7 @@ import com.minecart.yunxian.blockentity.budding.ArclightBuddingBlockEntity;
 import com.minecart.yunxian.blockentity.budding.BuddingGrowthBlockEntity;
 import com.minecart.yunxian.blockentity.budding.EchoConvertingBuddingBlockEntity;
 import com.minecart.yunxian.blockentity.budding.FlammableIceBuddingBlockEntity;
-import com.minecart.yunxian.blockentity.budding.LavaBuddingBlockEntity;
-import com.minecart.yunxian.blockentity.budding.ScriptedFluidBuddingBlockEntity;
+import com.minecart.yunxian.blockentity.budding.FluidTankBuddingBlockEntity;
 import com.minecart.yunxian.budding.BuddingFamilies;
 import com.minecart.yunxian.budding.BuddingRegistration;
 import com.minecart.yunxian.integration.ae2.AE2BlockEntities;
@@ -76,12 +75,6 @@ public final class ModBlockEntities {
                     ArclightBuddingBlockEntity::new,
                     BuddingFamilies.ARCLIGHT.budding().get()
             ).build(null));
-    // 远古残骸母岩：存熔岩的容器 BE（会落盘，也实现流体能力，见 ModCapabilities）
-    public static final Supplier<BlockEntityType<LavaBuddingBlockEntity>> ANCIENT_DEBRIS_BUDDING =
-            BLOCK_ENTITIES.register("ancient_debris_budding", () -> BlockEntityType.Builder.of(
-                    LavaBuddingBlockEntity::new,
-                    BuddingFamilies.ANCIENT_DEBRIS.budding().get()
-            ).build(null));
     // 母岩共享的“生长速度”展示 BE：凡是没指定专用 BE 的家族都走这里。
     // 合法方块表见 goggleInfoBlocks()：BuddingRegistration 的汇总 + 原版紫水晶母岩
     public static final Supplier<BlockEntityType<BuddingGrowthBlockEntity>> BUDDING_GROWTH =
@@ -89,13 +82,14 @@ public final class ModBlockEntities {
                     .of(BuddingGrowthBlockEntity::new, goggleInfoBlocks())
                     .build(null));
 
-    // 脚本母岩的流体罐 BE（KubeJS 的 needfluid）：容量、每次消耗、认哪种流体都读方块自己的
-    // GrowthDefinition，所以一个类型能服务任意多个脚本母岩（见 ScriptedFluidBuddingBlockEntity）。
-    // 合法方块表来自 BuddingRegistration：脚本在方块注册事件里用 declareFluidBuddingBlock 登记过，
-    // 那时方块还没建出来，这里（方块实体类型注册时）才解析得到
-    public static final Supplier<BlockEntityType<ScriptedFluidBuddingBlockEntity>> SCRIPTED_FLUID_BUDDING =
-            BLOCK_ENTITIES.register("scripted_fluid_budding", () -> BlockEntityType.Builder.of(
-                    ScriptedFluidBuddingBlockEntity::new,
+    // 母岩的流体罐 BE：容量、每次消耗、认哪种流体都读方块自己的 GrowthDefinition，
+    // 所以一个类型就能服务任意多块母岩——脚本注册的（kubejs 的 needfluid）与本模组自带的
+    // 远古残骸母岩（熔岩罐）共用它（见 FluidTankBuddingBlockEntity）。
+    // 合法方块表来自 BuddingRegistration：自带家族按家族表算出来、脚本在方块注册事件里
+    // 用 declareFluidBuddingBlock 登记，那时方块还没建出来，这里（方块实体类型注册时）才解析得到
+    public static final Supplier<BlockEntityType<FluidTankBuddingBlockEntity>> FLUID_TANK_BUDDING =
+            BLOCK_ENTITIES.register("fluid_tank_budding", () -> BlockEntityType.Builder.of(
+                    FluidTankBuddingBlockEntity::new,
                     BuddingRegistration.fluidTankBlocks()
             ).build(null));
 

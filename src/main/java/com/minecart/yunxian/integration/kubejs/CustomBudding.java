@@ -1,19 +1,30 @@
 package com.minecart.yunxian.integration.kubejs;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Supplier;
 
+import com.minecart.yunxian.Yunxian;
 import com.minecart.yunxian.block.budding.ScriptedBuddingBlock;
 import com.minecart.yunxian.block.budding.YunxianClusterBlock;
+import com.minecart.yunxian.budding.BuddingFamilies;
+import com.minecart.yunxian.budding.BuddingFamilies.RegisteredFamily;
 import com.minecart.yunxian.budding.BuddingFamilies.Stage;
+import com.minecart.yunxian.budding.BuddingFamily.BlockEntityKind;
+import com.minecart.yunxian.budding.BuddingFamily.LightRequirement;
 import com.minecart.yunxian.budding.BuddingGrowthEngine;
+import com.minecart.yunxian.budding.BuddingOverrides;
 import com.minecart.yunxian.budding.BuddingRegistration;
 import com.minecart.yunxian.budding.FluidRequirement;
 import com.minecart.yunxian.budding.GrowthDefinition;
+import com.minecart.yunxian.budding.GrowthEnvironment;
 import com.minecart.yunxian.registry.ModCreativeTabs;
 import com.minecart.yunxian.registry.ScriptedBlockDrops;
+import com.minecart.yunxian.registry.ScriptedMiningLevels;
 
 import dev.latvian.mods.kubejs.block.BlockBuilder;
 import dev.latvian.mods.kubejs.block.BlockRenderType;
@@ -27,7 +38,9 @@ import dev.latvian.mods.kubejs.util.ID;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
 import org.jetbrains.annotations.Nullable;
@@ -109,6 +122,12 @@ public final class CustomBudding {
     private static final String NO_LEVEL = "none";
 
     /**
+     * 流体写成这个 = <b>显式取消</b>已有的流体需求（与 {@link #NO_LEVEL} 同一个写法，见 {@code Options#fluid}）。
+     * 与"没写这一项"不是一回事：那个是 {@code null}。
+     */
+    private static final String NO_FLUID = "none";
+
+    /**
      * 阶段方块继承的原版模型 id（与上面的默认贴图同名，但语义是"模型"）：
      * 借它们才拿到芽/簇该有的 cross 几何与尺寸，而不是一个整块立方体。
      */
@@ -144,8 +163,7 @@ public final class CustomBudding {
         // 流体需求同理先解析：流体 id 写错、或者在方块注册时流体表还没建好，都要当场报出来。
         // 脚本跑到这里时流体已经全部注册完（注册事件按原版注册表顺序派发，流体在方块之前），
         // 所以这里查得到别的模组的流体，连脚本自己注册的都行
-        @Nullable FluidRequirement fluid = options.fluid == null ? null
-                : FluidRequirement.parse(options.fluid, options.fluidCostPerGrowth, options.fluidCapacity);
+        @Nullable FluidRequirement fluid = fluidRequirement(options);
 
         // 四个阶段方块：建成模组自己的簇方块（见 StageBuilder），朝向形状、支撑判定、音效都是原版行为
         ResourceLocation[] stages = new ResourceLocation[STAGE_KEYS.length];
@@ -182,7 +200,7 @@ public final class CustomBudding {
             // 掉落规则交给运行时：精准采集掉本体，否则只有晶簇掉 Options.dropItem × dropCount（默认什么都不掉）。
             // KubeJS 的掉落 API 表达不了精准采集，覆写 generateLootTable() 又没人调用，见 ScriptedBlockDrops
             ScriptedBlockDrops.register(stageId, cluster ? itemId(options.dropItem) : null,
-                    cluster ? options.dropCount : 1);
+                    cluster ? dropCount(options) : 1);
         }
 
         // 母岩本体：用模组自己的方块类（它自带随机刻 → 生长引擎，且带共享展示 BE，护目镜才显示信息）
@@ -222,6 +240,290 @@ public final class CustomBudding {
                 base, buddingId, stages[0], stages[1], stages[2], stages[3], options.group);
 
         return new Family(buddingId, stages[0], stages[1], stages[2], stages[3]);
+    }
+
+    /**
+     * 改一块<b>已经注册好的</b>母岩（自带的、别的脚本注册的、附属模组的都行）：
+     * 参数与 {@link #create} 共用同一个 {@link Options}，但语义是<b>合并</b>——
+     * 只改脚本显式写了的那几项，其余保持方块现状。
+     * <pre>{@code
+     * CustomBudding.modify('create_crystal_industry:ancient_debris_budding', new CustomBuddingOptions()
+     *     .chance(20)                       // 极慢档（1/50）改快一点
+     *     .growthDimensions('minecraft:overworld')   // 顺便解掉"只在下界满速"
+     *     .needfluid('none'))               // 不再扣熔岩
+     * }</pre>
+     * <b>只能改"特性"</b>：概率、光照上下限、含水、生长维度/群系、地盘外概率、流体需求、掉落、开采等级。
+     * 材质、破坏音效、破坏工具、翻译名与创造栏归属属于方块的「身份」，注册时就定下来、{@code modify}
+     * 一概不管——脚本里写了会当场报错（要换这些就 {@code create} 一块新的）。
+     * <p>
+     * 与 {@link #create} 一样<b>必须写在启动脚本里</b>：它改的是注册期定下来的东西，
+     * 而且 JEI 的母岩信息页只在启动时构建一次。
+     * <p>
+     * id 写母岩方块的 id（{@code create_crystal_industry:raw_iron_budding}）；末尾的
+     * {@code _budding} 可省（不写会自动补上），裸 id 落在 {@code kubejs} 命名空间（与 {@code create} 一致）。
+     * 目标方块不存在、或者不是本模组引擎驱动的母岩时，启动日志里会有一条警告——
+     * 这里<b>不能</b>当场校验（脚本跑在方块注册事件里，那时别的模组方块还没入表）。
+     */
+    public static void modify(String id, Options options) {
+        ResourceLocation blockId = buddingBlockId(parse(id));
+        rejectBakedOptions(options);
+        // 能当场查出来的矛盾在这儿就报（写错的脚本立刻在 KubeJS 日志里看到），
+        // 只有"与方块原有值合不上"那种才留到运行时兜底（那时只能在日志里报错 + 退回出厂定义）
+        validateGrowthValues(blockId, options);
+
+        @Nullable FluidRequirement requirement = fluidRequirement(options);
+        boolean clearsFluid = NO_FLUID.equals(fluidName(options));
+        rejectFluidOnEnergyFamily(blockId, requirement);
+
+        // 生长定义那一层：概率 / 光照 / 含水 / 环境 / 流体
+        BuddingOverrides.declareTarget(blockId);
+        BuddingOverrides.modify(blockId, new BuddingOverrides.Override(
+                options.chance, options.maxLight, options.minLight, options.requiresWater,
+                dimensions(options.growthDimensions), biomeEntries(options.growthBiomes),
+                options.outsideGrowthChance, requirement, clearsFluid));
+
+        // 流体罐的方块实体类型在注册期就定死了（见 BuddingRegistration），所以"这块有没有罐"
+        // 必须在这里登记：加罐的进流体罐那张表；取消的回到共享护目镜那张表。
+        // 原来就有罐的仍留在流体罐表里，于是两种实体类型都合法——区块重载时已有的罐不会被判非法丢掉
+        if (requirement != null) {
+            BuddingRegistration.declareFluidBuddingBlock(blockId);
+        } else if (clearsFluid) {
+            BuddingRegistration.declareBuddingBlock(blockId);
+        }
+
+        // 掉落：与 create 一致，改的是晶簇那一块（掉落规则按方块 id 存在 ScriptedBlockDrops 里，
+        // 运行时可写；对自带家族同样生效——那条规则会接管战利品表，JEI 的母岩信息页读的也是它）。
+        // 注意 .dropItem('none') 是"什么都不掉"（查不到这个物品，ScriptedBlockDrops 就当没有），
+        // 与"没写这一项"（null，保持现状）不是一回事
+        if (options.dropItem != null || options.dropCount != null) {
+            if (options.dropItem == null) {
+                // 只写数量是改不动的：改掉落 = 整条规则接管战利品表，而"原来的物品"在这里读不出来
+                // （脚本跑在方块注册事件里，方块还没入表、战利品表自然也没得读）。
+                // 与其静默把晶簇变成"什么都不掉"，不如让脚本作者把物品写出来
+                throw new IllegalArgumentException("modify 里只写 .dropCount(...) 改不了掉落数量："
+                        + "改掉落是整条规则接管战利品表的，得连物品一起写——"
+                        + ".dropItem('要掉的物品', 数量)；想让晶簇什么都不掉就写 .dropItem('none')");
+            }
+            ResourceLocation clusterId = stageId(blockId, "cluster");
+            ScriptedBlockDrops.register(clusterId, itemId(options.dropItem), dropCount(options));
+        }
+        // 开采等级：挂在方块 id 上的运行时判定（见 ScriptedMiningLevels），母岩与四个阶段各一份
+        if (options.buddingLevel != null || options.stageLevel != null) {
+            if (options.buddingLevel != null) {
+                ScriptedMiningLevels.register(blockId, levelTag(options.buddingLevel));
+            }
+            if (options.stageLevel != null) {
+                ResourceLocation stageLevelTag = levelTag(options.stageLevel);
+                for (String key : STAGE_KEYS) {
+                    ScriptedMiningLevels.register(stageId(blockId, key), stageLevelTag);
+                }
+            }
+        }
+
+        LOGGER.info("[KubeJS] 已修改母岩 {} 的生长参数：{}", blockId, options);
+    }
+
+    /**
+     * 母岩方块 id 的归一化：末尾的 {@code _budding} 可省。
+     * <p>
+     * {@code create} 与 {@code BuddingFamilies} 生成的母岩 id 一律是 {@code <前缀>_budding}
+     * （见 {@code BuddingFamily#buddingId()}），所以"没写后缀就当它写了"这条规则总能对上；
+     * 真有一块不按这个命名来的第三方母岩，会被启动时那次目标检查抓出来。
+     */
+    private static ResourceLocation buddingBlockId(ResourceLocation given) {
+        return given.getPath().endsWith("_budding") ? given : given.withSuffix("_budding");
+    }
+
+    /** 由母岩 id 推出同族的阶段方块 id（{@code <前缀>_small_bud} …），与 {@code create} 的命名一致 */
+    private static ResourceLocation stageId(ResourceLocation buddingId, String stageKey) {
+        String path = buddingId.getPath();
+        String prefix = path.substring(0, path.length() - "_budding".length());
+        return ResourceLocation.fromNamespaceAndPath(buddingId.getNamespace(), prefix + "_" + stageKey);
+    }
+
+    /**
+     * 挡住"不属于给方块加特性"的那几项：材质、破坏音效、破坏工具、翻译名，以及创造栏归属。
+     * <p>
+     * {@code modify} 的定位是<b>给某一块已有母岩添加新特性</b>（概率、光照、含水、环境、流体、
+     * 掉落、开采等级），不是改它的身份——外观、名字、进哪一页都是身份，注册期定下来就不动了。
+     * <p>
+     * 判定办法是跟一份全新的 {@link Options} 比默认值——比同名同值的写法（比如
+     * {@code .buddingSound('amethyst')}）会漏过去，但那种写法本来就是"不改变现状"，无害。
+     * KubeJS 的 {@code .tool(...)} 一次设两份工具，所以这里也两个一起报。
+     */
+    private static void rejectBakedOptions(Options options) {
+        Options defaults = new Options();
+        List<String> baked = new ArrayList<>();
+        if (!options.buddingTexture.equals(defaults.buddingTexture)) {
+            baked.add("buddingTexture");
+        }
+        if (!Arrays.equals(options.stageTextures, defaults.stageTextures)) {
+            baked.add("stageTextures");
+        }
+        if (options.buddingSound != defaults.buddingSound) {
+            baked.add("buddingSound");
+        }
+        if (options.stageSound != defaults.stageSound) {
+            baked.add("stageSound");
+        }
+        if (!Objects.equals(options.buddingTool, defaults.buddingTool)) {
+            baked.add("buddingTool");
+        }
+        if (!Objects.equals(options.stageTool, defaults.stageTool)) {
+            baked.add("stageTool");
+        }
+        if (options.displayName != null) {
+            baked.add("displayName");
+        }
+        if (options.stageDisplayNames != null) {
+            baked.add("stageDisplayNames");
+        }
+        if (!Objects.equals(options.group, defaults.group)) {
+            baked.add("group");
+        }
+        if (!baked.isEmpty()) {
+            throw new IllegalArgumentException("modify 改不了这些项：" + String.join(" / ", baked)
+                    + "——材质、破坏音效、破坏工具、翻译名与创造栏归属都在方块注册时就定下来了，"
+                    + "而且它们是方块的「身份」、不是能后加的特性；要换这些请用 CustomBudding.create 注册一块新的母岩");
+        }
+    }
+
+    /** {@link Options#fluid} 原样取出来，空白当没写 */
+    @Nullable
+    private static String fluidName(Options options) {
+        return options.fluid == null || options.fluid.isBlank() ? null : options.fluid;
+    }
+
+    /**
+     * 当场校验这一批生长参数：概率必须 ≥ 1，光照上下限不能自相矛盾。
+     * <p>
+     * 这些 {@link GrowthDefinition} 的紧凑构造器也会查，但它是在<b>随机刻里</b>被构造的——
+     * 在那儿抛就是每 tick 崩一次服务端（见 {@code BuddingOverrides#apply} 的兜底）。
+     * 所以能在这儿查清的一律在这儿查，报错信息里带上目标方块。
+     */
+    private static void validateGrowthValues(ResourceLocation blockId, Options options) {
+        if (options.chance != null && options.chance < 1) {
+            throw new IllegalArgumentException("modify 的概率基数必须 ≥ 1（每次随机刻 1/n 推进一级），收到 "
+                    + options.chance);
+        }
+        // 只给了一端时，另一端可能是方块原有的值——那要等到解析时才知道，这里只查"自己就矛盾"的写法
+        if (options.minLight != null && options.maxLight != null && bothPresent(options)
+                && options.minLight > options.maxLight) {
+            throw new IllegalArgumentException("modify 的生长格亮度下限（" + options.minLight
+                    + "）不能高于上限（" + options.maxLight + "），否则永远长不出来");
+        }
+        if (options.outsideGrowthChance != null
+                && !(options.outsideGrowthChance >= 0 && options.outsideGrowthChance <= 1)) {
+            throw new IllegalArgumentException("modify 的地盘外生长概率必须是 0 到 1 之间的小数"
+                    + "（0 = 完全不长，1 = 不限制），收到 " + options.outsideGrowthChance);
+        }
+        // 目标写在自带家族身上时，家族原本的光照要求是已知的（家族表在脚本之前就建好了）：
+        // 光给下限、而它高于家族的亮度上限（如回响母岩的"必须全黑"）也当场拦掉
+        RegisteredFamily family = familyOf(blockId);
+        if (family != null && options.minLight != null
+                && family.spec().growth().light().kind() == LightRequirement.Kind.BELOW
+                && options.minLight > family.spec().growth().light().threshold() - 1) {
+            throw new IllegalArgumentException("modify 的生长格亮度下限（" + options.minLight + "）与 "
+                    + blockId + " 自带的光照要求冲突：这个家族要求亮度低于 "
+                    + family.spec().growth().light().threshold() + " 才生长，两者不可能同时满足");
+        }
+    }
+
+    /** 两个光照端点是不是都"有效"（负数 = 那一端不限制，不算有效） */
+    private static boolean bothPresent(Options options) {
+        return options.minLight >= 0 && options.maxLight >= 0;
+    }
+
+    /**
+     * 带 AE 网格（福鲁伊克斯）或 FE（弧光石）付费的家族不能再加流体罐。
+     * <p>
+     * 两块方块实体只能留一个：换了通用罐，AE 网格节点 / FE 储罐就没了，而付费钩子又是"流体优先"的
+     * ——结果是这两条付费被静默跳过、方块白嫖。所以这种写法直接报错，而不是让它悄悄变便宜。
+     * （{@code needfluid('none')} 不受影响：那只是关掉一条本来就不存在的流体要求。）
+     */
+    private static void rejectFluidOnEnergyFamily(ResourceLocation blockId, @Nullable FluidRequirement requirement) {
+        if (requirement == null) {
+            return;
+        }
+        RegisteredFamily family = familyOf(blockId);
+        if (family == null) {
+            return;
+        }
+        BlockEntityKind kind = family.spec().appearance().blockEntity();
+        if (kind == BlockEntityKind.AE2_GRID || kind == BlockEntityKind.FE_TANK) {
+            throw new IllegalArgumentException("modify 不能给 " + blockId + " 加流体需求：它的方块实体要持"
+                    + (kind == BlockEntityKind.AE2_GRID ? " ME 网格节点（AE 付费）" : " FE 储罐（电费）")
+                    + "，换成流体罐之后就付不了费了。要在它身上加流体消耗，请用 CustomBudding.create 注册一块新的母岩");
+        }
+    }
+
+    /**
+     * 目标方块属于哪个自带家族；不是自带家族（脚本注册的、附属模组的）就返回 {@code null}。
+     * <p>
+     * 按<b>完整 id</b> 精确匹配（本模组的命名空间 + 家族表算出来的 {@code <家族 id>_budding}）：
+     * 家族表在脚本执行之前已经建好了，所以这里查得到。不能只比路径——脚本完全可以注册一块
+     * {@code kubejs:arclight_budding}，那跟自带的弧光石家族没有半点关系，
+     * 按路径比会把它的流体需求也一并拒掉。
+     */
+    @Nullable
+    private static RegisteredFamily familyOf(ResourceLocation blockId) {
+        return BuddingFamilies.ALL.stream()
+                .filter(family -> blockId.equals(
+                        ResourceLocation.fromNamespaceAndPath(Yunxian.MODID, family.spec().buddingId())))
+                .findFirst()
+                .orElse(null);
+    }
+
+    /** {@link Options#dropCount} 补上出厂默认值（没写就是 1） */
+    private static int dropCount(Options options) {
+        return options.dropCount != null ? options.dropCount : Options.DEFAULT_DROP_COUNT;
+    }
+
+    /**
+     * 脚本给的流体需求 → {@link FluidRequirement}。
+     * <p>
+     * 与工具/等级一样在调用时解析：流体 id 写错要立刻报错，而不是等第一次随机刻。
+     * {@code null} 与 {@code "none"} 都返回 {@code null}（前者是"没写"，后者是"取消"，
+     * 覆盖表那边分得清，见 {@code BuddingOverrides.Override#clearFluid}）。
+     */
+    @Nullable
+    private static FluidRequirement fluidRequirement(Options options) {
+        String fluidOrTag = fluidName(options);
+        if (fluidOrTag == null || NO_FLUID.equals(fluidOrTag)) {
+            return null;
+        }
+        int costPerGrowth = options.fluidCostPerGrowth != null
+                ? options.fluidCostPerGrowth : Options.DEFAULT_FLUID_COST;
+        int tankCapacity = options.fluidCapacity != null
+                ? options.fluidCapacity : Options.DEFAULT_FLUID_CAPACITY;
+        return FluidRequirement.parse(fluidOrTag, costPerGrowth, tankCapacity);
+    }
+
+    /**
+     * 脚本给的维度 id 列表：{@code null} = 没写这一项（沿用方块现状），
+     * <b>空数组 = 清空这一边</b>（维度不限）。在这里就解析一遍，id 写错当场报错。
+     */
+    @Nullable
+    private static List<ResourceKey<Level>> dimensions(@Nullable String[] ids) {
+        if (ids == null) {
+            return null;
+        }
+        List<ResourceKey<Level>> keys = new ArrayList<>(ids.length);
+        for (String id : ids) {
+            keys.add(GrowthEnvironment.dimension(id));
+        }
+        return List.copyOf(keys);
+    }
+
+    /** 群系条件同理：{@code null} = 没写，空数组 = 清空；字符串在这里先过一遍解析（写错当场报错） */
+    @Nullable
+    private static List<String> biomeEntries(@Nullable String[] entries) {
+        if (entries == null) {
+            return null;
+        }
+        // 解析一次只为校验：真正生效的那次在 BuddingOverrides 合并时做（那时要拼上原有的维度）
+        GrowthEnvironment.of(Options.DEFAULT_OUTSIDE_GROWTH_CHANCE, List.of(), entries);
+        return List.of(entries);
     }
 
     /**
@@ -525,35 +827,66 @@ public final class CustomBudding {
      * 链式方法都返回 {@code this}，名字与字段同名——脚本里 {@code opts.chance(20)} 与
      * {@code opts.chance = 20} 各走各的，互不影响。
      * <p>
-     * <b>链必须写在 {@code create} 的实参里</b>：选项只在 {@code create} 调用时读一次，
+     * <b>链必须写在 {@code create} / {@code modify} 的实参里</b>：选项只在调用时读一次，
      * 而 {@code create} 返回的是注册结果 {@link Family}，不是 builder——
      * {@code CustomBudding.create(event, id).chance(20)} 那种写法不会生效（方块那时已经建好了）。
+     * <p>
+     * <b>生长参数那几项没写就是 {@code null}（"未指定"）</b>：{@code create} 给它们补上文档里写的
+     * 默认值（概率 1/5、不限光照……），{@code modify} 则保留方块现状——所以
+     * {@code .modify(id, opts.chance(20))} 只改概率，方块原本的光照/含水/环境一概不动。
+     * （材质、音效、工具那几项是注册期的参数，没写就保持各自的默认值，{@code modify} 一概不管。）
+     * 想显式清掉某一项也有写法：{@code maxLight(-1)} = 不限制、{@code minLight(-1)} = 不限制、
+     * {@code requiresWater(false)} = 不再需要水、{@code growthDimensions()}（不给参数）= 维度不限、
+     * {@code needfluid('none')} = 取消流体需求。
      */
     public static final class Options {
-        /** 概率基数 n：每次随机刻有 1/n 的概率推进一级 */
-        public int chance = 5;
-        /** 生长位允许的最大亮度（0–15）；负数 = 不限制 */
-        public int maxLight = -1;
-        /** 生长位要求的最低亮度（0–15）；负数 = 不限制。不能高于 {@link #maxLight}，否则永远长不出来 */
-        public int minLight = -1;
-        /** 目标格必须含水（可燃冰式） */
-        public boolean requiresWater = false;
+
+        // ===== create 的默认值（modify 不用它们，未指定的项以方块现状为准） =====
+
+        /** 没写 {@link #chance} 时的概率基数 */
+        public static final int DEFAULT_CHANCE = 5;
+        /** 没写 {@link #maxLight} / {@link #minLight} 时的值：负数 = 那一端不限制 */
+        public static final int DEFAULT_LIGHT = -1;
+        /** 没写 {@link #outsideGrowthChance} 时的地盘外概率 */
+        public static final double DEFAULT_OUTSIDE_GROWTH_CHANCE = 0.5;
+        /** 没写 {@link #fluidCostPerGrowth} 时的每次消耗（mB） */
+        public static final int DEFAULT_FLUID_COST = 250;
+        /** 没写 {@link #fluidCapacity} 时的罐容量（mB） */
+        public static final int DEFAULT_FLUID_CAPACITY = 1000;
+        /** 没写 {@link #dropCount} 时的掉落数量 */
+        public static final int DEFAULT_DROP_COUNT = 1;
+        /** 没写 {@link #group} 时进的标签页 */
+        public static final String DEFAULT_GROUP = "kubejs";
+
+        /** 概率基数 n：每次随机刻有 1/n 的概率推进一级；null = 未指定（create 用 {@link #DEFAULT_CHANCE}） */
+        public @Nullable Integer chance = null;
+        /** 生长位允许的最大亮度（0–15）；<b>负数 = 那一端不限制</b>（显式写负数还能用来"清掉"已有的限制） */
+        public @Nullable Integer maxLight = null;
+        /** 生长位要求的最低亮度（0–15）；负数 = 不限制。与 {@link #maxLight} 一起构成闭区间 */
+        public @Nullable Integer minLight = null;
+        /** 目标格必须含水（可燃冰式）；null = 未指定 */
+        public @Nullable Boolean requiresWater = null;
         /**
          * 生长要消耗哪种流体：流体 id（{@code "minecraft:lava"}）或流体标签
-         * （{@code "#minecraft:lava"}）；null = 不消耗流体。
+         * （{@code "#minecraft:lava"}）；null = 未指定（不消耗流体，或 modify 时保留现状）。
          * <p>
-         * 这两个数字和它一起用，写法与含义见 {@link #needfluid(String, int, int)}；
-         * 逐字段赋值时可以直接改这三个字段。
+         * 写字符串 {@code "none"} = <b>显式取消</b>流体需求（改一块原本要烧流体的母岩时用得上，
+         * 与 {@code .buddingLevel('none')} 同一个写法）。
+         * <p>
+         * 这三个字段是<b>成套</b>读的：只有 {@link #fluid} 非 null 时才会去看下面两个数字
+         * （逐字段赋值时想改消耗或容量，必须把 {@code fluid} 也写上）。
          */
         public @Nullable String fluid = null;
-        /** {@link #fluid} 每次成功生长消耗多少 mB（默认 250，与远古残骸母岩同价） */
-        public int fluidCostPerGrowth = 250;
-        /** {@link #fluid} 的罐容量 mB（默认 1000 = 正好一桶；必须 ≥ 消耗量，否则永远长不出来） */
-        public int fluidCapacity = 1000;
+        /** {@link #fluid} 每次成功生长消耗多少 mB；null = 未指定（create 用 {@link #DEFAULT_FLUID_COST}） */
+        public @Nullable Integer fluidCostPerGrowth = null;
+        /** {@link #fluid} 的罐容量 mB；null = 未指定（create 用 {@link #DEFAULT_FLUID_CAPACITY}） */
+        public @Nullable Integer fluidCapacity = null;
         /**
          * 生长维度 id 列表（如 {@code "minecraft:overworld"}），<b>可以多选</b>：
          * 只在这些维度里正常生长，出了地盘每次判定通过后再掷一次、只有
          * {@link #outsideGrowthChance} 的概率继续生长。null / 不写 = 维度不限。
+         * <p>
+         * {@code modify} 时给一个<b>空数组</b>（{@code .growthDimensions()}）表示"清掉维度限制"。
          */
         public @Nullable String[] growthDimensions = null;
         /**
@@ -562,15 +895,15 @@ public final class CustomBudding {
          * （{@code "cold"} 寒冷 / {@code "warm"} 温暖 / {@code "hot"} 炎热；下界全域算炎热、末地全域算寒冷），
          * 或者它们前面加 {@code !} 表示<b>否定</b>（{@code "!cold"} = 只要不是寒冷群系就行）。
          * 与 {@link #growthDimensions} 都写时<b>取交集</b>——维度、群系都满足才算在自己的地盘上。
-         * null / 不写 = 群系不限。
+         * null / 不写 = 群系不限；{@code modify} 时空数组表示"清掉群系限制"。
          */
         public @Nullable String[] growthBiomes = null;
         /**
          * 自己的地盘<b>之外</b>的生长概率：0–1 的小数
-         * （默认 0.5 = 一半；0 = 出了地盘就再也长不动）。只有写了 {@link #growthDimensions} 或
-         * {@link #growthBiomes} 才有意义。
+         * （create 默认 0.5 = 一半；0 = 出了地盘就再也长不动）。只有写了 {@link #growthDimensions} 或
+         * {@link #growthBiomes} 才有意义。null = 未指定。
          */
-        public double outsideGrowthChance = 0.5;
+        public @Nullable Double outsideGrowthChance = null;
         /** 母岩的显示名；null = 交给 KubeJS 按 id 自动命名 */
         public @Nullable String displayName = null;
         /**
@@ -585,8 +918,12 @@ public final class CustomBudding {
          * 创造模式标签页：默认 {@code "kubejs"}（KubeJS 自己那一页）。
          * 可以换成原版页（{@code "building_blocks"} / {@code "natural_blocks"} / {@code "functional_blocks"} …，用方块 id 里那套下划线写法），
          * 设成 null 则不进标签页（只能用 {@code /give} 取）。
+         * <p>
+         * <b>只有 {@code create} 管这一项</b>：进了哪一页属于方块的「身份」，而 {@code modify} 只管
+         * 给它加特性——脚本在 {@code modify} 里写了这一项会当场报错（判定靠"与这个默认值不同"，
+         * 所以写成本页本身的 {@code .group('kubejs')} 反而是空操作，本来就在那一页）。
          */
-        public @Nullable String group = "kubejs";
+        public @Nullable String group = DEFAULT_GROUP;
         /** 母岩贴图 */
         public String buddingTexture = DEFAULT_BUDDING_TEXTURE;
         /**
@@ -640,8 +977,8 @@ public final class CustomBudding {
          * 数量受时运加成：每一级额外给 0..等级 个，与自带晶簇的掉落表一致。
          */
         public @Nullable String dropItem = null;
-        /** {@link #dropItem} 的掉落数量（小于 1 按 1 处理）；时运的加成会加在它上面 */
-        public int dropCount = 1;
+        /** {@link #dropItem} 的掉落数量（小于 1 按 1 处理）；时运的加成会加在它上面。null = 未指定 */
+        public @Nullable Integer dropCount = null;
         /** 四个阶段的贴图，顺序：小芽 → 中芽 → 大芽 → 晶簇 */
         public String[] stageTextures = DEFAULT_STAGE_TEXTURES.clone();
 
@@ -700,9 +1037,15 @@ public final class CustomBudding {
             return this;
         }
 
-        /** 同上，消耗与容量取默认值（{@link #fluidCostPerGrowth} 250 mB、{@link #fluidCapacity} 1000 mB） */
+        /**
+         * 同上，消耗与容量取默认值（250 mB / 1000 mB）。
+         * <p>
+         * 注意这两个数是<b>成套</b>写进去的：想只改消耗或容量，就把流体一起写上
+         * （{@code .needfluid('minecraft:lava', 500, 1000)}）——{@code modify} 时只写
+         * {@code .fluidCostPerGrowth} 之类的字段是没人读的。
+         */
         public Options needfluid(@Nullable String fluidOrTag) {
-            return needfluid(fluidOrTag, fluidCostPerGrowth, fluidCapacity);
+            return needfluid(fluidOrTag, DEFAULT_FLUID_COST, DEFAULT_FLUID_CAPACITY);
         }
 
         /**
@@ -848,14 +1191,17 @@ public final class CustomBudding {
 
         LazyDefinition(ResourceLocation[] stages, Options options, @Nullable FluidRequirement fluid) {
             this.stages = stages;
-            // 选项只在注册时读一次，之后脚本再改 Options 不影响这个家族
-            this.chance = options.chance;
-            this.maxLight = options.maxLight;
-            this.minLight = options.minLight;
-            this.requiresWater = options.requiresWater;
+            // 选项只在注册时读一次，之后脚本再改 Options 不影响这个家族。
+            // 选项里"没写"的项是 null（为的是让 modify 能区分"没写"与"写成默认值"），
+            // 所以这里统一补上 create 的出厂默认值
+            this.chance = options.chance != null ? options.chance : Options.DEFAULT_CHANCE;
+            this.maxLight = options.maxLight != null ? options.maxLight : Options.DEFAULT_LIGHT;
+            this.minLight = options.minLight != null ? options.minLight : Options.DEFAULT_LIGHT;
+            this.requiresWater = Boolean.TRUE.equals(options.requiresWater);
             this.growthDimensions = options.growthDimensions;
             this.growthBiomes = options.growthBiomes;
-            this.outsideGrowthChance = options.outsideGrowthChance;
+            this.outsideGrowthChance = options.outsideGrowthChance != null
+                    ? options.outsideGrowthChance : Options.DEFAULT_OUTSIDE_GROWTH_CHANCE;
             // 流体需求在 create 里就解析好了（那时报错更准），这里只是带着走
             this.fluid = fluid;
         }
