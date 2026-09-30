@@ -7,10 +7,12 @@
         "AirCurrentMixin",
         "NozzleBlockEntityMixin",
         "ChuteBlockEntityMixin",
-        "MechanicalCleanerAirCurrentMixin"
+        "MechanicalCleanerAirCurrentMixin",
+        "FilterItemStackMixin"
     ],
     "client": [
-        "LevelChunkMixin"
+        "LevelChunkMixin",
+        "BlockEntityBehaviourMixin"
     ],
     "injectors": {
         "defaultRequire": 1

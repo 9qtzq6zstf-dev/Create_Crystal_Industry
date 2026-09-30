@@ -37,6 +37,7 @@ public class Yunxian {
 
         ModBlocks.register(modEventBus);
         ModItems.register(modEventBus);
+        ModDataComponents.register(modEventBus);
         ModFluids.register(modEventBus);
         ModEffects.register(modEventBus);
         // 母岩家族由中央定义表注册：必须在这里触发一次类初始化，

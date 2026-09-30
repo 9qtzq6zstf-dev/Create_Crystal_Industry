@@ -398,5 +398,9 @@
     "advancements.create_crystal_industry.deep.flammable_ice.title": "深海之下的可燃冰",
     "advancements.create_crystal_industry.deep.flammable_ice.description": "在深海海床挖到可燃冰母岩",
     "advancements.create_crystal_industry.deep.ice_block.title": "压缩燃料",
-    "advancements.create_crystal_industry.deep.ice_block.description": "把可燃冰压成块当燃料"
+    "advancements.create_crystal_industry.deep.ice_block.description": "把可燃冰压成块当燃料",
+
+    "block.create_crystal_industry.resonance_table": "共振台",
+    "item.create_crystal_industry.resonance_filter": "共振过滤器",
+    "message.create_crystal_industry.resonance_table.new_network_started": "成功新建了一个过滤网络"
 }

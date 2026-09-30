@@ -3,6 +3,7 @@ package com.minecart.yunxian.registry;
 import com.minecart.yunxian.item.FlammableIceItem;
 import com.minecart.yunxian.Yunxian;
 import com.minecart.yunxian.item.NightVisionGogglesItem;
+import com.minecart.yunxian.item.ResonanceFilterItem;
 import com.minecart.yunxian.item.EchoSpyglassItem;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.item.BucketItem;
@@ -45,6 +46,18 @@ public final class ModItems {
                             .stacksTo(1)
                             .rarity(Rarity.RARE)
                             .component(DataComponents.CONTAINER, ItemContainerContents.EMPTY)));
+    /**
+     * 共振过滤器：放进漏斗/溜槽/工作盆的过滤槽后，过滤规则实时取自它绑定的共振台。
+     * <p>
+     * <b>刻意保持默认可堆叠</b>（和 Create 的过滤器物品一致）。别改成 {@code stacksTo(1)}：
+     * {@code FilteringBehaviour.getMaxStackSize(ItemStack)} 直接取过滤器物品的堆叠上限，
+     * 上限为 1 会让漏斗/溜槽的「提取数量」值设定面板整个消失（{@code isCountVisible()} 要求 > 1）。
+     */
+    public static final DeferredItem<ResonanceFilterItem> RESONANCE_FILTER =
+            ITEMS.register("resonance_filter",
+                    () -> new ResonanceFilterItem(new Item.Properties()
+                            .rarity(Rarity.RARE)));
+
     public static final DeferredItem<NightVisionGogglesItem> NIGHT_VISION_GOGGLES =
             ITEMS.register("night_vision_goggles",
                     () -> new NightVisionGogglesItem(new Item.Properties()

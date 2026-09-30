@@ -398,5 +398,9 @@
     "advancements.create_crystal_industry.deep.flammable_ice.title": "Fuel Beneath The Sea",
     "advancements.create_crystal_industry.deep.flammable_ice.description": "Mined flammable ice budding under the sea floor",
     "advancements.create_crystal_industry.deep.ice_block.title": "Compressed Fuel",
-    "advancements.create_crystal_industry.deep.ice_block.description": "Compressed flammable ice into a fuel block"
+    "advancements.create_crystal_industry.deep.ice_block.description": "Compressed flammable ice into a fuel block",
+
+    "block.create_crystal_industry.resonance_table": "Resonance Table",
+    "item.create_crystal_industry.resonance_filter": "Resonance Filter",
+    "message.create_crystal_industry.resonance_table.new_network_started": "New link network started"
 }

@@ -25,6 +25,14 @@ public final class ModCapabilities {
                 ModBlockEntities.MECHANICAL_CLEANER.get(),
                 (be, context) -> be.getInventory()
         );
+        // 共振台：台面那格物品对外可插可取（机械臂/漏斗/带子）。直接借 DepotBehaviour 自带的
+        // DepotItemHandler —— 置物台也是这么挂的，所以 arm 那边只要用基类 ArmInteractionPoint
+        // 就能直接工作，不用额外写逻辑。
+        event.registerBlockEntity(
+                Capabilities.ItemHandler.BLOCK,
+                ModBlockEntities.RESONANCE_TABLE.get(),
+                (be, context) -> be.depotBehaviour.itemHandler
+        );
         // 水晶电池：整座多方块结构共用一个 FE 接口，从任意一格接出去看到的都是同一池电
         event.registerBlockEntity(
                 Capabilities.EnergyStorage.BLOCK,

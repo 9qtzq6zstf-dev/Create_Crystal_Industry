@@ -51,6 +51,13 @@ public final class ModBlockEntities {
                     ModBlocks.MECHANICAL_CLEANER.get()
             ).build(null));
 
+    // 共振台：组合 Create 的 DepotBehaviour，交互/渲染都照置物台那套
+    public static final Supplier<BlockEntityType<ResonanceTableBlockEntity>> RESONANCE_TABLE =
+            BLOCK_ENTITIES.register("resonance_table", () -> BlockEntityType.Builder.of(
+                    ResonanceTableBlockEntity::new,
+                    ModBlocks.RESONANCE_TABLE.get()
+            ).build(null));
+
     // 水晶电池：多方块容器，骨架复用 Create 的 ConnectivityHandler
     public static final Supplier<BlockEntityType<CrystalBatteryBlockEntity>> CRYSTAL_BATTERY =
             BLOCK_ENTITIES.register("crystal_battery", () -> BlockEntityType.Builder.of(

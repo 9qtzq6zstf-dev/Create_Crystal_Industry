@@ -5,8 +5,10 @@ import com.minecart.yunxian.block.AcceleratorBlock;
 import com.minecart.yunxian.block.CrystalBatteryBlock;
 import com.minecart.yunxian.block.MechanicalAcceleratorBlock;
 import com.minecart.yunxian.block.MechanicalCleanerBlock;
+import com.minecart.yunxian.block.ResonanceTableBlock;
 import com.minecart.yunxian.block.SmartDrillBlock;
 import com.minecart.yunxian.item.CrystalBatteryItem;
+import com.minecart.yunxian.item.ResonanceTableItem;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
@@ -94,6 +96,14 @@ public final class ModBlocks {
                     .isRedstoneConductor((state, level, pos) -> true)
                     .noLootTable()),
             CrystalBatteryItem::new);
+
+    /**
+     * 共振台：上面放一样东西，接了「共振过滤器」的漏斗/溜槽/工作盆就按那样东西过滤。
+     * 属性对齐置物台（石质、需要镐），形状与交互也照抄置物台 —— 见 {@code ResonanceTableBlock}。
+     */
+    public static final DeferredBlock<Block> RESONANCE_TABLE = registerBlock("resonance_table",
+            () -> new ResonanceTableBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.ANDESITE)),
+            ResonanceTableItem::new);
 
     /** AE2 是否加载：可选联动（福鲁伊克斯母岩）的开关 */
     public static final boolean AE2_LOADED =

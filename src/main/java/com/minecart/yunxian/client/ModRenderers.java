@@ -15,6 +15,7 @@ import com.minecart.yunxian.client.echo.EchoSpyglassScopeOverlay;
 import com.minecart.yunxian.client.echo.EchoSpyglassUseRenderer;
 import com.minecart.yunxian.client.mechanical.MechanicalAcceleratorRenderer;
 import com.minecart.yunxian.client.mechanical.MechanicalCleanerRenderer;
+import com.minecart.yunxian.client.mechanical.ResonanceTableRenderer;
 import com.minecart.yunxian.client.mechanical.SmartDrillRenderer;
 import net.minecraft.client.resources.language.I18n;
 
@@ -64,6 +65,8 @@ public class ModRenderers {
         EchoSpyglassUseRenderer.register();
         modEventBus.addListener(ModRenderers::onRegisterRenderers);
         EchoSpyglassFrameRenderer.register();
+        ResonanceFilterHolderTracker.register();
+        ResonanceNetworkOutlineRenderer.register();
     }
 
     private static void onRegisterAdditional(ModelEvent.RegisterAdditional event) {
@@ -163,6 +166,9 @@ public class ModRenderers {
         event.registerBlockEntityRenderer(
                 ModBlockEntities.MECHANICAL_CLEANER.get(),
                 MechanicalCleanerRenderer::new);
+        event.registerBlockEntityRenderer(
+                ModBlockEntities.RESONANCE_TABLE.get(),
+                ResonanceTableRenderer::new);
     }
     static final ModelResourceLocation ECHO_SPYGLASS_FLAT =
             new ModelResourceLocation(

@@ -43,6 +43,8 @@ public final class ModCreativeTabs {
                         output.accept(ModBlocks.MECHANICAL_CLEANER.get());
                         // 水晶电池还是半成品，暂时不上物品栏（方块与物品仍在注册表里，/give 能拿到）；
                         // 做完之后把这一行加回来即可
+                        output.accept(ModBlocks.RESONANCE_TABLE.get());
+                        output.accept(ModItems.RESONANCE_FILTER.get());
                         output.accept(ModItems.ECHO_SPYGLASS.get());
                         output.accept(ModItems.NIGHT_VISION_GOGGLES.get());
                         // 电流浆桶：弧光石那条链的产物容器（弧光石本身跟在它家族的晶簇后面）

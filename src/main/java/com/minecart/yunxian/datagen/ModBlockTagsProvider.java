@@ -44,11 +44,15 @@ public class ModBlockTagsProvider extends BlockTagsProvider {
         // 三档芽进前者、晶簇进后者（物品侧见 ModItemTagsProvider）
         IntrinsicTagAppender<Block> buds = tag(ModTags.BUDS);
         IntrinsicTagAppender<Block> clusters = tag(ModTags.CLUSTERS);
-        // 挖掘工具：全部家族方块 + 可燃冰装饰方块 + 四种机器 + 水晶电池
+        // 挖掘工具：全部家族方块 + 可燃冰装饰方块 + 四种机器 + 水晶电池 + 共振台
+        // 注意共振台：它的属性抄的是安山岩，带 requiresCorrectToolForDrops。这类方块
+        // 如果没进 mineable/pickaxe，任何工具都不算"正确工具"，挖掉直接什么都不掉
+        // （和水晶电池那条注释是同一个坑），所以必须登记。
         IntrinsicTagAppender<Block> pickaxe = tag(BlockTags.MINEABLE_WITH_PICKAXE);
         pickaxe.add(ModBlocks.FLAMMABLE_ICE_BLOCK.get(), ModBlocks.ACCELERATOR.get(),
                 ModBlocks.SMART_DRILL.get(), ModBlocks.MECHANICAL_ACCELERATOR.get(),
-                ModBlocks.MECHANICAL_CLEANER.get(), ModBlocks.CRYSTAL_BATTERY.get());
+                ModBlocks.MECHANICAL_CLEANER.get(), ModBlocks.CRYSTAL_BATTERY.get(),
+                ModBlocks.RESONANCE_TABLE.get());
         // 挖掘等级：只有指定了等级的家族才登记（荧石与可燃冰不设等级）
         IntrinsicTagAppender<Block> needsStone = tag(BlockTags.NEEDS_STONE_TOOL);
         // 水晶电池底子取的是铜块属性（requiresCorrectToolForDrops），
