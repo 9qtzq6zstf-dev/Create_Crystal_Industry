@@ -1,6 +1,7 @@
 package com.minecart.yunxian.effect;
 
 import com.minecart.yunxian.registry.ModEffects;
+import com.minecart.yunxian.util.ShockImmunityHelper;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -19,6 +20,10 @@ import net.neoforged.neoforge.event.tick.EntityTickEvent;
  *   <li>扫到的每个位置交给 {@link ArclightSource#isSource}（内部先 {@code isAir} 短路，
  *       再拿方块对象查集合），与客户端冒火花的判定共用同一份逻辑。</li>
  * </ul>
+ * <p>
+ * <b>全套 {@code shock_immune} 盔甲的生物完全不获得</b>（判定见 {@link ShockImmunityHelper}），
+ * 已经带在身上的也会被摘掉。判定这一份就够：{@link ArclightSource#isSource} 涵盖母岩 + 三级芽 +
+ * 晶簇 + 电流浆，所以免疫不必改判定源，在这里拦一道即可。
  */
 public final class ElectrifiedAura {
 
@@ -42,6 +47,15 @@ public final class ElectrifiedAura {
             return; // 只在服务端施加
         }
         if ((living.tickCount + living.getId()) % CHECK_INTERVAL != 0) {
+            return;
+        }
+        if (ShockImmunityHelper.isWearingFullSet(living)) {
+            // 全套 shock_immune 盔甲：既然不该获得，身上已有的也顺手摘掉——
+            // 否则穿着甲走进场时残留的那几秒会让人觉得"免疫没生效"。
+            // 放在间歇闸门之后：那 10 tick 的延迟无所谓，而这个判定不必每 tick 白跑。
+            if (living.hasEffect(ModEffects.ELECTRIFIED)) {
+                living.removeEffect(ModEffects.ELECTRIFIED);
+            }
             return;
         }
         if (nearSource(level, living.blockPosition())) {

@@ -129,11 +129,23 @@ public final class YunxianAdvancements {
      * <p>
      * 催生器只是重放 {@code randomTick}，被催的方块自己并不知道是谁在催——
      * 生长监听器全靠这个标记才能做出「拔苗助长」「亲眼看着它长满」这两个成就。
+     * <p>
+     * 只对 {@code isRandomlyTicking} 的方块生效（与 {@code ServerLevel#tickChunk} 一致），
+     * 空气、石头这类邻格在这里就被挡掉，不会白白走一遍 randomTick 调用。
      */
     public static void acceleratedRandomTick(ServerLevel level, BlockPos pos) {
+        BlockState state = level.getBlockState(pos);
+
+        // 与原版同一条门槛：{@code ServerLevel#tickChunk} 也是先判 isRandomlyTicking，再调 randomTick。
+        // 少了这道判断，催生器就比原版"多给"了——最典型的是忘了写 Properties#randomTicks 的模组方块：
+        // 它在原版里永远等不到随机刻，却会在催生器旁边长起来，行为跟不装本模组时对不上。
+        if (!state.isRandomlyTicking()) {
+            return;
+        }
+
         accelerationDepth++;
         try {
-            level.getBlockState(pos).randomTick(level, pos, level.random);
+            state.randomTick(level, pos, level.random);
         } finally {
             accelerationDepth--;
         }

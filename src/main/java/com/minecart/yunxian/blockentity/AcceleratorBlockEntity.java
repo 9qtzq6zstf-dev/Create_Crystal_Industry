@@ -31,7 +31,11 @@ public class AcceleratorBlockEntity extends BlockEntity implements IEnergyStorag
     /** 相邻催生器之间每 tick 的最大传输量 */
     private static final int MAX_TRANSFER_PER_TICK = 4000;
 
-    /** 一次成功的催生会对 6 个方向各施加一次 randomTick（= Direction.values().length） */
+    /**
+     * 一次成功的催生<b>最多</b>对 6 个方向各施加一次 randomTick（= Direction.values().length）。
+     * 实际只落在会吃随机刻的邻格上（见 {@code YunxianAdvancements#acceleratedRandomTick}），
+     * 所以这是上限；护目镜按上限显示，即"满配"时的倍率。
+     */
     private static final float RANDOM_TICKS_PER_TICK = Direction.values().length;
 
     private int tickCounter;
@@ -88,7 +92,8 @@ public class AcceleratorBlockEntity extends BlockEntity implements IEnergyStorag
 
         for (Direction direction : Direction.values()) {
             BlockPos neighborPos = pos.relative(direction);
-            // 走 acceleratedRandomTick 而不是直接 randomTick：生长监听器靠它区分"催出来的"与"自然长的"
+            // 走 acceleratedRandomTick 而不是直接 randomTick：生长监听器靠它区分"催出来的"与"自然长的"；
+            // 邻格不吃随机刻（空气、石头等）时它自己会跳过，与原版随机刻同一套判定
             YunxianAdvancements.acceleratedRandomTick(serverLevel, neighborPos);
         }
 
@@ -195,7 +200,8 @@ public class AcceleratorBlockEntity extends BlockEntity implements IEnergyStorag
         // 改用 Component.translatable 原样解析自家命名空间
         boolean running = getBlockState().getValue(AcceleratorBlock.POWERED);
 
-        // 运行中每 interval tick 必定对 6 个方向各触发一次 randomTick（确定值，非期望值）
+        // 运行中每个吃随机刻的邻面、每 interval tick 必定触发一次 randomTick（确定值，非期望值）；
+        // 这里按 6 个邻面都合格算，是上限
         int interval = ModConfig.Common.acceleratorIntervalTicks();
         float per20 = running
                 ? Math.round(RANDOM_TICKS_PER_TICK * 20f / interval * 10f) / 10f

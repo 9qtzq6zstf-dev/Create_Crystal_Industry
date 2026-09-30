@@ -169,9 +169,11 @@ public class GenericBuddingBlock extends BuddingAmethystBlock implements EntityB
         }
 
         // 光照下限留空：家族表的 LightRequirement 只有"无要求 / 必须低于某个亮度"两种，没有下限
+        // 流体需求同样留空：家族母岩的罐参数（远古残骸的熔岩、弧光石的 FE）写在专用方块实体里，
+        // 走 EnergyRequirement，不经定义这条字段——那条路是给脚本与附属模组用的
         GrowthDefinition built = new GrowthDefinition(smallBud, mediumBud, largeBud, cluster, chance,
                 familyMaxLight(), OptionalInt.empty(), family.growth().rule() == GrowthRule.SUBMERGED,
-                family.growth().growthEnvironment());
+                family.growth().growthEnvironment(), null);
         cachedChance = chance;
         cachedDefinition = built;
         return built;

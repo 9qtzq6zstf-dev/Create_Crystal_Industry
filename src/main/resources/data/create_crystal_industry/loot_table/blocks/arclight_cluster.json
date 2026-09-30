@@ -32,14 +32,7 @@
             "entries": [
                 {
                     "type": "minecraft:item",
-                    "name": "create_crystal_industry:arclight",
-                    "functions": [
-                        {
-                            "function": "minecraft:apply_bonus",
-                            "enchantment": "minecraft:fortune",
-                            "formula": "minecraft:ore_drops"
-                        }
-                    ]
+                    "name": "create_crystal_industry:arclight"
                 }
             ],
             "conditions": [

@@ -3,6 +3,7 @@ package com.minecart.yunxian;
 import com.minecart.yunxian.advancement.YunxianAdvancements;
 import com.minecart.yunxian.effect.ElectrifiedAura;
 import com.minecart.yunxian.fluid.FluidInteractions;
+import com.minecart.yunxian.effect.ShockWard;
 import com.minecart.yunxian.effect.SlurryShock;
 import com.minecart.yunxian.attachment.EchoAttachments;
 import com.minecart.yunxian.behaviour.SmartDrillMovementBehaviour;
@@ -57,6 +58,9 @@ public class Yunxian {
         NeoForge.EVENT_BUS.addListener(ElectrifiedAura::onEntityTick);
         // 泡在电流浆里持续挨雷劈（见 SlurryShock 的类注释）
         NeoForge.EVENT_BUS.addListener(SlurryShock::onEntityTick);
+        // 全套 shock_immune 盔甲免疫闪电伤害：电流浆的电击与真实落雷共用 lightning_bolt 伤害类型，
+        // 所以一个拦截点就够（见 ShockWard 的类注释）
+        NeoForge.EVENT_BUS.addListener(ShockWard::onIncomingDamage);
         // 潜行右键换晶体：只能挂在物品层（原版潜行时会跳过方块的 useItemOn），且手持的是任意晶体方块，
         // 所以走 UseItemOnBlockEvent 这个对任何物品都生效的钩子，见该类注释
         NeoForge.EVENT_BUS.addListener(CrystalBatteryInteractions::onUseItemOnBlock);

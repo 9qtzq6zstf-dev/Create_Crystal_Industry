@@ -38,6 +38,8 @@ public final class BuddingRegistration {
     private static final Set<Block> DECLARED_BLOCKS = new LinkedHashSet<>();
     /** 按 id 声明的母岩方块，延后到方块实体类型注册时解析 */
     private static final Set<ResourceLocation> DECLARED_BLOCK_IDS = new LinkedHashSet<>();
+    /** 按 id 声明的「带流体罐的母岩」方块：它们进的是流体罐 BE，不进共享护目镜 BE */
+    private static final Set<ResourceLocation> DECLARED_FLUID_TANK_IDS = new LinkedHashSet<>();
     /** 外部声明的家族 id：让配置文件的四档能列出它们 */
     private static final Set<String> DECLARED_IDS = new LinkedHashSet<>();
     /** 外部声明的生长定义（按方块）：自己实现 randomTick 的方块靠它让 JEI 信息页也能读到参数 */
@@ -66,6 +68,21 @@ public final class BuddingRegistration {
      */
     public static void declareBuddingBlock(ResourceLocation blockId) {
         DECLARED_BLOCK_IDS.add(blockId);
+    }
+
+    /**
+     * 声明一个<b>带流体罐</b>的母岩方块（生长要消耗流体，罐由本模组的
+     * {@code ScriptedFluidBuddingBlockEntity} 提供）：它进的是流体罐那个方块实体类型，
+     * <b>不要再调</b> {@link #declareBuddingBlock(ResourceLocation)}——一个方块登记一张表就够了，
+     * 两边都写在排查"实体类型怎么串了"时只会添乱。
+     * <p>
+     * 目前只有脚本母岩走这条路（{@code CustomBuddingOptions#needfluid}）：罐的容量、每次生长的消耗、
+     * 认哪种流体都由方块的 {@code GrowthDefinition} 给出，方块实体照着建罐。
+     * <p>
+     * 与 {@link #declareBuddingBlock(ResourceLocation)} 同样按 id 声明、延后解析。
+     */
+    public static void declareFluidBuddingBlock(ResourceLocation blockId) {
+        DECLARED_FLUID_TANK_IDS.add(blockId);
     }
 
     /**
@@ -141,6 +158,24 @@ public final class BuddingRegistration {
         }
         blocks.addAll(DECLARED_BLOCKS);
         for (ResourceLocation blockId : DECLARED_BLOCK_IDS) {
+            Block block = BuiltInRegistries.BLOCK.get(blockId);
+            if (block != null) {
+                blocks.add(block);
+            }
+        }
+        return blocks.toArray(Block[]::new);
+    }
+
+    /**
+     * 流体罐方块实体（{@code ModBlockEntities.SCRIPTED_FLUID_BUDDING}）的合法方块：
+     * 声明过 {@link #declareFluidBuddingBlock(ResourceLocation)} 的那些。
+     * <p>
+     * 与 {@link #sharedGogglesBlocks()} 同样由 {@code ModBlockEntities} 在方块实体类型注册时调用，
+     * 那时方块已经全部入表，按 id 声明的在这里解析成方块。
+     */
+    public static Block[] fluidTankBlocks() {
+        List<Block> blocks = new ArrayList<>(DECLARED_FLUID_TANK_IDS.size());
+        for (ResourceLocation blockId : DECLARED_FLUID_TANK_IDS) {
             Block block = BuiltInRegistries.BLOCK.get(blockId);
             if (block != null) {
                 blocks.add(block);

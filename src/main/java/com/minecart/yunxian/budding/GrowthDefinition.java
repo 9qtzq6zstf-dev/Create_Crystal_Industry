@@ -11,6 +11,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * 一次生长判定所需的全部参数——<b>生长引擎的输入</b>（见 {@link BuddingGrowthEngine}）。
@@ -28,6 +29,7 @@ import net.minecraft.world.level.block.Blocks;
  * @param requiresWater      目标格必须是水源（可燃冰式）——为 true 时走水下生长路径
  * @param growthEnvironment 生长环境要求（维度 + 群系）：只在这些地方正常生长，出了地盘每次判定通过后再掷一次、
  *                          只有其中概率能继续长；{@link GrowthEnvironment#ANY}（默认）= 哪里都一样长
+ * @param fluid              生长要消耗的流体（母岩自带小罐）；空 = 不消耗流体，见 {@link #fluidRequirement(String, int, int)}
  */
 public record GrowthDefinition(
         Block smallBud,
@@ -38,15 +40,16 @@ public record GrowthDefinition(
         OptionalInt maxLight,
         OptionalInt minLight,
         boolean requiresWater,
-        GrowthEnvironment growthEnvironment) {
+        GrowthEnvironment growthEnvironment,
+        @Nullable FluidRequirement fluid) {
 
     /**
-     * 最常用的构造：四个阶段 + 概率，其余取默认（不限光照、不要求水源、不限维度）。
+     * 最常用的构造：四个阶段 + 概率，其余取默认（不限光照、不要求水源、不限维度、不消耗流体）。
      * 给附属模组与 KubeJS 脚本用起来最省事。
      */
     public static GrowthDefinition of(Block smallBud, Block mediumBud, Block largeBud, Block cluster, int chance) {
         return new GrowthDefinition(smallBud, mediumBud, largeBud, cluster, chance,
-                OptionalInt.empty(), OptionalInt.empty(), false, GrowthEnvironment.ANY);
+                OptionalInt.empty(), OptionalInt.empty(), false, GrowthEnvironment.ANY, null);
     }
 
     /**
@@ -89,7 +92,7 @@ public record GrowthDefinition(
     public static GrowthDefinition of(String smallBud, String mediumBud, String largeBud, String cluster,
                                       int chance, int maxLight, int minLight, boolean requiresWater) {
         return new GrowthDefinition(block(smallBud), block(mediumBud), block(largeBud), block(cluster),
-                chance, lightBound(maxLight), lightBound(minLight), requiresWater, GrowthEnvironment.ANY);
+                chance, lightBound(maxLight), lightBound(minLight), requiresWater, GrowthEnvironment.ANY, null);
     }
 
     // ==================== 生长环境（维度 + 群系） ====================
@@ -153,9 +156,37 @@ public record GrowthDefinition(
                 growthEnvironment.biomeConditions(), chance));
     }
 
+    // ==================== 生长的流体消耗 ====================
+
+    /**
+     * 生长要消耗流体（母岩自带小罐）：每次成功生长扣 {@code costPerGrowth} mB，
+     * 罐里不够就放弃这次生长，与远古残骸母岩的熔岩罐同款。
+     * <p>
+     * {@code fluidOrTag} 写 {@code "minecraft:lava"} 这样的流体 id（按流体类型判定，
+     * 静止与流动变体都算）或 {@code "#minecraft:lava"} 这样的流体标签；
+     * 罐的容量与认哪种流体都记在这条定义里，方块那边照着建罐（脚本母岩是
+     * {@code ScriptedFluidBuddingBlockEntity}，见 {@code CustomBuddingOptions#needfluid}）。
+     * <p>
+     * <b>光写这一条不会扣流体</b>：引擎是按调用方给的付费钩子决定扣不扣的（{@link BuddingGrowthEngine#tryGrow}），
+     * 自带家族走 {@code BuddingFamily.EnergyRequirement}，脚本母岩由 {@code ScriptedBuddingBlock} 自己接上。
+     * 所以自己实现 {@code randomTick} 的方块写了本方法之后，记得在钩子里照着 {@link #fluid()} 扣。
+     *
+     * @throws IllegalArgumentException 流体不存在、id 不合法，或两个数字不成立
+     *                                  （脚本写错会在 KubeJS 日志里直接看到）
+     */
+    public GrowthDefinition fluidRequirement(String fluidOrTag, int costPerGrowth, int capacity) {
+        return fluidRequirement(FluidRequirement.parse(fluidOrTag, costPerGrowth, capacity));
+    }
+
+    /** 同上，直接给一个已经构造好的 {@link FluidRequirement}；传 {@code null} = 取消流体需求 */
+    public GrowthDefinition fluidRequirement(@Nullable FluidRequirement requirement) {
+        return new GrowthDefinition(smallBud, mediumBud, largeBud, cluster, chance,
+                maxLight, minLight, requiresWater, growthEnvironment, requirement);
+    }
+
     private GrowthDefinition withEnvironment(GrowthEnvironment environment) {
         return new GrowthDefinition(smallBud, mediumBud, largeBud, cluster, chance,
-                maxLight, minLight, requiresWater, environment);
+                maxLight, minLight, requiresWater, environment, fluid);
     }
 
     /** 这个位置是否在自己的地盘上（维度与群系都命中；没写环境要求时恒为 true） */

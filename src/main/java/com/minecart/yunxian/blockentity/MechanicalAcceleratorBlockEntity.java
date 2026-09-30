@@ -21,7 +21,7 @@ public class MechanicalAcceleratorBlockEntity extends KineticBlockEntity {
     /** 满速基准：达到该转速时催生效果达到上限 */
     public static final float FULL_SPEED = 256f;
 
-    /** 电力催生器参考强度：每次催生对 6 个面各触发一次 randomTick */
+    /** 电力催生器参考强度：每次催生对 6 个面各触发一次 randomTick（只落在会吃随机刻的邻面上） */
     public static final float ELECTRIC_RATE = 6f;
 
     /**
@@ -72,7 +72,8 @@ public class MechanicalAcceleratorBlockEntity extends KineticBlockEntity {
         for (Direction dir : Direction.values()) {
             if (level.random.nextFloat() < perFaceProb) {
                 BlockPos target = worldPosition.relative(dir);
-                // 走 acceleratedRandomTick：生长监听器靠它区分"催出来的"与"自然长的"
+                // 走 acceleratedRandomTick：生长监听器靠它区分"催出来的"与"自然长的"；
+                // 邻格不吃随机刻（空气、石头等）时它自己会跳过，与原版随机刻同一套判定
                 YunxianAdvancements.acceleratedRandomTick(serverLevel, target);
             }
         }
@@ -99,7 +100,8 @@ public class MechanicalAcceleratorBlockEntity extends KineticBlockEntity {
         float speed = Math.abs(getSpeed());
         boolean running = speed != 0;
 
-        // 每 tick 期望施加的随机刻总数（6 个面求和后与 tick() 内 perFaceProb 公式等价）
+        // 每 tick 期望施加的随机刻总数（6 个面求和后与 tick() 内 perFaceProb 公式等价）；
+        // 邻面不吃随机刻时实际更低，这里是上限
         int interval = ModConfig.Common.acceleratorIntervalTicks();
         float expectedPerTick = running
                 ? Math.min(MAX_EFFECT_RATE * (speed / FULL_SPEED), MAX_EFFECT_RATE) / interval

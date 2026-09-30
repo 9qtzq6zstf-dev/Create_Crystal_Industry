@@ -49,6 +49,22 @@ public final class ModTags {
             ResourceLocation.fromNamespaceAndPath(Yunxian.MODID, "fan_immune"));
 
     /**
+     * 标记「全套穿上就免疫电击」的盔甲：原版锁链甲、原版下界合金甲，以及机械动力的下界合金潜水装备。
+     * <p>
+     * 与 {@link #FAN_IMMUNE} 的差别在<b>「任意一件」还是「四槽齐活」</b>：那个是任意一件即免疫，
+     * 这个是<b>四个盔甲槽全部</b>带本标签才生效，判定见 {@code util/ShockImmunityHelper}。
+     * <p>
+     * 免疫的内容有两份，共用同一个伤害类型（{@code minecraft:lightning_bolt}），所以服务端只需一处拦截：
+     * <ul>
+     *   <li>电流浆的电击（{@code effect/SlurryShock}）与<b>原版真实落雷</b>——都在
+     *       {@code effect/ShockWard} 里拦掉；</li>
+     *   <li>弧光石系列 / 电流浆的「感电」状态——在 {@code effect/ElectrifiedAura} 里不再施加。</li>
+     * </ul>
+     */
+    public static final TagKey<Item> SHOCK_IMMUNE = TagKey.create(Registries.ITEM,
+            ResourceLocation.fromNamespaceAndPath(Yunxian.MODID, "shock_immune"));
+
+    /**
      * 水晶电池的晶体方块容量档位（方块标签，见 {@code battery/CrystalTier}）。
      * <p>
      * 一个方块只要出现在其中任意一个标签里就是晶体方块，能塞进电池；出现在哪个标签里就按哪一档算容量。

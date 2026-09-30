@@ -24,6 +24,7 @@ import com.minecart.yunxian.budding.BuddingFamily.GrowthSpeed;
 import com.minecart.yunxian.budding.BuddingFamily.LightRequirement;
 import com.minecart.yunxian.budding.BuddingFamily.Replacement;
 import com.minecart.yunxian.budding.BuddingRegistration;
+import com.minecart.yunxian.budding.FluidRequirement;
 import com.minecart.yunxian.budding.GrowthDefinition;
 import com.minecart.yunxian.budding.GrowthEnvironment;
 import com.minecart.yunxian.client.budding.EnvironmentDisplay;
@@ -265,7 +266,7 @@ public final class BuddingInfoCollector {
 
     /** 生长定义（脚本/外部声明）里的生长条件，与家族定义共用同一套文案键 */
     private static List<Row> conditions(GrowthDefinition definition) {
-        List<Row> rows = new ArrayList<>(4);
+        List<Row> rows = new ArrayList<>(5);
         if (definition.minLight().isPresent()) {
             rows.add(Row.line(Component.translatable(LANG + "growth.light.min")));
         }
@@ -274,6 +275,13 @@ public final class BuddingInfoCollector {
         }
         if (definition.requiresWater()) {
             rows.add(Row.line(Component.translatable(LANG + "growth.water")));
+        }
+        // 流体消耗：与家族母岩的「熔岩 / FE」同一层意思，只是流体名、消耗量、容量都是定义给的
+        // （家族那边写死在专用 BE 里，只能写一句固定文案，见上面 conditions(Growth)）
+        FluidRequirement fluid = definition.fluid();
+        if (fluid != null) {
+            rows.add(Row.line(Component.translatable(LANG + "growth.fluid",
+                    fluid.displayName(), fluid.costPerGrowth(), fluid.capacity())));
         }
         if (definition.growthEnvironment().restricts()) {
             rows.addAll(environmentRows(definition.growthEnvironment()));

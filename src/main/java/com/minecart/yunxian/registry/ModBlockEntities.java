@@ -7,6 +7,7 @@ import com.minecart.yunxian.blockentity.budding.BuddingGrowthBlockEntity;
 import com.minecart.yunxian.blockentity.budding.EchoConvertingBuddingBlockEntity;
 import com.minecart.yunxian.blockentity.budding.FlammableIceBuddingBlockEntity;
 import com.minecart.yunxian.blockentity.budding.LavaBuddingBlockEntity;
+import com.minecart.yunxian.blockentity.budding.ScriptedFluidBuddingBlockEntity;
 import com.minecart.yunxian.budding.BuddingFamilies;
 import com.minecart.yunxian.budding.BuddingRegistration;
 import com.minecart.yunxian.integration.ae2.AE2BlockEntities;
@@ -87,6 +88,16 @@ public final class ModBlockEntities {
             BLOCK_ENTITIES.register("budding_growth", () -> BlockEntityType.Builder
                     .of(BuddingGrowthBlockEntity::new, goggleInfoBlocks())
                     .build(null));
+
+    // 脚本母岩的流体罐 BE（KubeJS 的 needfluid）：容量、每次消耗、认哪种流体都读方块自己的
+    // GrowthDefinition，所以一个类型能服务任意多个脚本母岩（见 ScriptedFluidBuddingBlockEntity）。
+    // 合法方块表来自 BuddingRegistration：脚本在方块注册事件里用 declareFluidBuddingBlock 登记过，
+    // 那时方块还没建出来，这里（方块实体类型注册时）才解析得到
+    public static final Supplier<BlockEntityType<ScriptedFluidBuddingBlockEntity>> SCRIPTED_FLUID_BUDDING =
+            BLOCK_ENTITIES.register("scripted_fluid_budding", () -> BlockEntityType.Builder.of(
+                    ScriptedFluidBuddingBlockEntity::new,
+                    BuddingRegistration.fluidTankBlocks()
+            ).build(null));
 
     /**
      * 共享护目镜 BE 的合法方块 = 自带家族 + 附属模组声明的方块 + 原版紫水晶母岩。

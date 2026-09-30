@@ -10,6 +10,7 @@ import com.minecart.yunxian.block.budding.YunxianClusterBlock;
 import com.minecart.yunxian.budding.BuddingFamilies.Stage;
 import com.minecart.yunxian.budding.BuddingGrowthEngine;
 import com.minecart.yunxian.budding.BuddingRegistration;
+import com.minecart.yunxian.budding.FluidRequirement;
 import com.minecart.yunxian.budding.GrowthDefinition;
 import com.minecart.yunxian.registry.ModCreativeTabs;
 import com.minecart.yunxian.registry.ScriptedBlockDrops;
@@ -47,7 +48,8 @@ import org.slf4j.LoggerFactory;
  *     .requiresWater()
  *     .growthDimensions('minecraft:overworld')  // 可多选；与下面那行取交集
  *     .growthBiomes('warm')                     // 群系 id / '#标签' / 关键字 cold·warm·hot，前面加 ! 是否定
- *     .outsideGrowthChance(0.1))                // 出了自己的地盘只剩一成概率还在长
+ *     .outsideGrowthChance(0.1)                 // 出了自己的地盘只剩一成概率还在长
+ *     .needfluid('minecraft:lava', 250, 1000))  // 每次生长扣 250 mB 熔岩，罐最多 1 B（见 Options#needfluid）
  * }</pre>
  * 生成 {@code <命名空间>:<id>_budding} 与 {@code _small_bud} / {@code _medium_bud} / {@code _large_bud} / {@code _cluster}；
  * 母岩的随机刻直接接到本模组的生长引擎上，芽/簇带 {@code FACING} 属性（引擎会写朝向）。
@@ -139,6 +141,11 @@ public final class CustomBudding {
         @Nullable ResourceLocation stageToolTag = mineableTag(options.stageTool);
         @Nullable ResourceLocation buddingLevelTag = levelTag(options.buddingLevel);
         @Nullable ResourceLocation stageLevelTag = levelTag(options.stageLevel);
+        // 流体需求同理先解析：流体 id 写错、或者在方块注册时流体表还没建好，都要当场报出来。
+        // 脚本跑到这里时流体已经全部注册完（注册事件按原版注册表顺序派发，流体在方块之前），
+        // 所以这里查得到别的模组的流体，连脚本自己注册的都行
+        @Nullable FluidRequirement fluid = options.fluid == null ? null
+                : FluidRequirement.parse(options.fluid, options.fluidCostPerGrowth, options.fluidCapacity);
 
         // 四个阶段方块：建成模组自己的簇方块（见 StageBuilder），朝向形状、支撑判定、音效都是原版行为
         ResourceLocation[] stages = new ResourceLocation[STAGE_KEYS.length];
@@ -180,7 +187,7 @@ public final class CustomBudding {
 
         // 母岩本体：用模组自己的方块类（它自带随机刻 → 生长引擎，且带共享展示 BE，护目镜才显示信息）
         ResourceLocation buddingId = ResourceLocation.fromNamespaceAndPath(namespace, base.getPath() + "_budding");
-        LazyDefinition definition = new LazyDefinition(stages, options);
+        LazyDefinition definition = new LazyDefinition(stages, options, fluid);
         BlockBuilder budding = new MotherBuilder(buddingId, definition);
         budding.sourceLine = SourceLine.UNKNOWN;
         budding.texture(options.buddingTexture);
@@ -195,8 +202,14 @@ public final class CustomBudding {
         forceItem(budding, BUDDING_BLOCKS_TAG);
         registerBlock(event, budding);
 
-        // 护目镜信息挂在方块实体上：把母岩声明给共享展示 BE（按 id——此刻方块还没建出来）
-        BuddingRegistration.declareBuddingBlock(buddingId);
+        // 护目镜信息挂在方块实体上，而方块实体类型是在方块之后注册的，所以这里按 id 先声明。
+        // 配了流体需求的母岩要用能存流体的那个 BE（护目镜信息由它自己补），
+        // 于是两边只能登记一边——登记的是哪一边，方块实体注册时就建哪个类型
+        if (fluid != null) {
+            BuddingRegistration.declareFluidBuddingBlock(buddingId);
+        } else {
+            BuddingRegistration.declareBuddingBlock(buddingId);
+        }
 
         // 母岩：普通破坏/普通采集什么都不掉（与原版紫水晶母岩一致），精准采集才掉本体——
         // 所以智能钻头的普通模式拿不到母岩，精准模式才拿得到（它读 c:budding_blocks 直接掉本体）
@@ -385,7 +398,13 @@ public final class CustomBudding {
 
         @Override
         public Block createObject() {
-            return new ScriptedBuddingBlock(definition, createProperties());
+            // randomTicks() 不能省：KubeJS 只在脚本挂了 randomTick 回调时才补这个标记
+            // （见 BlockBuilder#createProperties），而本类的随机刻是自己实现的、没有回调，
+            // 所以默认属性里 isRandomlyTicking 是 false——脚本母岩在原版里永远等不到随机刻，
+            // 自然生长为 0，只能被催生器硬催（见 YunxianAdvancements#acceleratedRandomTick）。
+            Block.Properties properties = createProperties();
+            properties.randomTicks();
+            return new ScriptedBuddingBlock(definition, properties);
         }
     }
 
@@ -520,6 +539,18 @@ public final class CustomBudding {
         /** 目标格必须含水（可燃冰式） */
         public boolean requiresWater = false;
         /**
+         * 生长要消耗哪种流体：流体 id（{@code "minecraft:lava"}）或流体标签
+         * （{@code "#minecraft:lava"}）；null = 不消耗流体。
+         * <p>
+         * 这两个数字和它一起用，写法与含义见 {@link #needfluid(String, int, int)}；
+         * 逐字段赋值时可以直接改这三个字段。
+         */
+        public @Nullable String fluid = null;
+        /** {@link #fluid} 每次成功生长消耗多少 mB（默认 250，与远古残骸母岩同价） */
+        public int fluidCostPerGrowth = 250;
+        /** {@link #fluid} 的罐容量 mB（默认 1000 = 正好一桶；必须 ≥ 消耗量，否则永远长不出来） */
+        public int fluidCapacity = 1000;
+        /**
          * 生长维度 id 列表（如 {@code "minecraft:overworld"}），<b>可以多选</b>：
          * 只在这些维度里正常生长，出了地盘每次判定通过后再掷一次、只有
          * {@link #outsideGrowthChance} 的概率继续生长。null / 不写 = 维度不限。
@@ -640,6 +671,38 @@ public final class CustomBudding {
         public Options requiresWater(boolean value) {
             this.requiresWater = value;
             return this;
+        }
+
+        /**
+         * 生长要消耗流体：母岩自带一个小罐，<b>每次成功生长扣 {@code costPerGrowth} mB</b>，
+         * 罐里不够一次消耗时就<b>不再生长</b>（不是减速、也不是半价推进，是这一轮直接不长），
+         * 与远古残骸母岩的熔岩罐同款。罐最多存 {@code capacity} mB。
+         * <pre>{@code
+         * .needfluid('minecraft:lava', 250, 1000)   // 认熔岩：每次生长扣 250 mB，最多存 1 B
+         * .needfluid('#minecraft:lava', 500, 4000)  // 认标签：标签覆盖的全部流体都算
+         * }</pre>
+         * 流体怎么写：{@code 'minecraft:lava'} 这样的 id（按流体类型判定，静止与流动变体都算，
+         * 所以桶灌的、管道抽的都认）或 {@code '#minecraft:lava'} 这样的标签；流体名写错会当场报错。
+         * <p>
+         * {@code capacity} 必须 ≥ {@code costPerGrowth}，否则罐永远装不满一次生长，
+         * 这种配置会直接报错而不是造出一个不长的方块。
+         * <p>
+         * 流体怎么进罐：管道/泵（方块实现了 NeoForge 流体能力）、手持容器右键（桶灌满、舀空；
+         * 一桶 = 1000 mB，半桶这种零头只能用管道补），比较器读液位，戴护目镜能看到当前量。
+         * <p>
+         * 不传第三个数时是 {@code .needfluid(流体)}：消耗与容量用默认的 250 / 1000。
+         * 传 {@code null} = 不要流体需求（与不写这项等价）。
+         */
+        public Options needfluid(@Nullable String fluidOrTag, int costPerGrowth, int capacity) {
+            this.fluid = fluidOrTag;
+            this.fluidCostPerGrowth = costPerGrowth;
+            this.fluidCapacity = capacity;
+            return this;
+        }
+
+        /** 同上，消耗与容量取默认值（{@link #fluidCostPerGrowth} 250 mB、{@link #fluidCapacity} 1000 mB） */
+        public Options needfluid(@Nullable String fluidOrTag) {
+            return needfluid(fluidOrTag, fluidCostPerGrowth, fluidCapacity);
         }
 
         /**
@@ -779,10 +842,11 @@ public final class CustomBudding {
         private final @Nullable String[] growthDimensions;
         private final @Nullable String[] growthBiomes;
         private final double outsideGrowthChance;
+        private final @Nullable FluidRequirement fluid;
 
         private GrowthDefinition cached;
 
-        LazyDefinition(ResourceLocation[] stages, Options options) {
+        LazyDefinition(ResourceLocation[] stages, Options options, @Nullable FluidRequirement fluid) {
             this.stages = stages;
             // 选项只在注册时读一次，之后脚本再改 Options 不影响这个家族
             this.chance = options.chance;
@@ -792,6 +856,8 @@ public final class CustomBudding {
             this.growthDimensions = options.growthDimensions;
             this.growthBiomes = options.growthBiomes;
             this.outsideGrowthChance = options.outsideGrowthChance;
+            // 流体需求在 create 里就解析好了（那时报错更准），这里只是带着走
+            this.fluid = fluid;
         }
 
         @Override
@@ -812,6 +878,9 @@ public final class CustomBudding {
                 if ((growthDimensions != null && growthDimensions.length > 0)
                         || (growthBiomes != null && growthBiomes.length > 0)) {
                     definition = definition.outsideGrowthChance(outsideGrowthChance);
+                }
+                if (fluid != null) {
+                    definition = definition.fluidRequirement(fluid);
                 }
                 cached = definition;
             }

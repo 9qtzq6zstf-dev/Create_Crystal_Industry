@@ -39,7 +39,7 @@ Drop rules:
 
 | Block | Normal Break | Silk Touch |
 | --- | --- | --- |
-| Cluster | The item in the "Cluster Output" column above, with Fortune applied | The cluster block itself |
+| Cluster | The item in the "Cluster Output" column above, with Fortune applied (**except the Arclight Cluster**, see below) | The cluster block itself |
 | Bud | Nothing | The bud block itself |
 | Budding Block | The block one tier below it (Budding Raw Iron drops a Block of Raw Iron, Budding Diamond drops a Block of Diamond; Budding Ancient Debris and Budding Arclight have no tier below them and drop 1 of their own item) | The same; Silk Touch does not change this |
 
@@ -49,10 +49,11 @@ Three block properties are worth noting. Budding Redstone, its buds and its clus
 
 ### The Lava Tank of Budding Ancient Debris
 
-Budding Ancient Debris is the only budding block that **burns lava**. The block itself is a fluid container holding **1 B (1000 mB)**, and lava is all it accepts — nothing else can be piped in or drawn out.
+Budding Ancient Debris is the only built-in budding block that **burns lava**. The block itself is a fluid container holding **1 B (1000 mB)**, and lava is all it accepts — nothing else can be piped in or drawn out. (Scripted budding blocks can burn fluid too, with their own fluid, cost and capacity — see "Fluid Consumption" in section 6.)
 
 - **Getting lava in**: pipes (Create pumps and fluid pipes, via the NeoForge fluid capability) or right-clicking with a lava bucket.
 - **Getting lava out**: right-clicking with an empty bucket. Buckets only work on an **empty** tank (pour in) or a **full** one (scoop out) — one bucket is exactly the tank's capacity, so the 750 / 500 / 250 leftovers have to be topped up by pipe.
+- **Nothing spills when it will not fit**: with the wrong fluid (pouring water onto a lava tank), or when the tank is already full / has nothing to scoop, the block swallows the click — the bucket's contents are **not** dumped next to the budding block. To deliberately pour fluid beside it, sneak and right-click (vanilla skips the block interaction while sneaking).
 - **Cost**: **250 mB** per successful growth; with less than that in the tank, the growth simply does not happen (which is why the ones generated in the Nether start empty). 1 B = 4 growths.
 - **Reading the level**: Engineer's Goggles show the level and the per-growth cost; a comparator emits a 1–15 signal proportional to the level.
 
@@ -63,7 +64,7 @@ The lava travels with the block but **not with the item**: breaking the block do
 Budding Arclight is the only budding block that **runs on FE**. It holds **1,000,000 FE** internally and spends **10,000 FE** per successful growth; with less than that stored, nothing grows (so it never charges itself — wire it up first). It is **receive-only**: a converter that turns power into matter, not a battery. Use the Crystal Battery if you want to store FE.
 
 - **Powering it**: any NeoForge FE source works, on all six faces; it accepts at most 10,000 FE per tick (one growth's worth per second).
-- **Output**: the cluster drops 1 **Arclight** (Fortune applies). Arclight is an **item only** — it has no block form.
+- **Output**: the cluster drops 1 **Arclight**, and **Fortune does not apply** (the only cluster in this mod that ignores it — Arclight is bought with FE, so letting Fortune multiply it would be multiplying the FE input for free). Arclight is an **item only** — it has no block form.
 - **Pressing**: put one Arclight in a Basin under a **Mechanical Press**, **superheated** (a Blaze Burner fed a Blaze Cake) → **500 mB of Current Slurry**. The recipe type is `create:compacting`, not `create:pressing` (the latter can only output items).
 - **Current Slurry and its bucket**: the mod's first fluid, registered the standard vanilla/NeoForge way as a **source fluid plus a flowing variant** (the same slot as Water, Chocolate or Seed Oil — which is why JEI shows a plain "Current Slurry"). It ships with a **Current Slurry Bucket**: fill it, pour it into the world, or scoop a placed source block back up. The fluid block itself is not meant to be mined (water-like properties: replaceable, no collision, unbreakable, no loot); its only reason to exist is that a bucket needs something to pour. How to turn the slurry back into FE is not decided yet, so that recipe is still missing.
 - **Light**: Current Slurry has a light level of **15** (the same as lava) — a poured pool doubles as a light source.
@@ -82,6 +83,10 @@ Budding Arclight is the only budding block that **runs on FE**. It holds **1,000
   - **Current Slurry** launches sparks up off its surface, plus a layer of small flickers sitting on the surface — the same "embers flying off lava" feel, with the particle swapped for an electric spark. Vanilla's crackle/pop sounds are deliberately not copied (there is no fitting electric sound on hand, and lava sounds would clash).
   - **Arclight blocks** (budding block, buds, cluster) emit the occasional spark **above their top face**. The position is deliberately outside the block: a particle spawned inside the volume gets hidden by the crystal's own crossing planes, which is why a cluster could look spark-less from certain angles.
 - **Electrified**: a living entity within 3 blocks of an **arclight block** (budding block, buds or cluster) or of **Current Slurry** gains the "Electrified" status effect; it fades about 3 seconds after leaving (and keeps refreshing while you stay). The effect itself is a **placeholder** — whether it hurts, slows or powers machines is still undecided. Only slurry actually poured into the world counts; what sits in tanks and pipes does not.
+- **Shock immunity**: the item tag `create_crystal_industry:shock_immune`. With **all four armour slots** holding items that carry the tag, you are immune to both "electric" effects above — no lightning damage from Current Slurry and no Electrified — and **also to the damage of vanilla's real lightning bolts** (being struck in a thunderstorm, or a Channeling trident, does no damage).
+  - The tag currently lists **11 items**: the four **chainmail** pieces, the four **netherite** pieces, and Create's three **netherite diving** items (diving helmet, backtank, diving boots). That set gets its head, chest and feet from Create while its **legs** are vanilla **netherite leggings** — that is Create's own definition of the set, and those leggings are in the tag anyway, so three Create items plus one pair of leggings naturally complete it.
+  - The check only looks at **slot + tag**, so the four pieces **do not have to match**: a chainmail helmet with a netherite chestplate still counts, as long as all four slots are tagged (take any one piece off and the shocks come straight back).
+  - Damage is blocked through NeoForge's `LivingIncomingDamageEvent`, cancelled after the invulnerability check but before any damage reduction — so **armour takes no durability loss and you take no knockback**. It blocks **damage only, not fire**: vanilla's lightning sets you alight through a separate path this mod does not touch (a full netherite set is fire resistant anyway, so it rarely matters).
 
 Budding Arclight currently **neither generates naturally nor has a crafting recipe**: how to obtain it is still undecided, so for now it is creative-only (its JEI info page says so too).
 
@@ -115,7 +120,7 @@ Each of the four config keys takes a list of **budding family ids** — the `<id
 
 ## 2. Accelerators
 
-A vanilla budding block sees a random tick about once every 68 seconds on average, which makes natural growth effectively unobservable. An accelerator applies **one random tick to each of its six adjacent faces**, compressing that process into seconds.
+A vanilla budding block sees a random tick about once every 68 seconds on average, which makes natural growth effectively unobservable. An accelerator applies **one random tick to each of the six adjacent blocks that can receive one**, compressing that process into seconds.
 
 | | Accelerator | Mechanical Accelerator |
 | --- | --- | --- |
@@ -129,6 +134,7 @@ A vanilla budding block sees a random tick about once every 68 seconds on averag
 - Adjacent Accelerators balance energy among themselves: the fuller side pushes toward the emptier one, and a single push never exceeds half the difference, which keeps the two from oscillating back and forth.
 - A Mechanical Accelerator below 256 RPM scales its effect with RPM; above 256 RPM it gains nothing further.
 - The `acceleratorIntervalTicks` config key (**Acceleration Interval (ticks)**) applies to both types, and a larger value means slower growth. The Accelerator settles its FE cost per pass, so slowing it down also reduces its power draw. The multiplier shown by Engineer's Goggles follows this config value.
+- Only neighbours that **can receive a random tick** are ticked: air, stone and the like are skipped on the spot, using exactly vanilla's check (`isRandomlyTicking`, i.e. the `randomTicks` block property). The Goggles multiplier is therefore a **ceiling** — you get less when not all six faces qualify. Conversely, **a modded block that forgot `.randomTicks()` is not accelerated**: vanilla would never random-tick it either, and an accelerator makes no exception.
 
 > **Random ticks drive far more than clusters.** Crops, saplings, copper oxidation, nether wart and every other random-tick-driven mechanic are accelerated along with them, which makes an accelerator a general-purpose tick accelerator as well.
 
@@ -232,6 +238,9 @@ StartupEvents.registry('block', event => {
                                                  // a min above the max throws immediately
     .requiresWater(false)                        // default false = no water needed
                                                  // the Flammable Ice form is .requiresWater() (target must be a water source)
+    .needfluid('minecraft:lava', 250, 1000)      // growth burns fluid (like Budding Ancient Debris burns lava):
+                                                 // 250 mB per successful growth, tank holds up to 1 B; omit = no fluid
+                                                 // see "Fluid Consumption" below
     .growthDimensions('minecraft:overworld')     // growth dimension ids, multiple allowed; omit = any dimension
     .growthBiomes('warm')                        // growth biomes, see "Growth Environment" below; omit = any biome
                                                  // writing this and the line above intersects the two
@@ -274,6 +283,7 @@ Chained methods share their names with the fields; the two forms are equivalent 
 | `maxLight(n)` | 0–15, negative = unlimited (−1) | Upper light bound at the growth space |
 | `minLight(n)` | 0–15, negative = unlimited (−1) | Lower light bound at the growth space |
 | `requiresWater()` | — (false) | Target space must be a water source block |
+| `needfluid(id, cost, capacity)` / `needfluid(id)` | fluid id or `'#tag'` + two amounts in mB (250 / 1000) | Growth burns fluid: each successful growth drains `cost` mB, and it stops growing when the tank cannot pay |
 | `growthDimensions(...)` | dimension ids, multiple allowed | Grows normally only in these dimensions |
 | `growthBiomes(...)` | biome ids / tags / climate keywords, multiple allowed | Grows normally only in these biomes |
 | `outsideGrowthChance(x)` | 0–1 (0.5) | Chance to keep growing outside your turf |
@@ -303,6 +313,29 @@ Each `growthBiomes` entry may be:
 
 Hitting any negation drops the position immediately; otherwise at least one positive entry must match. When only negations are written, the positive side is treated as "every biome", so `growthBiomes('!cold')` reads as "anywhere but cold biomes".
 
+### Fluid Consumption
+
+`needfluid(fluid, cost, capacity)` makes a budding block "burn fluid to grow" like Budding Ancient Debris does: the block carries a small tank, every **successful** growth drains one cost, and when the tank cannot pay that cost it simply does not grow (no slowdown, no discount).
+
+| Argument | Form | Meaning |
+| --- | --- | --- |
+| Fluid | `'minecraft:lava'` or `'#minecraft:lava'` | A fluid id matches by **fluid type**, so both the still and the flowing variant of the same fluid count (bucketed or pumped in, either works); a `#` prefix writes a fluid tag and accepts every fluid in it |
+| Cost | integer mB, default 250 | Drained per successful growth; must be ≥ 1 |
+| Capacity | integer mB, default 1000 | Tank size; must be ≥ the cost, otherwise it could never grow a single stage (that combination throws immediately) |
+
+Passing only the fluid (`needfluid('minecraft:lava')`) uses the default 250 / 1000, the same price as Budding Ancient Debris (one bucket). A misspelled fluid throws right away instead of quietly creating a block that never grows.
+
+How fluid gets in:
+
+- **Pipes and pumps**: the block exposes the NeoForge fluid capability, so Create's fluid pipes, pumps or any machine that understands it can fill and drain it;
+- **Held containers, right-click**: a bucket fills it or scoops it out. One bucket is 1000 mB, so a bucket only helps at "empty" or "full"; odd amounts like half a bucket need pipes (same as Budding Ancient Debris). When the tank will not take the fluid (wrong fluid) or has nothing to scoop, the block swallows the click — nothing is dumped next to the budding block; sneak and right-click if you want to pour it there on purpose;
+- **Comparators** read the level: 0 when empty, otherwise 1–15 proportionally;
+- **Engineer's Goggles** gain two lines: the current amount and the cost per growth, plus a red "it will not grow" line while the tank cannot pay.
+
+The tank does not travel with the block: breaking it (Silk Touch included) discards the fluid, so drain it with a pipe before moving it.
+
+> A fluid requirement needs a block entity that can store fluid. Budding blocks created by `CustomBudding` carry one automatically. Writing `fluidRequirement(...)` on a hand-rolled low-level block only adds a parameter to the definition — the tank and the payment hook are yours to implement, see "Low-Level Interface" below.
+
 ### Drops, Tools and Mining Tiers
 
 - **Drops**: buds drop themselves only under Silk Touch, whatever breaks them. Clusters drop what `dropItem(item, count)` names on a normal break and the cluster itself under Silk Touch; with no `dropItem` a normal break drops nothing. The count benefits from Fortune, adding 0–level per level, matching this mod's own cluster loot tables.
@@ -331,7 +364,7 @@ The value `create` returns, `family`, exposes five accessors for the block ids: 
 ### Behavior Notes
 
 - **Tags are attached automatically.** The budding block joins `#c:budding_blocks`, the three buds join `#c:buds` and the cluster joins `#c:clusters` (block and item tags for all three — NeoForge keeps those categories separate). The five blocks join the matching mining tags via `buddingTool` / `stageTool` and the matching tier tags via `buddingLevel` / `stageLevel` (by default only `#minecraft:mineable/pickaxe`, with no tier). As a result the Smart Drill's Silk Touch mode collects your budding block directly and AE2's Growth Accelerator accelerates it, with no tags to write by hand.
-- **Goggles**: wearing Engineer's Goggles and looking at a custom budding block shows the current growth multiplier along with its growth speed, light requirement, water requirement and growth environment (dimension / biome, phrased qualitatively as "Slow" or "must be dark enough" without exact numbers). Built-in families normally show only the multiplier line; those with `growthDimensions` / `growthBiomes` gain an extra "fastest only in X" line.
+- **Goggles**: wearing Engineer's Goggles and looking at a custom budding block shows the current growth multiplier along with its growth speed, light requirement, water requirement and growth environment (dimension / biome, phrased qualitatively as "Slow" or "must be dark enough" without exact numbers); blocks with `needfluid` also report the tank level and the cost per growth (a level is state, not a parameter, so those get exact numbers). Built-in families normally show only the multiplier line; those with `growthDimensions` / `growthBiomes` gain an extra "fastest only in X" line.
 - **Creative tab**: KubeJS-registered blocks go into no tab by default, which makes people think registration failed, so these land in the KubeJS tab unless told otherwise. `group(...)` switches to a vanilla tab, and `group(null)` omits the tab entirely (reachable only via `/give`).
 - **Names and appearance** come from resource packs and language files. Without a display name, KubeJS derives an English title from the id (`example_crystal_small_bud` → "Example Crystal Small Bud"). The block item and the block share one translation key, so the inventory, dropped items and creative tab all change together.
 
@@ -360,6 +393,11 @@ const definition = GrowthDefinition.of('minecraft:small_amethyst_bud', 'minecraf
 // Light and water live on the same chain (light 0–15, negative = that end unbounded; a min above the max throws):
 //   .maxLight(7).minLight(1)   // only light 1–7 advances
 //   .requiresWater()           // target must be a water source
+// Fluid consumption is on the chain too, but on its own it drains nothing:
+//   .fluidRequirement('minecraft:lava', 250, 1000)   // lava only, 250 mB per growth, 1 B tank
+// The engine pays through the gate the caller passes in (the fourth argument of tryGrow), and the tank has to
+// come from the block: blocks made by CustomBudding bring one along (see "Fluid Consumption" above), while a plain
+// event.create block has no block entity at all — there the call is just a parameter nothing ever reads.
 // The full overload of of() also works: of(small, medium, large, cluster, n, maxLight, minLight, requiresWater);
 // when only the max is wanted, omit the min: of(small, medium, large, cluster, n, maxLight, requiresWater).
 
@@ -412,7 +450,7 @@ BuddingRegistration.declareKnownId("my_budding");           // let the four conf
 
 `declareBuddingBlock` is not a courtesy call you can skip: when a chunk restores block entities from NBT it validates `BlockEntityType#isValid` (`LevelChunk:392`), and a block absent from the shared block entity's valid-block list has its block entity **discarded after a chunk reload**, at which point the Goggles readout stops working.
 
-A block built on `GenericBuddingBlock` is complete at this point: it carries its own family definition, which the JEI Budding Block Info page reads directly. Blocks that **assemble the low-level interface themselves** (implementing `randomTick` and calling the engine) have no definition to read, so they need one more declaration:
+A block built on `GenericBuddingBlock` is complete at this point: it carries its own family definition, which the JEI Budding Block Info page reads directly. Blocks that **assemble the low-level interface themselves** (implementing `randomTick` and calling the engine) have no definition to read, so they need one more declaration — and don't forget `.randomTicks()` in the block properties: without it neither vanilla nor an accelerator will ever touch the block (`GenericBuddingBlock` copies its properties wholesale from vanilla Budding Amethyst, so it carries the flag already):
 
 ```java
 // 3) Let the JEI "Budding Block Info" page list its growth speed / light / water requirements
