@@ -22,6 +22,8 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.pathfinder.PathComputationType;
 import net.minecraft.world.phys.BlockHitResult;
@@ -42,14 +44,21 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  */
 public class ResonanceTableBlock extends Block implements IBE<ResonanceTableBlockEntity>, IWrenchable, ProperWaterloggedBlock {
 
+    /**
+     * 红石充能状态。被充能时换成带充能标记的材质，并且台子会<b>冻结当前过滤</b>——
+     * 冻结的是「过滤器读到的那一份规则」，不是不让玩家动台面上的东西，见
+     * {@code ResonanceTableBlockEntity#getFilterSource}。
+     */
+    public static final BooleanProperty POWERED = BlockStateProperties.POWERED;
+
     public ResonanceTableBlock(Properties properties) {
         super(properties);
-        registerDefaultState(defaultBlockState().setValue(WATERLOGGED, false));
+        registerDefaultState(defaultBlockState().setValue(WATERLOGGED, false).setValue(POWERED, false));
     }
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        super.createBlockStateDefinition(builder.add(WATERLOGGED));
+        super.createBlockStateDefinition(builder.add(WATERLOGGED, POWERED));
     }
 
     @Override
@@ -66,7 +75,25 @@ public class ResonanceTableBlock extends Block implements IBE<ResonanceTableBloc
 
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
-        return withWater(super.getStateForPlacement(context), context);
+        // 放下时就要按当下的红石信号定状态，否则要等第一次邻居更新才会亮
+        return withWater(super.getStateForPlacement(context), context)
+                .setValue(POWERED, context.getLevel().hasNeighborSignal(context.getClickedPos()));
+    }
+
+    /**
+     * 红石充能状态只由邻居更新驱动。
+     * <p>
+     * 只在<b>值真的变了</b>时才 {@code setBlock}：否则每次邻居更新都设一遍方块，会再把更新
+     * 广播回去，和红石元件一起绕成死循环。
+     */
+    @Override
+    protected void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock,
+                                   BlockPos neighborPos, boolean movedByPiston) {
+        super.neighborChanged(state, level, pos, neighborBlock, neighborPos, movedByPiston);
+
+        boolean powered = level.hasNeighborSignal(pos);
+        if (powered != state.getValue(POWERED))
+            level.setBlock(pos, state.setValue(POWERED, powered), Block.UPDATE_ALL);
     }
 
     @Override

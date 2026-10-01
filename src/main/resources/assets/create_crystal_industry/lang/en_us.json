@@ -403,5 +403,6 @@
 
     "block.create_crystal_industry.resonance_table": "Resonance Table",
     "item.create_crystal_industry.resonance_filter": "Resonance Filter",
-    "message.create_crystal_industry.resonance_table.new_network_started": "New link network started"
+    "message.create_crystal_industry.resonance_table.new_network_started": "New link network started",
+    "create.create_crystal_industry.resonance_table.stack_size": "Item Stack Size"
 }

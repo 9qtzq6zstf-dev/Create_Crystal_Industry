@@ -30,9 +30,17 @@ import java.util.UUID;
  * （它在构造器里就把 18 格读进 containedItems 了）。本类的解析发生在 {@link #resolveAll} 里、
  * 按游戏刻缓存。
  * <p>
- * <b>读不到就什么都不通过</b>（fail-closed）：没绑网络、网络里一台都没有、所有台面都是空的
- * —— 一律返回 false。基类 {@code FilterItemStack} 的语义是「空 = 接受一切」，那条路在这里会
- * 变成「区块一卸载漏斗突然放行全部物品」，所以本类从不返回「空即通过」。
+ * 空与非空的分界，就分在「<b>读得到</b>吗」这一条线上：
+ * <ul>
+ *   <li><b>台子是空的 → 不加限制，什么都放行</b>，和「过滤槽里没插过滤器」同一个意思
+ *       （空的 {@code FilterItemStack} 的 test 恒为 true）。</li>
+ *   <li><b>根本读不到 → 什么都不通过</b>（fail-closed）：没绑网络、网络里一台都没有、
+ *       台子的区块没加载、被拆了。这几种都返回 false。</li>
+ * </ul>
+ * 这条分界是有意为之：台面空了是玩家自己动的手，看得见，跟空过滤槽一致；
+ * 而"读不到"是环境造成的，那时候放开就等于「区块一卸载漏斗突然放行全部物品」。
+ * <p>
+ * 顺带一提，并集的后果是：<b>网络里只要有一张台子是空的，整个网络就放行一切</b>。
  * <p>
  * 注意并集的一个后果，这是有意为之、但要心里有数：<b>一张台子的区块没加载时，它就不在并集里</b>
  * （{@code getAllPresent} 只给得出有效的方块实体），于是它那一份过滤规则会暂时消失。
@@ -161,8 +169,13 @@ public class ResonanceFilterItemStack extends FilterItemStack {
                 continue;
 
             ItemStack onTable = table.getFilterSource();
-            if (onTable.isEmpty())
-                continue;                       // 空台面对并集没有贡献（不是"不限"）
+            if (onTable.isEmpty()) {
+                // 空台面 = 不加限制，跟"过滤槽里没插过滤器"一个意思。
+                // 并集里放一个"接受一切"的过滤器即可：FilterItemStack.empty() 的 test 恒为 true。
+                // 注意它对流体也是恒 true，所以空台面同样会放开流体。
+                filters.add(FilterItemStack.empty());
+                continue;
+            }
 
             // 递归护栏：台面上又放了一个共振过滤器的话，FilterItemStack.of 会再次走到本类
             if (onTable.getItem() instanceof ResonanceFilterItem)

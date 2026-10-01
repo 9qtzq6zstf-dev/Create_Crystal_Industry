@@ -9,6 +9,7 @@
         "ChuteBlockEntityMixin",
         "MechanicalCleanerAirCurrentMixin",
         "FilterItemStackMixin",
+        "DepotBehaviourAccessor",
         "LightningBoltMixin"
     ],
     "client": [

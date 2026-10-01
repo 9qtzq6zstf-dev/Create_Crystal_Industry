@@ -1,0 +1,6 @@
+{
+	"parent": "create_crystal_industry:block/resonance_table/block",
+	"textures": {
+		"1": "create_crystal_industry:block/resonance_table/depot_side_powered"
+	}
+}

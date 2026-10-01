@@ -403,5 +403,6 @@
 
     "block.create_crystal_industry.resonance_table": "共振台",
     "item.create_crystal_industry.resonance_filter": "共振过滤器",
-    "message.create_crystal_industry.resonance_table.new_network_started": "成功新建了一个过滤网络"
+    "message.create_crystal_industry.resonance_table.new_network_started": "成功新建了一个过滤网络",
+    "create.create_crystal_industry.resonance_table.stack_size": "物品堆数量"
 }

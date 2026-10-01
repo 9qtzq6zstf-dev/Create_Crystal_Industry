@@ -1,7 +1,10 @@
 {
   "variants": {
-    "": {
+    "powered=false": {
       "model": "create_crystal_industry:block/resonance_table/block"
+    },
+    "powered=true": {
+      "model": "create_crystal_industry:block/resonance_table/block_powered"
     }
   }
 }
