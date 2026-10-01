@@ -11,7 +11,7 @@ import net.neoforged.neoforge.event.tick.EntityTickEvent;
 
 /**
  * 「感电」的施加规则：生物待在**弧光石系列方块**（母岩 + 三级芽 + 晶簇）或**电流浆**附近即获得，
- * 离开约 3 秒后自然消退（效果本身目前是空的，见 {@link ElectrifiedEffect}）。
+ * 离开约 3 秒后自然消退（效果本身做什么见 {@link ElectrifiedZap}）。
  * <p>
  * 判定放在<b>实体 tick 侧</b>而不是方块侧：方块没有每 tick 的钩子（随机刻太稀疏，撑不起"待着就有"的手感），
  * 而生物数量有限、扫描半径又小，代价可控。两处细节都是为了便宜：

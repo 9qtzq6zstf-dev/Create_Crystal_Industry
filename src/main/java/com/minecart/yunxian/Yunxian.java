@@ -2,6 +2,7 @@ package com.minecart.yunxian;
 
 import com.minecart.yunxian.advancement.YunxianAdvancements;
 import com.minecart.yunxian.effect.ElectrifiedAura;
+import com.minecart.yunxian.effect.ElectrifiedZap;
 import com.minecart.yunxian.fluid.FluidInteractions;
 import com.minecart.yunxian.effect.ShockWard;
 import com.minecart.yunxian.effect.SlurryShock;
@@ -62,6 +63,8 @@ public class Yunxian {
         NeoForge.EVENT_BUS.addListener(ElectrifiedAura::onEntityTick);
         // 泡在电流浆里持续挨雷劈（见 SlurryShock 的类注释）
         NeoForge.EVENT_BUS.addListener(SlurryShock::onEntityTick);
+        // 「感电」的实际效果：带电的生物挨打时放电，自己再吃一发雷击并电到旁边带电的那个（见 ElectrifiedZap）
+        NeoForge.EVENT_BUS.addListener(ElectrifiedZap::onDamagePost);
         // 全套 shock_immune 盔甲免疫闪电伤害：电流浆的电击与真实落雷共用 lightning_bolt 伤害类型，
         // 所以一个拦截点就够（见 ShockWard 的类注释）
         NeoForge.EVENT_BUS.addListener(ShockWard::onIncomingDamage);

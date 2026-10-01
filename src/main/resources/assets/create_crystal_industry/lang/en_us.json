@@ -72,6 +72,8 @@
     "item.create_crystal_industry.current_slurry_bucket": "Current Slurry Bucket",
     "fluid_type.create_crystal_industry.current_slurry": "Current Slurry",
     "effect.create_crystal_industry.electrified": "Electrified",
+    "death.attack.electricShock": "%1$s was electrocuted",
+    "death.attack.electricShock.player": "%1$s was struck by lightning caused by %2$s",
     "item.create_crystal_industry.echo_spyglass": "Echo Spyglass",
     "container.create_crystal_industry.echo_spyglass_filter": "Place Item to Detect",
     "item.create_crystal_industry.echo_spyglass.filter_tip": "Filter: %s",

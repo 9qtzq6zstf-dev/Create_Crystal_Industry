@@ -72,6 +72,8 @@
     "item.create_crystal_industry.current_slurry_bucket": "电流浆桶",
     "fluid_type.create_crystal_industry.current_slurry": "电流浆",
     "effect.create_crystal_industry.electrified": "感电",
+    "death.attack.electricShock": "%1$s死于电刑",
+    "death.attack.electricShock.player": "%1$s被%2$s造成的闪电劈死了",
     "item.create_crystal_industry.echo_spyglass": "回响望远镜",
     "container.create_crystal_industry.echo_spyglass_filter": "放置要探测的物品",
     "item.create_crystal_industry.echo_spyglass.filter_tip": "过滤：%s",

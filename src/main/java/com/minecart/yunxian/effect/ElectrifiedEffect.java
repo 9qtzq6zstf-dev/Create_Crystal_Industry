@@ -6,12 +6,13 @@ import net.minecraft.world.effect.MobEffectCategory;
 /**
  * 「感电」：靠近弧光石系列方块或电流浆会获得的状态。
  * <p>
- * <b>目前只有状态本身，没有任何实际效果</b>——它的具体作用（加伤害？减速？给电弧石充能？）
- * 还没定，等定了在这里补 {@code applyEffectTick}/{@code addAttributeModifiers} 之类的重写即可。
- * 施加逻辑不在本类，见 {@link ElectrifiedAura}。
+ * 施加逻辑在 {@link ElectrifiedAura}（什么时候得）；<b>实际效果在 {@link ElectrifiedZap}</b>
+ * ——带电的生物挨打时会放电，自己再吃一发 4 点雷击，并顺带电到旁边一个同样带电的生物。
+ * 效果本身没有 {@code applyEffectTick} 之类的每刻行为：它是「挨打时才会响」的，挂在受伤事件上，
+ * 不是挂在状态自己的 tick 上（那条路每刻都要跑，且判不出"刚被打"）。
  * <p>
- * 分类取「中性」也只是占位（既不算增益也不算减益），将来效果定了多半要改成
- * {@link MobEffectCategory#BENEFICIAL} 或 {@link MobEffectCategory#HARMFUL}。
+ * 分类取「中性」：它既不是纯增益也不是纯减益——挨打会多掉血（减益），
+ * 但也能把电传给旁边的敌人（增益）。等哪天要给它加属性修正再考虑改分类。
  */
 public class ElectrifiedEffect extends MobEffect {
 

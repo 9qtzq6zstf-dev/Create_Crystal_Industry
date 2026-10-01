@@ -1,5 +1,6 @@
 package com.minecart.yunxian.effect;
 
+import com.minecart.yunxian.registry.ModDamageTypes;
 import com.minecart.yunxian.registry.ModFluids;
 
 import net.minecraft.server.level.ServerLevel;
@@ -9,8 +10,12 @@ import net.neoforged.neoforge.event.tick.EntityTickEvent;
 /**
  * 电流浆的电击：泡在浆里的生物持续挨雷劈。
  * <p>
- * 伤害用的是原版的 <b>闪电伤害类型</b>（{@code minecraft:lightning_bolt}）——它无视护甲，
- * 这正是「雷击伤害」该有的手感。
+ * 伤害用的是本模组自己的 <b>{@code electric_shock}</b>（见 {@link ModDamageTypes}）：
+ * 它登记在 {@code minecraft:bypasses_armor} 里，所以<b>无视护甲</b>，是这个模组意义上的真实伤害。
+ * 死亡讯息走 {@code electricShock} 那一对（「xxx死于电刑」/「xxx被xxx造成的闪电劈死了」）。
+ * <p>
+ * <b>刻意没有登记 {@code bypasses_cooldown}</b>：本类的频率就是靠无敌帧压出来的（见下），
+ * 跳了无敌帧会变成每 tick 20 点。放电用的另一条类型 {@code electric_discharge} 才跳无敌帧。
  * <p>
  * 两个刻意的选择：
  * <ul>
@@ -42,6 +47,6 @@ public final class SlurryShock {
         if (!living.isInFluidType(ModFluids.CURRENT_SLURRY_TYPE.get())) {
             return;
         }
-        living.hurt(level.damageSources().lightningBolt(), DAMAGE);
+        living.hurt(level.damageSources().source(ModDamageTypes.ELECTRIC_SHOCK), DAMAGE);
     }
 }
