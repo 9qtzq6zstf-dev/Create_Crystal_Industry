@@ -69,6 +69,18 @@ public class ArclightBuddingBlockEntity extends BlockEntity implements IHaveGogg
         return true;
     }
 
+    /**
+     * 把电量一次灌满。给「失活母岩被雷劈中 → 变成弧光石母岩」用（见 {@code budding/LightningActivation}）：
+     * 闪电是白给的启动资金，所以新生的母岩直接满电，不用玩家先接电缆。
+     * <p>
+     * 别拿 {@link #receiveEnergy} 循环一百次去凑：那条路每次最多收 {@link #MAX_RECEIVE}，
+     * 而 {@code MAX_RECEIVE} 是「每 tick 从外部吸多少」的限流，管的是外面灌进来的电，
+     * 不该管我们自己给的这一下。
+     */
+    public void setEnergyToFull() {
+        setEnergy(CAPACITY);
+    }
+
     /** 改电量并落盘 + 同步给客户端（护目镜在客户端读这个值） */
     private void setEnergy(int value) {
         int clamped = Math.clamp(value, 0, CAPACITY);

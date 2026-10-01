@@ -49,7 +49,8 @@ public class ModBlockTagsProvider extends BlockTagsProvider {
         // 如果没进 mineable/pickaxe，任何工具都不算"正确工具"，挖掉直接什么都不掉
         // （和水晶电池那条注释是同一个坑），所以必须登记。
         IntrinsicTagAppender<Block> pickaxe = tag(BlockTags.MINEABLE_WITH_PICKAXE);
-        pickaxe.add(ModBlocks.FLAMMABLE_ICE_BLOCK.get(), ModBlocks.ACCELERATOR.get(),
+        pickaxe.add(ModBlocks.INACTIVE_ARCLIGHT_BUDDING.get(), ModBlocks.FLAMMABLE_ICE_BLOCK.get(),
+                ModBlocks.ACCELERATOR.get(),
                 ModBlocks.SMART_DRILL.get(), ModBlocks.MECHANICAL_ACCELERATOR.get(),
                 ModBlocks.MECHANICAL_CLEANER.get(), ModBlocks.CRYSTAL_BATTERY.get(),
                 ModBlocks.RESONANCE_TABLE.get());
@@ -59,6 +60,9 @@ public class ModBlockTagsProvider extends BlockTagsProvider {
         // 等级必须跟着一起登记，否则任何工具都算不上"正确"，挖掉一格都不掉东西
         needsStone.add(ModBlocks.CRYSTAL_BATTERY.get());
         IntrinsicTagAppender<Block> needsIron = tag(BlockTags.NEEDS_IRON_TOOL);
+        // 失活母岩抄的是弧光石母岩的属性（于是也带 requiresCorrectToolForDrops），
+        // 而弧光石母岩属于 IRON 档，所以这一格的等级得跟着它一起登记——否则同样是什么都不掉
+        needsIron.add(ModBlocks.INACTIVE_ARCLIGHT_BUDDING.get());
         IntrinsicTagAppender<Block> needsDiamond = tag(BlockTags.NEEDS_DIAMOND_TOOL);
 
         for (RegisteredFamily family : BuddingFamilies.ALL) {

@@ -302,9 +302,11 @@ public final class BuddingFamilies {
     private static RegisteredFamily arclight() {
         Growth growth = new Growth(GrowthRule.STANDARD, LightRequirement.ANY,
                 EnergyRequirement.FE, List.of(), ClusterKind.STANDARD, 0, GrowthEnvironment.ANY, GrowthSpeed.NORMAL, null);
-        // 只在晶簇之后追加「弧光石」这一件物品：它是母岩的产物，不是一个方块家族
+        // 只在晶簇之后追加两件：弧光石（母岩的产物，不是一个方块家族）与失活母岩
+        // （藏在 ModBlocks 里的待激活形态，靠雷劈变成上面这块母岩，见 LightningActivation）
         Appearance appearance = new Appearance(INHERIT_BUD_LIGHT, null, null,
-                BlockEntityKind.FE_TANK, 0, null, null, List.of(() -> ModItems.ARCLIGHT.get()), true);
+                BlockEntityKind.FE_TANK, 0, null, null,
+                List.of(() -> ModItems.ARCLIGHT.get(), () -> ModBlocks.INACTIVE_ARCLIGHT_BUDDING.get()), true);
         return register(new BuddingFamily("arclight", BuddingModel.CUBE_ALL, ToolTier.IRON, false, null, false,
                 () -> ModItems.ARCLIGHT.get(), growth, appearance));
     }

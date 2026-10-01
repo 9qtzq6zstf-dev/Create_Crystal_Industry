@@ -8,7 +8,8 @@
         "NozzleBlockEntityMixin",
         "ChuteBlockEntityMixin",
         "MechanicalCleanerAirCurrentMixin",
-        "FilterItemStackMixin"
+        "FilterItemStackMixin",
+        "LightningBoltMixin"
     ],
     "client": [
         "LevelChunkMixin",

@@ -1,0 +1,5 @@
+{
+    "variants": {
+        "": { "model": "create_crystal_industry:block/arclight/inactive_arclight_budding" }
+    }
+}

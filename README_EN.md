@@ -90,6 +90,15 @@ Budding Arclight is the only budding block that **runs on FE**. It holds **1,000
   - The check only looks at **slot + tag**, so the four pieces **do not have to match**: a chainmail helmet with a netherite chestplate still counts, as long as all four slots are tagged (take any one piece off and the shocks come straight back).
   - Damage is blocked through NeoForge's `LivingIncomingDamageEvent`, cancelled after the invulnerability check but before any damage reduction — so **armour takes no durability loss and you take no knockback**. It blocks **damage only, not fire**: vanilla's lightning sets you alight through a separate path this mod does not touch (a full netherite set is fire resistant anyway, so it rarely matters).
 
+- **Inactive Budding Arclight**: the "not yet activated" form of Budding Arclight — only a **lightning strike** turns it into the real thing. On its own it is pure decoration: it holds no FE, grows nothing, emits no sparks, has no block entity and does not count as a source for "Electrified". **Two ways to trigger it**:
+  - a lightning bolt **lands on it directly**;
+  - the block **directly above it is a lightning rod** and **that rod gets struck** — so the usual setup is to put a rod on top of it and wait for a thunderstorm (a rod redirects nearby strikes onto itself). The check is hard-coded to the block directly below; a rod stuck to its side does not count.
+  - The budding block it turns into comes out **with a full FE buffer** (1 000 000), so you do not have to wire it up first.
+  - The conversion also **feeds it 16 random ticks**, so the brand-new budding block immediately sprouts a few buds (about 3 on average; roughly a 3% chance of none at all) and looks like it had been growing there all along. Those buds are on the house: they are **not deducted from the full buffer**, which still ends up completely full.
+  - Vanilla only exposes "was struck by lightning" for lightning rods — plain blocks have no hook at all, and NeoForge only ships an entity-side lightning event — so this chain runs through a mixin injected into vanilla's `LightningBolt#powerLightningRod` (see `mixin/LightningBoltMixin` and `budding/LightningActivation`).
+  - It copies Budding Arclight's properties (same hardness, sound and **iron-pickaxe requirement**) and drops itself; how to obtain it is likewise undecided, so it is creative-only for now.
+  - Its texture is currently a **straight copy of Budding Arclight's** as a placeholder; no dedicated texture has been drawn yet.
+
 Budding Arclight currently **neither generates naturally nor has a crafting recipe**: how to obtain it is still undecided, so for now it is creative-only (its JEI info page says so too).
 
 ### Budding Block Reproduction

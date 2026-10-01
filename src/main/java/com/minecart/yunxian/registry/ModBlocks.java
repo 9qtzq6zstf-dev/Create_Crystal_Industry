@@ -45,6 +45,30 @@ public final class ModBlocks {
                     .friction(0.989F)));
 
     /**
+     * 失活弧光石母岩：弧光石母岩的「未激活」形态。是个纯装饰 & 待激活的方块，自己没有方块实体——
+     * 不吃电、不长芽、不冒火花，只有一点：被雷劈中就变成真正的弧光石母岩，并且 FE 直接给满。
+     * <p>
+     * 两条触发路径都写在 {@code budding/LightningActivation} 里，由 {@code mixin/LightningBoltMixin}
+     * 在闪电结算的那一刻调起：闪电<b>直接落在它身上</b>，或者它<b>正上方那格是避雷针、避雷针被劈中</b>。
+     * 原版只在 {@code LightningBolt#powerLightningRod} 里给避雷针开了口子，普通方块没有任何钩子，
+     * 所以这里必须走 mixin。
+     * <p>
+     * 属性逐字照抄弧光石母岩用的那一套（{@code ofFullCopy(BUDDING_AMETHYST)}）：既然它是后者的
+     * 未激活形态，硬度、音效、爆炸抗性就该完全一致。<b>两个后果要记住</b>：
+     * <ul>
+     *   <li>这套属性带 {@code requiresCorrectToolForDrops}，所以它必须进
+     *       {@code mineable/pickaxe} 与 {@code needs_iron_tool} 两个标签
+     *       （见 {@code ModBlockTagsProvider}），否则挖掉一格都不掉；</li>
+     *   <li>连带抄来了 {@code randomTicks} 标志位。本方块是纯 {@code Block}，{@code randomTick}
+     *       是空的，所以只是让所在区段多被随机刻扫一遍、不产生任何行为。留着是为了和弧光石母岩
+     *       永远同进同退，不值得为这点开销把属性表抄成第二份。</li>
+     * </ul>
+     * 获取方式未定：没有合成配方也没有世界生成，当前是创造限定。
+     */
+    public static final DeferredBlock<Block> INACTIVE_ARCLIGHT_BUDDING = registerBlock("inactive_arclight_budding",
+            () -> new Block(BlockBehaviour.Properties.ofFullCopy(Blocks.BUDDING_AMETHYST)));
+
+    /**
      * 电流浆的流体方块：存在的唯一理由是「桶倒下去得有东西可放」，不是给玩家挖的。
      * 它与岩浆块的交互不在本类，而在 {@code ModFluids#registerInteractions()} 里用
      * NeoForge 的流体交互 API 注册（照着原版玄武岩那条写的）。
