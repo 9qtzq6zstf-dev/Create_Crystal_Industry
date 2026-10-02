@@ -66,7 +66,7 @@ public class SmartDrillScenes {
 
         scene.overlay().showText(95)
                 .attachKeyFrame()
-                .text("This is the Smart Drill: a Mechanical Drill with two harvesting modes - Normal Harvesting and Silk Touch Harvesting.")
+                .text("The Smart Drill is a Mechanical Drill with two harvesting modes: Normal Harvesting and Silk Touch Harvesting.")
                 .placeNearTarget()
                 .pointAt(util.vector().centerOf(smart));
         scene.idle(105);
@@ -78,7 +78,7 @@ public class SmartDrillScenes {
         scene.overlay().showOutlineWithText(util.select()
                         .position(smart)
                         .add(util.select().position(vanilla)), 105)
-                .text("For comparison: a regular Mechanical Drill on the left. Both drills take Rotational Force at the back and mine the block in front of the head.")
+                .text("A regular Mechanical Drill stands on the left for comparison. Both drills take Rotational Force at the back and mine the block in front of the head.")
                 .placeNearTarget();
         scene.idle(115);
 
@@ -120,7 +120,7 @@ public class SmartDrillScenes {
 
         scene.overlay().showText(120)
                 .attachKeyFrame()
-                .text("Switch modes at any time through the setting slot on its side. In Silk Touch Harvesting, the mining speed matches a regular drill - but blocks drop as if mined with Silk Touch.")
+                .text("The setting slot on its side switches modes at any time. In Silk Touch Harvesting, the mining speed matches a regular drill, but blocks drop as if mined with Silk Touch.")
                 .placeNearTarget()
                 .pointAt(util.vector().centerOf(smart));
         // 模式槽位指示：朝向为北时，四个垂直于轴向的面（上/下/东/西）均可配置；这里指向面向默认镜头的西面槽位。
@@ -138,7 +138,7 @@ public class SmartDrillScenes {
 
         scene.overlay().showText(110)
                 .attachKeyFrame()
-                .text("Budding Blocks are a special case: a regular drill - or the Smart Drill in Normal Harvesting - shatters them, and the block itself cannot be collected.")
+                .text("Budding Blocks are a special case. A regular drill, or the Smart Drill in Normal Harvesting, shatters them, and the block itself cannot be collected.")
                 .placeNearTarget()
                 .pointAt(util.vector().centerOf(spotVanilla));
         scene.idle(20);
@@ -148,7 +148,7 @@ public class SmartDrillScenes {
         // 7) 母岩：精准采集完整采下（掉落物留在场景中）
         scene.overlay().showText(110)
                 .attachKeyFrame()
-                .text("In Silk Touch Harvesting, the Smart Drill collects the Budding Block itself - one of the ways Crystal Industry lets you obtain budding blocks.")
+                .text("In Silk Touch Harvesting, the Smart Drill collects the Budding Block itself. This is one of the ways Crystal Industry provides for obtaining Budding Blocks.")
                 .placeNearTarget()
                 .pointAt(util.vector().centerOf(spotSmart));
         scene.idle(10);

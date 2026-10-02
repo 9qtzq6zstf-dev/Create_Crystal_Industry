@@ -3,6 +3,7 @@ package com.minecart.yunxian.ponder;
 import com.minecart.yunxian.budding.BuddingFamilies;
 import com.minecart.yunxian.budding.BuddingFamilies.RegisteredFamily;
 import com.minecart.yunxian.registry.ModBlocks;
+import com.minecart.yunxian.registry.ModItems;
 
 import net.createmod.ponder.api.registration.MultiTagBuilder;
 import net.createmod.ponder.api.registration.PonderTagRegistrationHelper;
@@ -27,7 +28,7 @@ public class AllYunxianPonderTags {
                 .addToIndex()
                 .item(Items.AMETHYST_CLUSTER, true, false)
                 .title("Crystal Budding Blocks")
-                .description("Blocks that slowly grow crystals, and the Accelerators that speed them up")
+                .description("Blocks which slowly grow crystals, and the Accelerators which speed them up")
                 .register();
 
         helper.registerTag(ACCELERATORS)
@@ -41,7 +42,7 @@ public class AllYunxianPonderTags {
                 .addToIndex()
                 .item(ModBlocks.SMART_DRILL.get().asItem(), true, false)
                 .title("Machines")
-                .description("Powered machines that harvest and process crystals")
+                .description("Powered machines which harvest and process crystals")
                 .register();
 
         PonderTagRegistrationHelper<Block> blocks = helper.withKeyFunction(BuiltInRegistries.BLOCK::getKey);
@@ -62,7 +63,13 @@ public class AllYunxianPonderTags {
 
         blocks.addToTag(MACHINES)
                 .add(ModBlocks.SMART_DRILL.get())
-                .add(ModBlocks.MECHANICAL_CLEANER.get());
+                .add(ModBlocks.MECHANICAL_CLEANER.get())
+                .add(ModBlocks.RESONANCE_TABLE.get());
+
+        // 共振过滤器是物品，走物品视角的那份 helper 进同一个标签
+        helper.withKeyFunction(BuiltInRegistries.ITEM::getKey)
+                .addToTag(MACHINES)
+                .add(ModItems.RESONANCE_FILTER.get());
     }
 
 }

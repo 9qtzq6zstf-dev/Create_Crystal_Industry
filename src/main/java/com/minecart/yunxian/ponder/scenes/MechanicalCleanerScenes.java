@@ -66,7 +66,7 @@ public class MechanicalCleanerScenes {
         // 1) 鼓风机能力提示（一句话，不展开演示）
         scene.overlay().showText(100)
                 .attachKeyFrame()
-                .text("The Mechanical Cleaner drives the same airstream as an Encased Fan - in short, every airflow ability of the fan applies here as well.")
+                .text("The Mechanical Cleaner drives the same airstream as an Encased Fan. Every airflow ability of the Fan applies to it as well.")
                 .placeNearTarget()
                 .pointAt(util.vector().centerOf(cleaner));
         scene.idle(110);
@@ -74,7 +74,7 @@ public class MechanicalCleanerScenes {
         // 2) 吸取掉落物
         scene.overlay().showText(110)
                 .attachKeyFrame()
-                .text("On top of that, it is also a collector: items caught in its stream - or simply lying in front of it - are sucked in and stored in its built-in inventory.")
+                .text("It is also a collector. Items caught in its stream, or lying in front of it, are sucked in and stored in its built-in inventory.")
                 .placeNearTarget()
                 .pointAt(util.vector().centerOf(cleaner));
         scene.idle(20);
@@ -105,7 +105,7 @@ public class MechanicalCleanerScenes {
 
         scene.overlay().showText(110)
                 .attachKeyFrame()
-                .text("A container placed directly in front is used in a special way: the Cleaner moves items in and out of it directly - nothing is dropped into the world.")
+                .text("A container placed directly in front is handled specially: the Cleaner moves items in and out of it directly, without dropping anything into the world.")
                 .placeNearTarget()
                 .pointAt(util.vector().centerOf(2, 1, 2));
         scene.idle(120);
@@ -113,7 +113,7 @@ public class MechanicalCleanerScenes {
         // 4) 容器 -> 吸尘器（直接抽取，不产生掉落物）
         scene.overlay().showText(100)
                 .attachKeyFrame()
-                .text("While collecting, it can reach into that container and pull matching items straight into its own inventory.")
+                .text("While collecting, it can reach into that container and pull matching items into its own inventory.")
                 .placeNearTarget()
                 .pointAt(util.vector().centerOf(2, 1, 2));
         scene.idle(20);
@@ -133,7 +133,7 @@ public class MechanicalCleanerScenes {
         // 5) 吸尘器 -> 容器（直接送回，不洒落）
         scene.overlay().showText(110)
                 .attachKeyFrame()
-                .text("While blowing, stored items are fed back into the container in front - again, without spilling anything into the world.")
+                .text("While blowing, stored items are fed back into the container in front, again without spilling anything into the world.")
                 .placeNearTarget()
                 .pointAt(util.vector().centerOf(2, 1, 2));
         scene.idle(15);
@@ -153,7 +153,7 @@ public class MechanicalCleanerScenes {
         // 6) 收尾：模式 / 过滤 / 数量在侧面配置槽与界面里
         scene.overlay().showText(100)
                 .attachKeyFrame()
-                .text("Blowing or sucking, filters, and transfer amounts are all configured through its interface and the side slot.")
+                .text("Blowing or sucking, filters and transfer amounts are all configured through its interface and the side slot.")
                 .placeNearTarget()
                 .pointAt(util.vector().centerOf(cleaner));
         scene.overlay().showCenteredScrollInput(cleaner, Direction.WEST, 80);

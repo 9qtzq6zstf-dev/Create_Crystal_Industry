@@ -45,7 +45,7 @@ public class CrystalScenes {
 
         scene.overlay().showText(130)
                 .attachKeyFrame()
-                .text("Vanilla budding blocks only grow when random ticks land on them. Each block receives one every ~68 seconds on average, and each roll only has a 1-in-5 chance to advance a growth stage.")
+                .text("Vanilla Budding Blocks only advance their growth when a random tick lands on them. On average a block receives one every 68 seconds, and each roll only has a 1-in-5 chance to advance a growth stage.")
                 .placeNearTarget()
                 .pointAt(util.vector().centerOf(budding));
         scene.idle(140);
@@ -58,7 +58,7 @@ public class CrystalScenes {
 
         scene.overlay().showText(120)
                 .attachKeyFrame()
-                .text("Crystal Industry's Accelerators change this. The Electric Accelerator on the left runs on FE; the Mechanical Accelerator on the right runs on Rotational Force.")
+                .text("Crystal Industry's Accelerators change this. The Electric Accelerator on the left runs on FE, and the Mechanical Accelerator on the right on Rotational Force.")
                 .placeNearTarget()
                 .pointAt(util.vector().centerOf(electric));
         scene.idle(130);
@@ -74,7 +74,7 @@ public class CrystalScenes {
 
         scene.overlay().showText(110)
                 .attachKeyFrame()
-                .text("Each tick, an Accelerator forces one random tick onto every adjacent block. Growth stages that used to take minutes now take moments.")
+                .text("Each tick, an Accelerator forces a random tick onto every adjacent block. Growth stages which used to take minutes now take moments.")
                 .placeNearTarget()
                 .pointAt(util.vector().topOf(budding));
 
@@ -85,7 +85,7 @@ public class CrystalScenes {
 
         scene.overlay().showText(100)
                 .attachKeyFrame()
-                .text("In a few seconds a fully-grown Cluster appears. Farming crystals around Accelerators becomes a fast, highly efficient way to gather them.")
+                .text("Within seconds a fully grown Cluster appears. Arranging Budding Blocks around Accelerators becomes a fast and efficient way to gather crystals.")
                 .placeNearTarget()
                 .pointAt(util.vector().topOf(spot));
         scene.idle(110);
@@ -97,7 +97,7 @@ public class CrystalScenes {
         scene.idle(20);
 
         scene.overlay().showText(110)
-                .text("Some budding blocks in this mod have extra conditions - Echo needs darkness, Flammable Ice needs water, Fluix needs AE power - but the growth itself is always driven by the same random ticks.")
+                .text("Some Budding Blocks in this mod have additional requirements. Echo requires darkness, Flammable Ice requires water, Fluix requires AE power, and Quartz and Glowstone only grow at full speed in the Nether. The growth itself is always driven by the same random ticks.")
                 .placeNearTarget()
                 .pointAt(util.vector().centerOf(budding));
         scene.idle(120);
@@ -132,7 +132,7 @@ public class CrystalScenes {
 
         scene.overlay().showText(100)
                 .attachKeyFrame()
-                .text("Accelerators come in two types: this Electric Accelerator runs on FE, while the Mechanical Accelerator runs on Rotational Force.")
+                .text("Accelerators come in two types. This Electric Accelerator runs on FE, and the Mechanical Accelerator on Rotational Force.")
                 .placeNearTarget()
                 .pointAt(util.vector().centerOf(acc));
         scene.idle(110);
@@ -149,7 +149,7 @@ public class CrystalScenes {
 
         scene.overlay().showText(80)
                 .attachKeyFrame()
-                .text("Supply it with FE and it activates. Every tick, it forces a random tick onto each of the six neighbouring blocks.")
+                .text("Supplying it with FE activates it. Every tick, it forces a random tick onto each of the six neighbouring blocks.")
                 .placeNearTarget()
                 .pointAt(util.vector().centerOf(acc));
         scene.idle(20);
@@ -179,7 +179,7 @@ public class CrystalScenes {
 
         scene.overlay().showText(110)
                 .attachKeyFrame()
-                .text("Random ticks drive far more than crystal growth: crops, saplings, stems - anything random-tick based will be accelerated, not only budding blocks.")
+                .text("Random ticks drive more than crystal growth. Crops, saplings, copper oxidation and every other random-tick based mechanic are accelerated as well, not only Budding Blocks.")
                 .placeNearTarget()
                 .pointAt(util.vector().topOf(wheat));
         scene.idle(120);
@@ -188,7 +188,7 @@ public class CrystalScenes {
                         .position(ironBudding)
                         .add(util.select().position(roseBudding))
                         .add(util.select().position(amethyst)), 110)
-                .text("And because all six sides are ticked at once, a single Accelerator can serve several budding blocks surrounding it.")
+                .text("Since all six sides are ticked at once, a single Accelerator can serve several Budding Blocks surrounding it.")
                 .placeNearTarget();
         scene.idle(120);
     }
@@ -226,7 +226,7 @@ public class CrystalScenes {
 
         scene.overlay().showText(95)
                 .attachKeyFrame()
-                .text("Accelerators come in two types: this Mechanical Accelerator runs on Rotational Force, while the Electric Accelerator runs on FE.")
+                .text("Accelerators come in two types. This Mechanical Accelerator runs on Rotational Force, and the Electric Accelerator on FE.")
                 .placeNearTarget()
                 .pointAt(util.vector().centerOf(acc));
         scene.idle(105);
@@ -241,7 +241,7 @@ public class CrystalScenes {
 
         scene.overlay().showText(105)
                 .attachKeyFrame()
-                .text("Supply Rotational Force at its back - through any combination of shafts and cogs. The faster the input spins, the more random ticks it applies each second.")
+                .text("Rotational Force is supplied at its back, through any combination of shafts and cogs. The faster the input spins, the more random ticks it applies each second.")
                 .placeNearTarget()
                 .pointAt(util.vector().centerOf(largeCog));
         scene.idle(115);
@@ -256,7 +256,7 @@ public class CrystalScenes {
 
         scene.overlay().showText(95)
                 .attachKeyFrame()
-                .text("Every tick, it forces a random tick onto each of the six neighbouring blocks - here, two budding blocks and an ordinary wheat crop.")
+                .text("Every tick, it forces a random tick onto each of the six neighbouring blocks. Here, that is two Budding Blocks and one Wheat crop.")
                 .placeNearTarget()
                 .pointAt(util.vector().centerOf(acc));
         scene.idle(105);
@@ -277,7 +277,7 @@ public class CrystalScenes {
 
         scene.overlay().showText(95)
                 .attachKeyFrame()
-                .text("Running at low speed, each stage still takes a while - so far only the first advancement has happened.")
+                .text("At low speed, each growth stage still takes a while. So far only the first advancement has happened.")
                 .placeNearTarget()
                 .pointAt(util.vector().topOf(amethystSpot));
         scene.idle(105);
@@ -308,7 +308,7 @@ public class CrystalScenes {
 
         scene.overlay().showText(110)
                 .attachKeyFrame()
-                .text("Raise the input speed and the same stages complete in moments. It accelerates anything driven by random ticks - not only budding blocks, but crops and more.")
+                .text("Raising the input speed completes the same stages in moments. Anything driven by random ticks is accelerated, not only Budding Blocks.")
                 .placeNearTarget()
                 .pointAt(util.vector().topOf(wheat));
         scene.idle(120);
@@ -317,7 +317,7 @@ public class CrystalScenes {
         scene.overlay().showOutlineWithText(util.select()
                         .position(goldBudding)
                         .add(util.select().position(amethyst)), 110)
-                .text("With all six sides ticked at once, one Accelerator can serve several budding blocks surrounding it.")
+                .text("Since all six sides are ticked at once, one Accelerator can serve several Budding Blocks surrounding it.")
                 .placeNearTarget();
         scene.idle(120);
     }

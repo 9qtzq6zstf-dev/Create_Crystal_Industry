@@ -7,8 +7,10 @@ import com.minecart.yunxian.budding.BuddingFamilies;
 import com.minecart.yunxian.budding.BuddingFamilies.RegisteredFamily;
 import com.minecart.yunxian.ponder.scenes.CrystalScenes;
 import com.minecart.yunxian.ponder.scenes.MechanicalCleanerScenes;
+import com.minecart.yunxian.ponder.scenes.ResonanceScenes;
 import com.minecart.yunxian.ponder.scenes.SmartDrillScenes;
 import com.minecart.yunxian.registry.ModBlocks;
+import com.minecart.yunxian.registry.ModItems;
 
 import net.createmod.ponder.api.registration.PonderSceneRegistrationHelper;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -49,6 +51,21 @@ public class AllYunxianPonderScenes {
         // 5) 动力吸尘器
         blocks.forComponents(ModBlocks.MECHANICAL_CLEANER.get())
                 .addStoryBoard("mechanical_cleaner/mechanical_cleaner", MechanicalCleanerScenes::mechanicalCleaner,
+                        AllYunxianPonderTags.MACHINES);
+
+        // 6) 共振台：三张分镜 —— 台子本身、接了共振过滤器之后的过滤，以及用显示链接器把网络读出来
+        blocks.forComponents(ModBlocks.RESONANCE_TABLE.get())
+                .addStoryBoard("resonance_table/resonance_table", ResonanceScenes::resonanceTable,
+                        AllYunxianPonderTags.MACHINES)
+                .addStoryBoard("resonance_table/resonance_filter", ResonanceScenes::resonanceFilter,
+                        AllYunxianPonderTags.MACHINES)
+                .addStoryBoard("resonance_table/resonance_display", ResonanceScenes::resonanceDisplay,
+                        AllYunxianPonderTags.MACHINES);
+
+        // 7) 共振过滤器：同一条「过滤」分镜挂到物品上，鼠标停在物品上也能直接看
+        helper.withKeyFunction(BuiltInRegistries.ITEM::getKey)
+                .forComponents(ModItems.RESONANCE_FILTER.get())
+                .addStoryBoard("resonance_table/resonance_filter", ResonanceScenes::resonanceFilter,
                         AllYunxianPonderTags.MACHINES);
     }
 
