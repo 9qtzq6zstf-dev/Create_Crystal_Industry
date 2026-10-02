@@ -201,15 +201,15 @@ public final class BuddingGrowthHelper {
         }
         if (environment.hasDimensions()) {
             addLine(tooltip, Component.translatable("create_crystal_industry.goggles.growth_dimensions",
-                    EnvironmentDisplay.dimensions(environment)));
+                    highlight(EnvironmentDisplay.dimensions(environment))));
         }
         if (environment.hasIncludedBiomes()) {
             addLine(tooltip, Component.translatable("create_crystal_industry.goggles.growth_biomes",
-                    EnvironmentDisplay.biomes(environment)));
+                    highlight(EnvironmentDisplay.biomes(environment))));
         }
         if (environment.hasExcludedBiomes()) {
             addLine(tooltip, Component.translatable("create_crystal_industry.goggles.growth_biomes_excluded",
-                    EnvironmentDisplay.excludedBiomes(environment)));
+                    highlight(EnvironmentDisplay.excludedBiomes(environment))));
         }
     }
 
@@ -238,5 +238,15 @@ public final class BuddingGrowthHelper {
 
     private static void addLine(List<Component> tooltip, MutableComponent text) {
         CreateLang.builder().add(text.withStyle(ChatFormatting.GRAY)).forGoggles(tooltip, 1);
+    }
+
+    /**
+     * 把插进句子里的那几个名字标成淡紫，句子本身仍旧走 {@link #addLine} 的灰。
+     * <p>
+     * 这几行的"数据"是名字（下界 / 温暖群系 / …），"只在…生长得最快"只是套话——
+     * 颜色只给名字，扫一眼就能认出地盘，而不会整行晃眼。
+     */
+    private static Component highlight(Component names) {
+        return names.copy().withStyle(ChatFormatting.LIGHT_PURPLE);
     }
 }
