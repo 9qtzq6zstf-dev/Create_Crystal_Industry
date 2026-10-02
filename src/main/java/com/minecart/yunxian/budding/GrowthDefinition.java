@@ -162,16 +162,19 @@ public record GrowthDefinition(
      * 生长要消耗流体（母岩自带小罐）：每次成功生长扣 {@code costPerGrowth} mB，
      * 罐里不够就放弃这次生长，与远古残骸母岩的熔岩罐同款。
      * <p>
-     * {@code fluidOrTag} 写 {@code "minecraft:lava"} 这样的流体 id（按流体类型判定，
-     * 静止与流动变体都算）或 {@code "#minecraft:lava"} 这样的流体标签；
-     * 罐的容量与认哪种流体都记在这条定义里，方块那边照着建罐（脚本母岩是
-     * {@code ScriptedFluidBuddingBlockEntity}，见 {@code CustomBuddingOptions#needfluid}）。
+     * {@code fluidOrTag} 有三种写法：{@code "minecraft:lava"} 这样的流体 id（按流体类型判定，
+     * 静止与流动变体都算）、{@code "#minecraft:lava"} 这样的流体标签，以及
+     * {@code "create:potion[minecraft:potion_contents={potion:\"minecraft:swiftness\"}]"} 这样
+     * <b>流体 id + 数据组件</b>的写法（精确到某一种药水这类同一流体的不同变体）。
+     * 罐的容量与认哪种流体都记在这条定义里，方块那边照着建罐（方块实体是共享的
+     * {@code FluidTankBuddingBlockEntity}，见 {@code CustomBuddingOptions#needfluid}）。
      * <p>
      * <b>光写这一条不会扣流体</b>：引擎是按调用方给的付费钩子决定扣不扣的（{@link BuddingGrowthEngine#tryGrow}），
      * 自带家族走 {@code BuddingFamily.EnergyRequirement}，脚本母岩由 {@code ScriptedBuddingBlock} 自己接上。
      * 所以自己实现 {@code randomTick} 的方块写了本方法之后，记得在钩子里照着 {@link #fluid()} 扣。
      *
-     * @throws IllegalArgumentException 流体不存在、id 不合法，或两个数字不成立
+     * @throws IllegalArgumentException 流体不存在、id 不合法、组件写错（SNBT 语法错、
+     *                                  组件 id 不存在），或两个数字不成立
      *                                  （脚本写错会在 KubeJS 日志里直接看到）
      */
     public GrowthDefinition fluidRequirement(String fluidOrTag, int costPerGrowth, int capacity) {

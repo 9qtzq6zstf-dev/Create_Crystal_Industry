@@ -7,6 +7,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import com.minecart.yunxian.block.budding.EchoConvertingBuddingBlock;
+import com.minecart.yunxian.block.budding.FueledBuddingBlock;
 import com.minecart.yunxian.block.budding.GenericBuddingBlock;
 import com.minecart.yunxian.block.budding.RedstoneClusterBlock;
 import com.minecart.yunxian.block.budding.YunxianClusterBlock;
@@ -65,7 +66,7 @@ public final class BuddingFamilies {
     // ==================== 每型数值常量 ====================
     // 原先散落在各个母岩子类里，集中在此：调整任何一个母岩的手感都只改这一处。
     // 生长速度也在这一节：写在每个家族自己的 Growth.speed 里（见各工厂方法），
-    // 红石与青金石是快档、远古残骸是极慢档，其余都是正常档——脚本还能用
+    // 红石与青金石是快档、远古残骸是慢档，其余都是正常档——脚本还能用
     // CustomBudding.modify(...) 单独改某一块母岩。
 
     /** 石头/深板岩 → 对应矿石 */
@@ -275,10 +276,12 @@ public final class BuddingFamilies {
         List<BlockConversion> conversions = List.of(
                 BlockConversion.of(SPREAD_CHANCE, 1, Replacement.toSelf(() -> Blocks.ANCIENT_DEBRIS)).gated());
 
-        // 极慢档：它的晶簇掉下界合金碎片，按稀缺资源处理（想让下界合金量产就把这里改掉，
-        // 或用脚本 CustomBudding.modify('create_crystal_industry:ancient_debris_budding', ...) 单独改）
+        // 慢档（1/20）：它的晶簇掉下界合金碎片，按稀缺资源处理，所以比其余母岩慢一档。
+        // 再往下的极慢档（1/50）现在没有出厂成员，留给脚本与附属模组；
+        // 想让下界合金量产就把这里改掉，或用脚本
+        // CustomBudding.modify('create_crystal_industry:ancient_debris_budding', ...) 单独改
         Growth growth = new Growth(GrowthRule.STANDARD, LightRequirement.ANY,
-                EnergyRequirement.FREE, conversions, ClusterKind.STANDARD, 0, NETHER_ONLY, GrowthSpeed.VERY_SLOW,
+                EnergyRequirement.FREE, conversions, ClusterKind.STANDARD, 0, NETHER_ONLY, GrowthSpeed.SLOW,
                 LAVA_TANK);
         // 方块实体按"定义里有没有流体需求"选（见 GenericBuddingBlock#newBlockEntity），
         // 所以这里用不上专用的 BE 类型，共享展示 BE 只在没罐时才会被建出来
@@ -397,6 +400,13 @@ public final class BuddingFamilies {
         // 回响母岩需要 CAN_SUMMON 状态，只能由子类注册（见 EchoConvertingBuddingBlock 的类注释）
         if (spec.appearance().blockEntity() == BlockEntityKind.ECHO_DISPLAY) {
             return new EchoConvertingBuddingBlock(spec, properties,
+                    smallBud.get(), mediumBud.get(), largeBud.get(), cluster.get());
+        }
+        // 烧流体的母岩多一个 fueled 状态（同样只能由子类注册），客户端据此换 _unpowered 材质。
+        // 判据用家族表而不是运行时定义：方块类只能在构造期定，而脚本的 modify 是启动期才跑的
+        // （边界见 FueledBuddingBlock 的类注释）
+        if (spec.growth().fluid() != null) {
+            return new FueledBuddingBlock(spec, properties,
                     smallBud.get(), mediumBud.get(), largeBud.get(), cluster.get());
         }
         return new GenericBuddingBlock(spec, properties,

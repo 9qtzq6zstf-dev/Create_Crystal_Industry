@@ -136,8 +136,8 @@ The chance lives in the **family table** (each family's own `Growth.speed` in `B
 | --- | --- | --- |
 | Fast | 1/1, a successful roll always advances | Redstone, Lapis Lazuli |
 | Normal | 1/5, the same as vanilla Budding Amethyst | everything else |
-| Slow | 1/20 | no member by default (it is there for scripts and addons) |
-| Very Slow | 1/50 | Ancient Debris (its cluster drops Netherite Scrap, so it is treated as a scarce resource) |
+| Slow | 1/20 | Ancient Debris (its cluster drops Netherite Scrap, so it is treated as a scarce resource) |
+| Very Slow | 1/50 | no member by default (it is there for scripts and addons) |
 
 To retune one specific budding block, use KubeJS `CustomBudding.modify(...)` (section 6) instead of editing and recompiling the source; to retune a whole family, edit the family table.
 
@@ -439,16 +439,20 @@ Hitting any negation drops the position immediately; otherwise at least one posi
 
 | Argument | Form | Meaning |
 | --- | --- | --- |
-| Fluid | `'minecraft:lava'` or `'#minecraft:lava'` | A fluid id matches by **fluid type**, so both the still and the flowing variant of the same fluid count (bucketed or pumped in, either works); a `#` prefix writes a fluid tag and accepts every fluid in it |
+| Fluid | `'minecraft:lava'`, `'#minecraft:lava'` or `'create:potion[minecraft:potion_contents={potion:"minecraft:swiftness"}]'` | A fluid id matches by **fluid type**, so both the still and the flowing variant of the same fluid count (bucketed or pumped in, either works); a `#` prefix writes a fluid tag and accepts every fluid in it; a bracketed **data component** list (same shape as vanilla item syntax, SNBT values) narrows it to one concrete variant — that is how Create's single potion fluid is split into individual potions |
 | Cost | integer mB, default 250 | Drained per successful growth; must be ≥ 1 |
 | Capacity | integer mB, default 1000 | Tank size; must be ≥ the cost, otherwise it could never grow a single stage (that combination throws immediately) |
 
 Passing only the fluid (`needfluid('minecraft:lava')`) uses the default 250 / 1000, the same price as Budding Ancient Debris (one bucket). A misspelled fluid throws right away instead of quietly creating a block that never grows.
 
+A **data component** list matches as a **subset**: the fluid in the tank only has to *contain* those components, extra ones do not matter (identical to NeoForge's `DataComponentFluidIngredient.of(false, stack)`, which is what Create uses internally). A **tag cannot carry components** — a tag may hold several fluids and one set of components cannot speak for all of them, so that combination throws. The typical use is Create's potions: every potion shares the single `create:potion` fluid, so `needfluid('create:potion')` can only mean "any potion", while the bracketed form above rejects the other potions and makes the Goggles and JEI say "Potion of Swiftness" instead of a flat "Potion". The potion **level** is not part of vanilla's name (Swiftness I and II are both `item.minecraft.potion.effect.swiftness`; the level only shows on the effect lines), and this line exists to pin down exactly which one, so the level is appended following vanilla's own `potion.potency` convention — it reads "Potion of Swiftness II".
+
+With a **fluid id**, the Goggles and JEI show the fluid's translated name (`minecraft:lava` -> "Lava", `create:honey` -> "Honey" — the fluid carries its own translated name, this mod does not have to do anything). A **tag** has no name of its own, so there is a separate key with a fallback, `create_crystal_industry.fluid_tag.<namespace>.<path>`, and this mod ships the common ones already: `#minecraft:lava` / `#minecraft:water`, plus the NeoForge common tags `#c:*` (water, lava, milk, potion, the various stews, experience, ... — `#c:chocolate` and `#c:tea` among them, contributed by Create; only `#c:gaseous` and `#c:hidden_from_recipe_viewers` are deliberately left out, as they describe a fluid's nature rather than naming one). Other tags can be translated by a modpack or addon, and an untranslated one is shown verbatim as `#mymod:syrup`.
+
 How fluid gets in:
 
 - **Pipes and pumps**: the block exposes the NeoForge fluid capability, so Create's fluid pipes, pumps or any machine that understands it can fill and drain it;
-- **Held containers, right-click**: a bucket fills it or scoops it out. One bucket is 1000 mB, so a bucket only helps at "empty" or "full"; odd amounts like half a bucket need pipes (same as Budding Ancient Debris). When the tank will not take the fluid (wrong fluid) or has nothing to scoop, the block swallows the click — nothing is dumped next to the budding block; sneak and right-click if you want to pour it there on purpose;
+- **Held containers, right-click**: a bucket fills it or scoops it out. One bucket is 1000 mB, so a bucket only helps at "empty" or "full"; odd amounts like half a bucket need pipes (same as Budding Ancient Debris). When the tank will not take the fluid (wrong fluid) or has nothing to scoop, the block swallows the click — nothing is dumped next to the budding block; sneak and right-click if you want to pour it there on purpose. **Potions have to go through pipes**: a potion bottle exposes no item fluid capability (Create only registers one for buckets), so right-clicking with one does not fill the tank;
 - **Comparators** read the level: 0 when empty, otherwise 1–15 proportionally;
 - **Engineer's Goggles** gain two lines: the current amount and the cost per growth, plus a red "it will not grow" line while the tank cannot pay.
 
@@ -472,7 +476,7 @@ The same options can retune a budding block that is **already registered** — a
 // kubejs/startup_scripts/my_tweaks.js
 StartupEvents.registry('block', event => {
   CustomBudding.modify('create_crystal_industry:ancient_debris_budding', new CustomBuddingOptions()
-    .chance(20)                                 // was the Very Slow tier (1/50)
+    .chance(10)                                 // the default is the Slow tier (1/20)
     .growthDimensions('minecraft:overworld')    // also drop the "Nether only" restriction
     .needfluid('none'))                         // and stop burning lava
 })
@@ -573,7 +577,7 @@ A runnable example also ships in the local development directory: `run/kubejs/st
 Every trait of a budding block — light, water, power and fluid requirements, growth rules, block conversion, light and sound, drops — lives in a single table in
 `src/main/java/com/minecart/yunxian/budding/BuddingFamilies.java`. **Adding a budding family amounts to adding one entry to that table**; block registration, growth logic, Goggles readouts, creative tabs, world generation switches and Ponder entries are all derived from it.
 
-Growth speed is in that table too: pass a `GrowthSpeed` tier to that entry's `Growth(...)` (`NORMAL` / `FAST` / `SLOW` / `VERY_SLOW`, see `BuddingFamily.GrowthSpeed`) — omitting it means Normal. Redstone and Lapis Lazuli are Fast, Ancient Debris is Very Slow, everything else is Normal. To retune an **existing** budding block (built-in families included) you do not have to touch the table: a script can call `CustomBudding.modify(...)`.
+Growth speed is in that table too: pass a `GrowthSpeed` tier to that entry's `Growth(...)` (`NORMAL` / `FAST` / `SLOW` / `VERY_SLOW`, see `BuddingFamily.GrowthSpeed`) — omitting it means Normal. Redstone and Lapis Lazuli are Fast, Ancient Debris is Slow, everything else is Normal (the Very Slow tier has no built-in member). To retune an **existing** budding block (built-in families included) you do not have to touch the table: a script can call `CustomBudding.modify(...)`.
 
 ### Data Generation
 

@@ -136,8 +136,8 @@
 | --- | --- | --- |
 | 快 | 1/1，抽中必定推进 | 红石、青金石 |
 | 正常 | 1/5，与原版紫水晶母岩同速 | 其余全部 |
-| 慢 | 1/20 | 出厂成员为空（留给脚本与附属模组用） |
-| 极慢 | 1/50 | 远古残骸（它的晶簇掉下界合金碎片，按稀缺资源处理） |
+| 慢 | 1/20 | 远古残骸（它的晶簇掉下界合金碎片，按稀缺资源处理） |
+| 极慢 | 1/50 | 出厂成员为空（留给脚本与附属模组用） |
 
 想单独调某一块母岩的概率，用 KubeJS 的 `CustomBudding.modify(...)`（见第六节），不必改源码重编译；整族一起调就直接改家族表。
 
@@ -438,16 +438,20 @@ StartupEvents.registry('block', event => {
 
 | 参数 | 写法 | 说明 |
 | --- | --- | --- |
-| 流体 | `'minecraft:lava'` 或 `'#minecraft:lava'` | 流体 id 按**流体类型**判定，同一种流体的静止与流动变体都算（桶灌的、管道抽的都认）；加 `#` 前缀则写流体标签，一次收下标签里的全部流体 |
+| 流体 | `'minecraft:lava'`、`'#minecraft:lava'` 或 `'create:potion[minecraft:potion_contents={potion:"minecraft:swiftness"}]'` | 流体 id 按**流体类型**判定，同一种流体的静止与流动变体都算（桶灌的、管道抽的都认）；加 `#` 前缀则写流体标签，一次收下标签里的全部流体；方括号里写**数据组件**（与原版物品的写法一致，值用 SNBT）则精确到"哪一种"——创造那一整个药水流体就靠它分出具体药水 |
 | 每次消耗 | 整数 mB，默认 250 | 每次成功生长扣多少，必须 ≥ 1 |
 | 容量 | 整数 mB，默认 1000 | 罐的容量，必须 ≥ 每次消耗，否则永远长不出来（这种写法会当场报错） |
 
 只传流体（`needfluid('minecraft:lava')`）时，消耗与容量用默认的 250 / 1000，正好与远古残骸母岩同价（一桶）。流体名写错会当场报错，而不是安静地做出一个永远不长的方块。
 
+写**数据组件**时判定是**子集**：罐里那份流体只要含有这些组件就算数，多出来的组件不影响（与 NeoForge 的 `DataComponentFluidIngredient.of(false, stack)` 一致，创造内部也是这么写的）。**标签不能带组件**——标签里可能有好几种流体，一条组件说明不了它们全部，这种写法会当场报错。典型用途就是机械动力的药水：所有药水共用 `create:potion` 一个流体，`needfluid('create:potion')` 只能表达"任意药水"，写成上面那种带组件的写法才拦得住别的药水，护目镜与 JEI 也才会显示「迅捷药水」而不是笼统的「药水」。药水的**等级**原版名字里本来就没有（迅捷 I 与迅捷 II 都叫 `item.minecraft.potion.effect.swiftness`，等级只写在效果那几行），而这一行是"只认哪一种"，所以这里照原版 `potion.potency` 的习惯补了后缀——显示成「迅捷药水 II」。
+
+写**流体 id** 时，护目镜与 JEI 页面显示的是流体的翻译名（`minecraft:lava` → 「熔岩」，`create:honey` → 「蜂蜜」——流体自己带了翻译名，不需要本模组做什么）。写**标签**时标签没有自己的名字，所以另有一条带兜底的翻译键 `create_crystal_industry.fluid_tag.<命名空间>.<路径>`：本模组已经把常见的那批都备好了——原版的 `#minecraft:lava` / `#minecraft:water`，加上 NeoForge 公共标签 `#c:*`（水、熔岩、奶、药水、几种炖菜、经验等；`#c:chocolate` 与 `#c:tea` 是机械动力补进来的。只有 `#c:gaseous`、`#c:hidden_from_recipe_viewers` 这两条描述流体性质、不表示某种具体流体的标签没翻，故意让它退回字面写法）；别的标签由整合包/附属模组补自己的语言键，没人补就原样显示 `#mymod:syrup`。
+
 流体怎么进罐：
 
 - **管道 / 泵**：方块实现了 NeoForge 的流体能力，Create 的流体管道、泵，或任何认这个能力的机器都能直接灌进去、抽出来；
-- **手持容器右键**：桶灌进去、舀出来。一桶 = 1000 mB，所以桶只在「罐空」或「罐满」时管用，半桶这种零头得靠管道补（与远古残骸母岩一致）。罐收不下（拿错流体）或没得舀时，这一下会被方块自己吞掉，液体**不会**被倒在母岩旁边——想故意往旁边倒液体就潜行着右键；
+- **手持容器右键**：桶灌进去、舀出来。一桶 = 1000 mB，所以桶只在「罐空」或「罐满」时管用，半桶这种零头得靠管道补（与远古残骸母岩一致）。罐收不下（拿错流体）或没得舀时，这一下会被方块自己吞掉，液体**不会**被倒在母岩旁边——想故意往旁边倒液体就潜行着右键。**药水得走管道**：药剂瓶没有物品流体能力（创造只给杂物桶注册了），手持右键灌不进去；
 - **比较器**读液位：空罐 0，其余按比例给 1–15；
 - **护目镜**多两行：当前流体量与每次生长的消耗；不够一次时额外红字提示「当前不会生长」。
 
@@ -471,7 +475,7 @@ StartupEvents.registry('block', event => {
 // kubejs/startup_scripts/my_tweaks.js
 StartupEvents.registry('block', event => {
   CustomBudding.modify('create_crystal_industry:ancient_debris_budding', new CustomBuddingOptions()
-    .chance(20)                                 // 极慢档（1/50）改快
+    .chance(10)                                 // 出厂是慢档（1/20），再快一倍
     .growthDimensions('minecraft:overworld')    // 顺手解掉"只在下界满速"
     .needfluid('none'))                         // 不再扣熔岩
 })
@@ -572,7 +576,7 @@ event.create('my_budding').randomTick(ctx => {
 母岩的全部特点——光照/含水/充能要求、生长规则、方块转化、亮度与音效、掉落物——集中在
 `src/main/java/com/minecart/yunxian/budding/BuddingFamilies.java` 这一张表里。**新增一个母岩家族等于在表里加一条**，方块注册、生长逻辑、护目镜提示、创造模式标签、世界生成开关与 Ponder 条目都会自动派生。
 
-生长速度也在这张表里：给那一条的 `Growth(...)` 传一个 `GrowthSpeed` 档位即可（`NORMAL` / `FAST` / `SLOW` / `VERY_SLOW`，见 `BuddingFamily.GrowthSpeed`）；不写就是「正常」。红石与青金石是快档、远古残骸是极慢档，其余都是正常档。想改**已经存在**的母岩（含自带家族）的概率与其它生长参数，不必动这张表——脚本用 `CustomBudding.modify(...)` 就行。
+生长速度也在这张表里：给那一条的 `Growth(...)` 传一个 `GrowthSpeed` 档位即可（`NORMAL` / `FAST` / `SLOW` / `VERY_SLOW`，见 `BuddingFamily.GrowthSpeed`）；不写就是「正常」。红石与青金石是快档、远古残骸是慢档，其余都是正常档（极慢档没有出厂成员）。想改**已经存在**的母岩（含自带家族）的概率与其它生长参数，不必动这张表——脚本用 `CustomBudding.modify(...)` 就行。
 
 流体消耗同样是表里的一项：给 `Growth(...)` 传一个 `FluidRequirement`（如远古残骸的 `FluidRequirement.ofTag(FluidTags.LAVA, 250, 1000)`），方块就会自带流体罐——通用罐的合法方块表是按"家族表里声明了流体"自动算出来的，不必再登记什么。
 

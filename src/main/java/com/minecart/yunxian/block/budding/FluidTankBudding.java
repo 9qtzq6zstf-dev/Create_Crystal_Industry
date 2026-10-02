@@ -3,6 +3,7 @@ package com.minecart.yunxian.block.budding;
 import com.minecart.yunxian.budding.FluidRequirement;
 
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -17,6 +18,20 @@ import org.jetbrains.annotations.Nullable;
  * 于是加罐、改参数、取消罐都能在启动期由脚本改掉。
  */
 public interface FluidTankBudding {
+
+    /**
+     * 罐里够不够一次生长：{@code false} = 客户端渲染"燃料不足"那套静态贴图
+     * （远古残骸母岩的 {@code ancient_debris_budding_side/top_unpowered}）。
+     * <p>
+     * <b>想显示这一位的母岩必须自己把它加进 {@code createBlockStateDefinition}</b>
+     * （本模组里是 {@code FueledBuddingBlock}，见那个类的注释：方块状态只能在构造器里注册，
+     * 而 {@code createBlockStateDefinition} 早于子类字段赋值，读不到家族表）。
+     * 没登记的母岩（脚本注册的 {@code ScriptedBuddingBlock}）方块实体那边会先
+     * {@code hasProperty} 判空再跳过，不换材质也不报错——脚本方块不能加这一位，
+     * 因为它们的 blockstate JSON 由脚本作者自己写，凭空多一条属性会让原版加载器
+     * 报"缺变体"并把它渲染成缺失模型。
+     */
+    BooleanProperty FUELED = BooleanProperty.create("fueled");
 
     /**
      * 本方块当前生效的流体需求；没配（或已被脚本取消）时返回 {@code null}。

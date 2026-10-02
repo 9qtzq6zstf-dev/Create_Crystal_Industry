@@ -1,6 +1,9 @@
 {
   "variants": {
-    "": {
+    "fueled=false": {
+      "model": "create_crystal_industry:block/ancient_debris/ancient_debris_budding_unpowered"
+    },
+    "fueled=true": {
       "model": "create_crystal_industry:block/ancient_debris/ancient_debris_budding"
     }
   }

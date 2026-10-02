@@ -248,7 +248,7 @@ public final class CustomBudding {
      * 只改脚本显式写了的那几项，其余保持方块现状。
      * <pre>{@code
      * CustomBudding.modify('create_crystal_industry:ancient_debris_budding', new CustomBuddingOptions()
-     *     .chance(20)                       // 极慢档（1/50）改快一点
+     *     .chance(10)                       // 出厂是慢档（1/20），再快一倍
      *     .growthDimensions('minecraft:overworld')   // 顺便解掉"只在下界满速"
      *     .needfluid('none'))               // 不再扣熔岩
      * }</pre>
@@ -1017,15 +1017,25 @@ public final class CustomBudding {
          * <pre>{@code
          * .needfluid('minecraft:lava', 250, 1000)   // 认熔岩：每次生长扣 250 mB，最多存 1 B
          * .needfluid('#minecraft:lava', 500, 4000)  // 认标签：标签覆盖的全部流体都算
+         * .needfluid('create:potion[minecraft:potion_contents={potion:"minecraft:swiftness"}]')
+         *                                           // 认"迅捷 II 药水"这一种：创造的药水共用
+         *                                           // 一个流体，只有带上组件才分得开
          * }</pre>
          * 流体怎么写：{@code 'minecraft:lava'} 这样的 id（按流体类型判定，静止与流动变体都算，
-         * 所以桶灌的、管道抽的都认）或 {@code '#minecraft:lava'} 这样的标签；流体名写错会当场报错。
+         * 所以桶灌的、管道抽的都认）、{@code '#minecraft:lava'} 这样的标签，或
+         * {@code '流体id[组件id=值]'} 这样<b>带数据组件</b>的写法（方括号里与原版物品的写法一致，
+         * 值用 SNBT）。名字写错、组件写错都会当场报错，不会安静地做出一个永远不长的方块。
+         * <p>
+         * 带组件时判定是<b>子集</b>：罐里那份流体只要含有这些组件就算数，多出来的组件不影响
+         * （与 NeoForge 的 {@code DataComponentFluidIngredient.of(false, stack)} 一致）。
+         * <b>标签不能带组件</b>——标签里可能有好几种流体，一条组件说明不了它们全部。
          * <p>
          * {@code capacity} 必须 ≥ {@code costPerGrowth}，否则罐永远装不满一次生长，
          * 这种配置会直接报错而不是造出一个不长的方块。
          * <p>
          * 流体怎么进罐：管道/泵（方块实现了 NeoForge 流体能力）、手持容器右键（桶灌满、舀空；
          * 一桶 = 1000 mB，半桶这种零头只能用管道补），比较器读液位，戴护目镜能看到当前量。
+         * <b>药水得用管道送</b>：药剂瓶没有物品流体能力（创造只给杂物桶注册了），手持右键灌不进去。
          * <p>
          * 不传第三个数时是 {@code .needfluid(流体)}：消耗与容量用默认的 250 / 1000。
          * 传 {@code null} = 不要流体需求（与不写这项等价）。

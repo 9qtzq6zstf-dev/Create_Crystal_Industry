@@ -186,7 +186,7 @@ public record BuddingFamily(
      * 生长速度档位：随机刻抽中母岩时，有 {@code 1/chance()} 的概率推进一级。
      * <p>
      * 一个母岩属于哪一档由家族表的 {@link Growth#speed()} 声明——红石与青金石是快档、
-     * 远古残骸是极慢档、其余都是正常档；脚本还能用 {@code CustomBudding.modify(...)}
+     * 远古残骸是慢档、其余都是正常档（极慢档没有出厂成员）；脚本还能用 {@code CustomBudding.modify(...)}
      * 把某一块母岩改成别的档位（甚至任意整数概率，那时界面改用 {@link #nearest(int)} 的定性说法）。
      * <p>
      * 本枚举同时也是<b>界面词汇</b>：护目镜与 JEI 的概率行只说「缓慢」「很快」这类话，

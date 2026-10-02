@@ -1,6 +1,7 @@
 package com.minecart.yunxian.datagen;
 
 import com.minecart.yunxian.Yunxian;
+import com.minecart.yunxian.block.budding.FluidTankBudding;
 import com.minecart.yunxian.budding.BuddingFamilies;
 import com.minecart.yunxian.budding.BuddingFamilies.RegisteredFamily;
 import com.minecart.yunxian.budding.BuddingFamilies.Stage;
@@ -47,21 +48,51 @@ public class ModBlockStateProvider extends BlockStateProvider {
         }
     }
 
-    /** 母岩本体：单变体方块 + 对应物品模型 */
+    /**
+     * 母岩本体：方块模型与物品模型。
+     * <p>
+     * 烧流体的家族（{@link BuddingFamily.Growth#fluid()} 非空，对应 {@code FueledBuddingBlock}）
+     * 多一套"燃料不足"外观，挂在 {@code FUELED=false} 上：贴图按
+     * {@code <名字>_side_unpowered} / {@code <名字>_top_unpowered}（柱体）或 {@code <名字>_unpowered}
+     * （六面体）取名，与"有燃料"那套（带动画）并列。
+     * <p>
+     * 贴图不做存在性检查——声明了流体需求却没画这套贴图的家族会让 {@code runData} 当场失败，
+     * 比默默渲染成缺失模型好。
+     */
     private void buddingBlock(RegisteredFamily family) {
         BuddingFamily spec = family.spec();
         String id = spec.id();
         String name = spec.buddingId();
         String modelPath = "block/" + id + "/" + name;
+        boolean column = spec.buddingModel() == BuddingFamily.BuddingModel.CUBE_COLUMN;
 
-        ModelFile model = spec.buddingModel() == BuddingFamily.BuddingModel.CUBE_COLUMN
+        ModelFile model = column
                 ? models().cubeColumn(modelPath,
                         modLoc("block/" + id + "/" + name + "_side"),
                         modLoc("block/" + id + "/" + name + "_top"))
                 : models().cubeAll(modelPath, modLoc("block/" + id + "/" + name));
 
-        // simpleBlockWithItem 会顺带生成 parent 指向方块模型的物品模型
-        simpleBlockWithItem(family.budding().get(), model);
+        Block block = family.budding().get();
+        if (spec.growth().fluid() == null) {
+            // simpleBlockWithItem 会顺带生成 parent 指向方块模型的物品模型
+            simpleBlockWithItem(block, model);
+            return;
+        }
+
+        String unpoweredPath = modelPath + "_unpowered";
+        ModelFile unpowered = column
+                ? models().cubeColumn(unpoweredPath,
+                        modLoc("block/" + id + "/" + name + "_side_unpowered"),
+                        modLoc("block/" + id + "/" + name + "_top_unpowered"))
+                : models().cubeAll(unpoweredPath, modLoc("block/" + id + "/" + name + "_unpowered"));
+
+        // 必须显式写两条带属性的变体：simpleBlock 那套写出来的空键 "" 会匹配所有状态，
+        // 把 fueled=false 一并吞掉，而且 VariantBlockStateBuilder 只在漏状态时才拦，不会报错
+        getVariantBuilder(block)
+                .partialState().with(FluidTankBudding.FUELED, true).modelForState().modelFile(model).addModel()
+                .partialState().with(FluidTankBudding.FUELED, false).modelForState().modelFile(unpowered).addModel();
+        // 物品模型仍旧指"有燃料"那套（与 simpleBlockWithItem 内部做的是同一件事）
+        simpleBlockItem(block, model);
     }
 
     /** 芽与晶簇：六向变体（不含 waterlogged）+ cross 模型 + 物品模型 */

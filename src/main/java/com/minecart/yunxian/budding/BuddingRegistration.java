@@ -71,7 +71,7 @@ public final class BuddingRegistration {
 
     /**
      * 声明一个<b>带流体罐</b>的母岩方块（生长要消耗流体，罐由本模组的
-     * {@code ScriptedFluidBuddingBlockEntity} 提供）：它进的是流体罐那个方块实体类型，
+     * {@code FluidTankBuddingBlockEntity} 提供）：它进的是流体罐那个方块实体类型，
      * <b>不要再调</b> {@link #declareBuddingBlock(ResourceLocation)}——一个方块登记一张表就够了，
      * 两边都写在排查"实体类型怎么串了"时只会添乱。
      * <p>

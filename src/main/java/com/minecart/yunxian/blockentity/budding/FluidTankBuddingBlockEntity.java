@@ -77,6 +77,9 @@ public class FluidTankBuddingBlockEntity extends BlockEntity implements IHaveGog
                 // 客户端读同步包走的是 readFromNBT（直接写字段，不经这里），所以这条判断平时不会命中；
                 // 留着是兜底：真在客户端被调到时也只落盘、不把包原样发回去
                 if (level != null && !level.isClientSide) {
+                    // 先顶方块状态再发方块实体包：前者是给"换贴图"的（客户端按 fueled 选模型），
+                    // 后者才是护目镜要读的液位，两个都得发
+                    syncFueledState();
                     level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS);
                 }
             }
@@ -89,18 +92,56 @@ public class FluidTankBuddingBlockEntity extends BlockEntity implements IHaveGog
     }
 
     /**
+     * 罐里够不够再长一次：量不少于一次消耗、且流体类型是罐收的那种。
+     * <p>
+     * 类型不对也算"不够"：脚本可能用 {@code modify} 把这块母岩要的流体换过，而罐是方块实体
+     * 创建时建的——里面留着的旧流体既不会被消耗、管道也抽得出来，此时它长不了，
+     * 材质与护目镜都该照实报红。
+     * <p>
+     * 没有流体需求（旧罐退化来的空罐）视作永远够：这一位对那块母岩没有意义，
+     * 显示成"燃料不足"反而误导。
+     */
+    private boolean hasEnoughForOneGrowth() {
+        return requirement == null
+                || (tank.getFluidAmount() >= requirement.costPerGrowth() && requirement.matches(tank.getFluid()));
+    }
+
+    /**
+     * 把 {@link FluidTankBudding#FUELED} 顶成与罐里实时一致——客户端就是靠它换
+     * {@code _unpowered} 贴图的。
+     * <p>
+     * 只在值真的变了才写：{@code setBlock} 会顶一次客户端更新，白写就是白发。
+     * 没登记这一位的母岩（脚本方块）直接跳过，不换材质也不报错，理由见
+     * {@link FluidTankBudding#FUELED}。
+     * <p>
+     * 不担心把罐子写坏：同一个方块只换状态时原版会保留方块实体
+     * （{@code LevelChunk#setBlockState} 只在方块本身变了才 remove），也不会重入
+     * {@link #onContentsChanged()}。
+     */
+    private void syncFueledState() {
+        BlockState state = getBlockState();
+        if (!state.hasProperty(FluidTankBudding.FUELED)) {
+            return;
+        }
+        boolean fueled = hasEnoughForOneGrowth();
+        if (state.getValue(FluidTankBudding.FUELED) != fueled) {
+            level.setBlock(worldPosition, state.setValue(FluidTankBudding.FUELED, fueled), Block.UPDATE_CLIENTS);
+        }
+    }
+
+    /**
      * 尝试为一次生长扣掉一份流体。
      *
-     * @return 罐里不足 {@link FluidRequirement#costPerGrowth()} 时返回 false，表示放弃这次生长
+     * @return 罐里不足 {@link FluidRequirement#costPerGrowth()}（或流体类型不对）时返回 false，表示放弃这次生长
      */
     public boolean tryConsumeGrowthCost() {
         if (requirement == null || level == null || level.isClientSide()) {
             return false;
         }
-        if (tank.getFluidAmount() < requirement.costPerGrowth() || !requirement.matches(tank.getFluid())) {
+        if (!hasEnoughForOneGrowth()) {
             return false;
         }
-        // EXECUTE 会经 onContentsChanged 落盘并同步给客户端
+        // EXECUTE 会经 onContentsChanged 落盘、同步给客户端，并顺手顶掉 fueled 状态
         tank.drain(requirement.costPerGrowth(), FluidAction.EXECUTE);
         return true;
     }
@@ -203,6 +244,12 @@ public class FluidTankBuddingBlockEntity extends BlockEntity implements IHaveGog
      * 生长参数（速度 / 光照 / 含水）与生长环境也在这里一起补上：那几行本来是共享展示 BE
      * （{@code BuddingGrowthBlockEntity}）代劳的，带罐的母岩用的是本类，得自己记得调，
      * 否则护目镜上会少几行。
+     * <p>
+     * <b>流体名报"罐里那一桶"的实名</b>（{@link FluidRequirement#displayNameOf}），只有空罐或流体不对时
+     * 才报需求的名字。流体的名字是<b>带栈</b>的（{@code FluidType#getDescription(FluidStack)}）：
+     * 机械动力那一种药水流体就是靠它把笼统的「药水」细分成「迅捷药水」「力量药水」等具体药水，
+     * 而只报 {@code FluidType} 的通用名会让所有药水看起来一模一样；药水的<b>等级</b>
+     * （迅捷 I / 迅捷 II）名字里本来也没有，由那个方法照原版习惯补上后缀。
      */
     @Override
     public boolean addToGoggleTooltip(List<Component> tooltip, boolean isPlayerSneaking) {
@@ -221,9 +268,14 @@ public class FluidTankBuddingBlockEntity extends BlockEntity implements IHaveGog
         // 所以这里如实报红，别让玩家对着 1000/1000 的绿字纳闷它为什么不长
         boolean rightFluid = amount <= 0 || requirement.matches(tank.getFluid());
         boolean enough = rightFluid && amount >= requirement.costPerGrowth();
+        // 罐里装着对的东西就报它的实名（药水借此细分成具体药水、并补上等级后缀，见方法注释）；
+        // 空罐与装错东西时仍旧报需求的名字——那正是"该灌什么 / 该换成什么"的提示
+        Component fluidLabel = rightFluid && amount > 0
+                ? FluidRequirement.displayNameOf(tank.getFluid())
+                : requirement.displayName();
         CreateLang.builder()
                 .add(Component.translatable("create_crystal_industry.goggles.scripted.fluid",
-                                requirement.displayName(), amount, requirement.capacity())
+                                fluidLabel, amount, requirement.capacity())
                         .withStyle(enough ? ChatFormatting.GREEN : ChatFormatting.RED))
                 .forGoggles(tooltip, 1);
         CreateLang.builder()
