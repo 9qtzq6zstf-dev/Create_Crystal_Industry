@@ -10,11 +10,11 @@ Vanilla's amethyst budding mechanic, generalized to the rest of the ore table. A
 
 ## 1. Budding Blocks
 
-A budding block rolls for growth independently on each of its six faces. An empty face grows a **Small Bud**; an existing bud advances along **Small Bud → Medium Bud → Large Bud → Cluster**, with the cluster as the final stage. Rolls are driven by random ticks, and a successful roll advances one stage. The budding block itself is not consumed, so the face it occupies stays available after you harvest the cluster.
+A budding block rolls for growth independently on each of its six faces. An empty face grows a Small Bud; an existing bud advances through Medium Bud, Large Bud and finally Cluster. Rolls are driven by random ticks, and a successful roll advances one stage. The budding block itself is not consumed, so it keeps growing after each harvest.
 
 ### Budding Blocks at a Glance
 
-"Adjacent Conversion" works as follows: each random tick the budding block rolls a 1-in-20 chance; on success it picks **one random position within a radius of 1 (a 3×3×3 volume)** and converts it to the matching ore if that position holds Stone or Deepslate. Output therefore depends on how much of that volume is Stone or Deepslate — burying the budding block in stone raises the hit rate. Budding Echo uses a different radius and chance, noted in the table.
+"Adjacent Conversion" follows a simple rule: each random tick the budding block rolls a 1-in-20 chance, and on success it picks one random position within a radius of 1 (a 3×3×3 volume), converting it to the matching ore if that position holds Stone or Deepslate. Output therefore depends on how much of that volume is Stone or Deepslate, so burying the budding block in stone raises the hit rate. Budding Echo uses a different radius and chance, noted in the table.
 
 | Budding Block | Extra Growth Condition | Cluster Output | Adjacent Conversion |
 | --- | --- | --- | --- |
@@ -45,33 +45,31 @@ Drop rules:
 
 The budding block itself cannot be collected with ordinary tools. The Smart Drill's Silk Touch mode is the only way to obtain it, described in section 3.
 
-Three block properties are worth noting. Budding Redstone, its buds and its cluster all emit a redstone signal (15 from the budding block, then 3 / 7 / 11 from the buds and 15 from the cluster), so they work directly as a redstone source. Budding Glowstone, its buds and its cluster all emit light (15 from the budding block, then 3 / 7 / 11 from the buds and 15 from the cluster). Budding Echo's buds and cluster deliberately emit no light at all: any emission would occupy the very growth space they need.
+Budding Redstone, its buds and its cluster all emit a redstone signal (15 from the budding block and the cluster, 3 / 7 / 11 from the three bud stages), so they work directly as a redstone source. Budding Glowstone and its stages emit light at the same levels. Budding Echo's buds and cluster deliberately emit no light at all: any emission would occupy the very growth space they need.
 
 ### The Lava Tank of Budding Ancient Debris
 
-Budding Ancient Debris is the only built-in budding block that **burns lava**. The block itself is a fluid container holding **1 B (1000 mB)**, and lava is all it accepts — nothing else can be piped in or drawn out.
+Budding Ancient Debris is the only built-in budding block that burns lava. The block itself is a fluid container holding 1 B, and lava is all it accepts. Each successful growth costs 250 mB, and with less than that in the tank nothing grows, which is why the ones generated in the Nether start empty. 1 B is four growths.
 
-Its tank parameters live in the family table (the `LAVA_TANK` constant in `BuddingFamilies`: lava, 250 mB, 1 B), and **scripted budding blocks use the very same tank** — `needfluid` declares the same `FluidRequirement`, and the block entity, the payment hook, the Goggles readout and the comparator all run through one code path. A script can therefore give **any existing budding block** a fluid cost, change its parameters, or drop Ancient Debris's own — see "Fluid Consumption" and "Modifying an Existing Budding Block" in section 6.
+- **Getting lava in and out**: pipes (via the NeoForge fluid capability) or right-clicking with a bucket. One bucket is exactly the tank's capacity, so buckets only work on a full or an empty tank and the leftovers have to be topped up by pipe.
+- **Nothing spills when it will not fit**: with the wrong fluid, or with nothing to pour or scoop, the block swallows the click and the bucket's contents are not dumped next to the budding block. To deliberately pour fluid beside it, sneak and right-click.
+- **Reading the level**: Engineer's Goggles show the level and the per-growth cost; a comparator emits a 1–15 signal proportional to it.
 
-- **Getting lava in**: pipes (Create pumps and fluid pipes, via the NeoForge fluid capability) or right-clicking with a lava bucket.
-- **Getting lava out**: right-clicking with an empty bucket. Buckets only work on an **empty** tank (pour in) or a **full** one (scoop out) — one bucket is exactly the tank's capacity, so the 750 / 500 / 250 leftovers have to be topped up by pipe.
-- **Nothing spills when it will not fit**: with the wrong fluid (pouring water onto a lava tank), or when the tank is already full / has nothing to scoop, the block swallows the click — the bucket's contents are **not** dumped next to the budding block. To deliberately pour fluid beside it, sneak and right-click (vanilla skips the block interaction while sneaking).
-- **Cost**: **250 mB** per successful growth; with less than that in the tank, the growth simply does not happen (which is why the ones generated in the Nether start empty). 1 B = 4 growths.
-- **Reading the level**: Engineer's Goggles show the level and the per-growth cost; a comparator emits a 1–15 signal proportional to the level.
+Scripted budding blocks use the very same tank, see "Fluid Consumption" and "Modifying an Existing Budding Block" in section 6.
 
-The lava travels with the block but **not with the item**: breaking the block does not preserve it, and schematics always paste an empty tank (this block entity does not implement Create's `PartialSafeNBT`, so schematics skip its data by default).
+The lava travels with the block but not with the item. Breaking the block loses it, and schematics always paste an empty tank.
 
 ### Arclight and Current Slurry
 
-Budding Arclight is the only budding block that **runs on FE**. It holds **1,000,000 FE** internally and spends **10,000 FE** per successful growth; with less than that stored, nothing grows (so it never charges itself — wire it up first). It is **receive-only**: a converter that turns power into matter, not a battery. Use the Crystal Battery if you want to store FE.
+Budding Arclight is the only budding block that runs on FE. It holds 1,000,000 FE internally and spends 10,000 FE per successful growth, and with less than that stored nothing grows. It is receive-only, a converter that turns power into matter rather than a battery. Use the Crystal Battery if you want to store FE.
 
-- **Powering it**: any NeoForge FE source works, on all six faces; it accepts at most 10,000 FE per tick (one growth's worth per second).
-- **Output**: the cluster drops 1 **Arclight**, and **Fortune does not apply** (the only cluster in this mod that ignores it — Arclight is bought with FE, so letting Fortune multiply it would be multiplying the FE input for free). Arclight is an **item only** — it has no block form.
-- **Pressing**: put one Arclight in a Basin under a **Mechanical Press**, **superheated** (a Blaze Burner fed a Blaze Cake) → **500 mB of Current Slurry**. The recipe type is `create:compacting`, not `create:pressing` (the latter can only output items).
-- **Current Slurry and its bucket**: the mod's first fluid, registered the standard vanilla/NeoForge way as a **source fluid plus a flowing variant** (the same slot as Water, Chocolate or Seed Oil — which is why JEI shows a plain "Current Slurry"). It ships with a **Current Slurry Bucket**: fill it, pour it into the world, or scoop a placed source block back up. The fluid block itself is not meant to be mined (water-like properties: replaceable, no collision, unbreakable, no loot); its only reason to exist is that a bucket needs something to pour. How to turn the slurry back into FE is not decided yet, so that recipe is still missing.
-- **Light**: Current Slurry has a light level of **15** (the same as lava) — a poured pool doubles as a light source.
-- **Shock**: anything living standing in Current Slurry keeps taking **shock damage** (**20 per hit — ten hearts** — using this mod's own `create_crystal_industry:electric_shock` damage type, which **ignores armour**, so falling in is effectively instant death; that is deliberate). It works on contact, like lava — it does not require being fully submerged, since one bucket only gives you a single block of depth. Vanilla's hurt cooldown naturally limits it to about twice a second (this type deliberately does **not** bypass invulnerability frames — that cooldown is exactly what sets the rate).
-- **Quenching (a verbatim copy of vanilla's basalt generation)**: with **soul soil below the lava and a Flammable Ice Block beside it**, that lava cell turns into **deepslate**, with the fizz sound. It is vanilla's basalt recipe with a single block swapped:
+- **Powering it**: any FE source works, on all six faces, up to 10,000 FE per tick.
+- **Output**: the cluster drops 1 Arclight and Fortune does not apply. Arclight is an item only, it has no block form.
+- **Pressing**: put one Arclight in a Basin under a Mechanical Press, superheated, to get 500 mB of Current Slurry.
+- **Current Slurry**: the mod's first fluid, shipped with a Current Slurry Bucket that can fill, pour and scoop. A poured pool has a light level of 15, so it doubles as a light source. The fluid block itself is not meant to be mined, its reason to exist is that a bucket needs something to pour. How to turn the slurry back into FE is not decided yet.
+- **Shock**: anything living standing in Current Slurry keeps taking shock damage, 20 per hit, ignoring armour. It works on contact, like lava, and does not require being fully submerged.
+- **Sparks**: sparks fly up off the surface of poured slurry, and arclight blocks emit the occasional spark above their top face.
+- **Quenching**: with soul soil below the lava and a Flammable Ice Block beside it, that lava cell turns into deepslate. It is vanilla's basalt recipe with a single block swapped:
 
   | Vanilla basalt | This mod |
   | --- | --- |
@@ -79,45 +77,20 @@ Budding Arclight is the only budding block that **runs on FE**. It holds **1,000
   | Blue ice **beside** the lava | A **Flammable Ice Block** beside it |
   | Lava → basalt | Lava → **deepslate** |
 
-  It is written as a verbatim copy of vanilla's entry (which lives in NeoForge's `FluidInteractionRegistry` static block), so it inherits the same quirks: **water is not required** (vanilla's entry is commented and coded with soul soil and blue ice only); "beside" means the sides or above (the registry only walks the directions other than down) while "below" means the soul soil sits directly under the lava; and it sits after vanilla's "lava + water → obsidian / cobblestone" entry, so if water touches the lava at all that earlier rule wins and this one will not fire.
-  > **This is a global rule**: it applies to any lava + soul-soil-below + Flammable-Ice-Block-beside combination in the world, not just to anything this mod places.
-- **Sparks**: everything goes through vanilla's **`animateTick`** (the same hook lava uses for its embers; client-side only, and only for blocks and fluid surfaces near the player), so there is no custom scanning:
-  - **Current Slurry** launches sparks up off its surface, plus a layer of small flickers sitting on the surface — the same "embers flying off lava" feel, with the particle swapped for an electric spark. Vanilla's crackle/pop sounds are deliberately not copied (there is no fitting electric sound on hand, and lava sounds would clash).
-  - **Arclight blocks** (budding block, buds, cluster) emit the occasional spark **above their top face**. The position is deliberately outside the block: a particle spawned inside the volume gets hidden by the crystal's own crossing planes, which is why a cluster could look spark-less from certain angles.
-- **Electrified**: a living entity within 3 blocks of an **arclight block** (budding block, buds or cluster) or of **Current Slurry** gains the "Electrified" status effect; it fades about 3 seconds after leaving (and keeps refreshing while you stay). Only slurry actually poured into the world counts; what sits in tanks and pipes does not.
-- **What Electrified does: hit an electrified creature and it discharges**. When an electrified entity **takes damage**, two things happen at once:
-  - it takes **another 4 points** of lightning damage;
-  - it arcs to the **closest electrified creature within 5 blocks**, which also takes 4 points of lightning, with a **line of electric sparks** drawn between the two.
-  - **It propagates down a row**: the bolt that reaches the partner is itself "taking damage", so the partner also discharges and passes it on (A→B→C→D…), drawing another arc at every hop. Every creature that gets passed to takes **two** hits — the one from its neighbour plus its own discharge — for **8 points**; only the one that started the chain takes a single 4 (nothing passed it anything).
-  - **It never doubles back and never loops**: whoever just discharged goes straight onto cooldown, and a discharging creature skips on-cooldown candidates when picking a target, so the chain only travels one way and no creature is hit twice by the same chain. A **chain length cap (16 creatures)** bounds the worst case, keeping a dense mob farm from nesting the recursion dozens deep.
-  - At most **once per second** (a 20-tick cooldown): this is the throttle — without it, being swarmed would discharge on every single hit and the bonus damage would run away. It is also the gate that stops the self-inflicted bolt from re-triggering the discharge.
-  - The trigger is "**actually lost health**": attacks entirely eaten by invulnerability frames or a shield do not discharge.
-  - **Those 4 points ignore armour, and invulnerability frames cannot eat them**: the discharge uses this mod's `create_crystal_industry:electric_discharge`, listed in both `minecraft:bypasses_armor` and `minecraft:bypasses_cooldown`.
-  - **Why it does not share a type with the slurry**: the two need opposite things from invulnerability frames — the slurry *relies* on them to cap its rate (it calls `hurt` every tick, throttled to about twice a second), while the discharge fires on the tail end of a hit that just resolved and would be swallowed whole without bypassing them. One shared type would turn the slurry into 20 points every tick. The two types **share a single death message**, so splitting them does not split the text.
-  - **Death messages**: with no kill credit you get "**%1$s was electrocuted**"; when the victim still carries kill credit (someone hit them recently) you get "**%1$s was struck by lightning caused by %2$s**". Vanilla picks between the two based on whether the damage source carries an entity, which is why the discharge source deliberately carries none.
-  - How this interacts with `shock_immune` armour: the main protection is that you **never get in**. `ElectrifiedAura` strips the "Electrified" effect from anyone wearing the full set, so they do not have the effect at all — they never discharge and are never picked as the partner in a chain. `ShockWard` is the second line of defence, and it works off a **whitelist of damage types** (vanilla `lightning_bolt` plus this mod's two), covering the few ticks right after you put the set on, before the effect has been stripped.
-- **Shock immunity**: the item tag `create_crystal_industry:shock_immune`. With **all four armour slots** holding items that carry the tag, you are immune to both "electric" effects above — no shock damage from Current Slurry (**including its armour-ignoring true damage**) and no Electrified — and **also to the damage of vanilla's real lightning bolts** (being struck in a thunderstorm, or a Channeling trident, does no damage).
-  - The check runs off a **whitelist of damage types**: `minecraft:lightning_bolt` (vanilla strikes) plus `create_crystal_industry:electric_shock` (Current Slurry) and `create_crystal_industry:electric_discharge` (the Electrified discharge). **Adding a new shock damage type to this mod means adding it to that whitelist** — miss it and nothing errors, the armour just goes silent against that shock.
-  - The tag currently lists **11 items**: the four **chainmail** pieces, the four **netherite** pieces, and Create's three **netherite diving** items (diving helmet, backtank, diving boots). That set gets its head, chest and feet from Create while its **legs** are vanilla **netherite leggings** — that is Create's own definition of the set, and those leggings are in the tag anyway, so three Create items plus one pair of leggings naturally complete it.
-  - The check only looks at **slot + tag**, so the four pieces **do not have to match**: a chainmail helmet with a netherite chestplate still counts, as long as all four slots are tagged (take any one piece off and the shocks come straight back).
-  - Damage is blocked through NeoForge's `LivingIncomingDamageEvent`, cancelled after the invulnerability check but before any damage reduction — so **armour takes no durability loss and you take no knockback**. It blocks **damage only, not fire**: vanilla's lightning sets you alight through a separate path this mod does not touch (a full netherite set is fire resistant anyway, so it rarely matters).
+  It sits after vanilla's "lava + water → obsidian / cobblestone" entry, so if water touches the lava at all that earlier rule wins. This is a global rule, it applies to any such combination in the world, not just to anything this mod places.
+- **Electrified**: a living entity within 3 blocks of an arclight block or of Current Slurry gains the "Electrified" effect, which fades about 3 seconds after leaving. Only slurry actually poured into the world counts, what sits in tanks and pipes does not.
+- **Discharge**: when an electrified entity takes damage it discharges, taking another 4 points of lightning damage and arcing to the closest electrified creature within 5 blocks, with a line of sparks drawn between the two. The creature it reaches discharges in turn, so the chain travels down a row, and each one it reaches takes two hits for 8 points. The chain only travels one way, no creature is hit twice, it is capped at 16 creatures and fires at most once per second. Those 4 points ignore armour and bypass invulnerability frames.
+- **Death messages**: "%1$s was electrocuted" with no kill credit, "%1$s was struck by lightning caused by %2$s" when the victim still carries kill credit.
+- **Shock immunity**: the item tag `create_crystal_industry:shock_immune`. With all four armour slots holding tagged items you are immune to the slurry's shock, to the discharge, and to vanilla's real lightning bolts. The tag lists the four chainmail pieces, the four netherite pieces and Create's three netherite diving items. The check only looks at slot and tag, the four pieces do not have to match.
+- **Inactive Budding Arclight**: only a lightning strike turns it into the real thing. Either a bolt lands on it directly, or the block directly above it is a lightning rod and that rod gets struck. The budding block it turns into comes out with a full FE buffer and immediately sprouts a few buds. On its own it is pure decoration: no FE, no growth, no sparks, no block entity.
 
-- **Inactive Budding Arclight**: the "not yet activated" form of Budding Arclight — only a **lightning strike** turns it into the real thing. On its own it is pure decoration: it holds no FE, grows nothing, emits no sparks, has no block entity and does not count as a source for "Electrified". **Two ways to trigger it**:
-  - a lightning bolt **lands on it directly**;
-  - the block **directly above it is a lightning rod** and **that rod gets struck** — so the usual setup is to put a rod on top of it and wait for a thunderstorm (a rod redirects nearby strikes onto itself). The check is hard-coded to the block directly below; a rod stuck to its side does not count.
-  - The budding block it turns into comes out **with a full FE buffer** (1 000 000), so you do not have to wire it up first.
-  - The conversion also **feeds it 16 random ticks**, so the brand-new budding block immediately sprouts a few buds (about 3 on average; roughly a 3% chance of none at all) and looks like it had been growing there all along. Those buds are on the house: they are **not deducted from the full buffer**, which still ends up completely full.
-  - Vanilla only exposes "was struck by lightning" for lightning rods — plain blocks have no hook at all, and NeoForge only ships an entity-side lightning event — so this chain runs through a mixin injected into vanilla's `LightningBolt#powerLightningRod` (see `mixin/LightningBoltMixin` and `budding/LightningActivation`).
-  - It copies Budding Arclight's properties (same hardness, sound and **iron-pickaxe requirement**) and drops itself; how to obtain it is likewise undecided, so it is creative-only for now.
-  - Its texture is currently a **straight copy of Budding Arclight's** as a placeholder; no dedicated texture has been drawn yet.
-
-Budding Arclight currently **neither generates naturally nor has a crafting recipe**: how to obtain it is still undecided, so for now it is creative-only (its JEI info page says so too).
+Budding Arclight currently neither generates naturally nor has a crafting recipe, it is creative-only for now.
 
 ### Budding Block Reproduction
 
-Beyond converting ore, an ore budding block has a **1-in-25000** chance to "infect" an adjacent block of the matching ore block, turning it into another budding block. Budding Quartz infects Smooth Quartz Blocks instead, and Budding Fluix infects Fluix Blocks (that conversion additionally requires ME Grid power).
+Beyond converting ore, an ore budding block has a 1-in-25000 chance to infect an adjacent block of the matching ore block, turning it into another budding block. Budding Quartz infects Smooth Quartz Blocks instead, and Budding Fluix infects Fluix Blocks.
 
-Budding Ancient Debris is the one family with no Stone → Ore conversion at all: it turns nothing into Ancient Debris, it only infects an adjacent **block of Ancient Debris** to make another budding block (and that conversion costs 250 mB of lava too, same as a growth). Getting a second one therefore means hauling Ancient Debris over to sit next to it.
+Budding Ancient Debris is the one family with no Stone → Ore conversion at all. It only infects an adjacent block of Ancient Debris to make another budding block, and that conversion costs 250 mB of lava too, so getting a second one means hauling Ancient Debris over to sit next to it.
 
 | Budding Block | Block That Can Be Converted Into It |
 | --- | --- |
@@ -130,7 +103,7 @@ Budding Ancient Debris is the one family with no Stone → Ore conversion at all
 
 ### Growth Speed
 
-The chance lives in the **family table** (each family's own `Growth.speed` in `BuddingFamilies`); there is no config key for it any more:
+The chance lives in the family table (each family's own `Growth.speed` in `BuddingFamilies`), there is no config key for it:
 
 | Tier | Chance to Advance per Random Tick | Which budding blocks |
 | --- | --- | --- |
@@ -139,15 +112,13 @@ The chance lives in the **family table** (each family's own `Growth.speed` in `B
 | Slow | 1/20 | Ancient Debris (its cluster drops Netherite Scrap, so it is treated as a scarce resource) |
 | Very Slow | 1/50 | no member by default (it is there for scripts and addons) |
 
-To retune one specific budding block, use KubeJS `CustomBudding.modify(...)` (section 6) instead of editing and recompiling the source; to retune a whole family, edit the family table.
-
-> Older versions had four `growthSpeed*` id lists in the config file; those are gone. An existing `config/create_crystal_industry-common.toml` keeps the stale keys lying around, but nothing reads them and the next config save drops them.
+To retune one specific budding block, use KubeJS `CustomBudding.modify(...)` (section 6) instead of editing and recompiling the source. To retune a whole family, edit the family table.
 
 ---
 
 ## 2. Accelerators
 
-A vanilla budding block sees a random tick about once every 68 seconds on average, which makes natural growth effectively unobservable. An accelerator applies **one random tick to each of the six adjacent blocks that can receive one**, compressing that process into seconds.
+A vanilla budding block sees a random tick about once every 68 seconds on average, which makes natural growth effectively unobservable. An accelerator applies one random tick to each of the six adjacent blocks that can receive one, compressing that process into seconds.
 
 | | Accelerator | Mechanical Accelerator |
 | --- | --- | --- |
@@ -158,14 +129,14 @@ A vanilla budding block sees a random tick about once every 68 seconds on averag
 | Effect at full speed | 6 random ticks per tick | Identical to the Accelerator |
 | Internal buffer | 10,000 FE, max input 100 FE/t | — |
 
-- Adjacent Accelerators balance energy among themselves: the fuller side pushes toward the emptier one, and a single push never exceeds half the difference, which keeps the two from oscillating back and forth.
+- Adjacent Accelerators balance energy among themselves.
 - A Mechanical Accelerator below 256 RPM scales its effect with RPM; above 256 RPM it gains nothing further.
-- The `acceleratorIntervalTicks` config key (**Acceleration Interval (ticks)**) applies to both types, and a larger value means slower growth. The Accelerator settles its FE cost per pass, so slowing it down also reduces its power draw. The multiplier shown by Engineer's Goggles follows this config value.
-- Only neighbours that **can receive a random tick** are ticked: air, stone and the like are skipped on the spot, using exactly vanilla's check (`isRandomlyTicking`, i.e. the `randomTicks` block property). The Goggles multiplier is therefore a **ceiling** — you get less when not all six faces qualify. Conversely, **a modded block that forgot `.randomTicks()` is not accelerated**: vanilla would never random-tick it either, and an accelerator makes no exception.
+- The `acceleratorIntervalTicks` config key applies to both types, and a larger value means slower growth. The Accelerator settles its FE cost per pass, so slowing it down also reduces its power draw.
+- Only neighbours that can receive a random tick are ticked, using exactly vanilla's check. Air, stone and the like are skipped on the spot, so the Goggles multiplier is a ceiling. A modded block that forgot `.randomTicks()` is not accelerated.
 
-> **Random ticks drive far more than clusters.** Crops, saplings, copper oxidation, nether wart and every other random-tick-driven mechanic are accelerated along with them, which makes an accelerator a general-purpose tick accelerator as well.
+Random ticks drive far more than clusters. Crops, saplings, copper oxidation and every other random-tick-driven mechanic are accelerated along with them, which makes an accelerator a general-purpose tick accelerator as well.
 
-Wearing Engineer's Goggles and looking at a **vanilla Budding Amethyst** shows the same growth speed and multiplier line. The vanilla block itself is untouched: the information is generated client-side on demand, so nothing is added to your save data.
+Wearing Engineer's Goggles and looking at a vanilla Budding Amethyst shows the same growth speed and multiplier line. The vanilla block itself is untouched, nothing is added to your save data.
 
 ---
 
@@ -173,11 +144,15 @@ Wearing Engineer's Goggles and looking at a **vanilla Budding Amethyst** shows t
 
 | Item | Description |
 | --- | --- |
-| **Smart Drill** | A mechanical drill with two modes, switchable at any time from the value slot on its side. **Normal mode**: breaks blocks at twice the speed of an ordinary Mechanical Drill. **Silk Touch mode**: same speed as an ordinary drill, but blocks drop intact as if mined with Silk Touch. Budding blocks are the special case: Normal mode only shatters them (dropping the tier below), and only Silk Touch mode collects the budding block itself. A filter item can restrict which blocks it breaks; an empty filter breaks anything. |
-| **Mechanical Cleaner** | Has every airflow function of the Encased Fan (blow/suck, filtering, an airflow range of 1–20 blocks), and additionally pulls items caught in the airflow into its own 27-slot inventory; without rotational power it still passively collects items directly in front of it. If a container sits directly in front, it exchanges items with that container directly, never dropping anything into the world. **Waterlogged while blowing**, it applies washing to items, equivalent to the Encased Fan's washing. |
-| **Night Vision Goggles** | Engineer's Goggles modified with an Echo Shard. While worn, a keybind toggles night vision (default `N`, rebindable in Controls), and the wearer is also immune to the Darkness effect. Wears in the vanilla helmet slot or a Curios head slot. |
-| **Echo Spyglass** | While in use, your line of sight passes through blocks and renders them as outlines, for up to 60 seconds per use. Sneak-right-click opens a filter screen that accepts an item or a Create List Filter; with no filter it matches `#c:ores` (all ores) by default. |
+| **Smart Drill** | A mechanical drill with two modes, switchable from the value slot on its side. Normal mode breaks blocks at twice the speed of an ordinary Mechanical Drill. Silk Touch mode has the same speed but drops blocks intact, and it is the only mode that collects a budding block itself. A filter item can restrict which blocks it breaks. |
+| **Mechanical Cleaner** | Has every airflow function of the Encased Fan, and additionally pulls items caught in the airflow into its own 27-slot inventory. Without rotational power it still passively collects items directly in front of it. If a container sits directly in front, it exchanges items with it directly, never dropping anything into the world. Waterlogged while blowing, it washes items. |
+| **Resonance Table** | Put an item on top and any machine holding a Resonance Filter filters by that item. The sliders on its four sides set how many items the top may hold. While powered by redstone it switches to a powered appearance and freezes the current filter. |
+| **Resonance Filter** | Goes into the filter slot of a Funnel, Chute or Basin. It stores no rules of its own, it reads them live from the Resonance Tables in its network and takes the union. A List Filter or Attribute Filter on a table has its contents mirrored along with it. |
+| **Night Vision Goggles** | Engineer's Goggles modified with an Echo Shard. While worn, a keybind toggles night vision (default `N`), and the wearer is also immune to the Darkness effect. Wears in the vanilla helmet slot or a Curios head slot. |
+| **Echo Spyglass** | While in use, your line of sight passes through blocks and renders them as outlines, for up to 60 seconds per use. Sneak-right-click opens a filter screen that accepts an item or a Create List Filter. With no filter it matches `#c:ores`. |
 | **Flammable Ice** | Flammable Ice (400 ticks) and Flammable Ice Blocks (4000 ticks) are both fuels, and both are listed among the superheated fuels for Create's Blaze Burner. Nine Flammable Ice craft into one Flammable Ice Block. |
+
+Resonance Tables and Filters form a network. Sneak-right-click an existing table while holding a table to make the held one remember that network, and place it elsewhere to add the new table to the same network. Sneak-right-click a table while holding a Resonance Filter to join that network, and sneak-right-click in the air to leave. What a network filters can be read out with a Display Link.
 
 ---
 
@@ -206,7 +181,7 @@ Each budding block generates at the depth of its corresponding ore, usually embe
 
 Each one can be toggled individually in the config file (`generate_<budding id>`). The Flammable Ice structure and Budding Glowstone have their own additional chance settings.
 
-> **Breaking a naturally generated Budding Echo summons a Warden.** The check reads the block's `can_summon` state, so a Budding Echo you placed yourself never triggers it.
+Breaking a naturally generated Budding Echo summons a Warden. The check reads the block's `can_summon` state, so a Budding Echo you placed yourself never triggers it.
 
 ---
 
@@ -220,7 +195,7 @@ Each one can be toggled individually in the config file (`generate_<budding id>`
 | JEI | Optional | Adds a "Budding Block Info" page: one page per budding block covering growth conditions, growth speed and generation conditions, reachable from the budding block, its buds, its cluster and the cluster's output |
 | KubeJS | Optional | Register your own budding blocks from a script, see the next section |
 
-Without AE2 the mod starts normally and simply does not register any Fluix content. Every machine provides the standard Engineer's Goggles information panel, and the budding blocks (including vanilla Budding Amethyst), both Accelerators, the Smart Drill and the Mechanical Cleaner each ship with a Ponder scene.
+Without AE2 the mod starts normally and simply does not register any Fluix content. The budding blocks (including vanilla Budding Amethyst), both Accelerators, the Smart Drill and the Mechanical Cleaner each ship with a Ponder scene, and Engineer's Goggles read out how they are running.
 
 The mod provides 31 advancements across five branches: budding blocks, accelerators, machines, equipment, and the deep ocean and Deep Dark.
 
