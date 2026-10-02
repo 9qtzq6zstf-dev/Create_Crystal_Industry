@@ -81,6 +81,7 @@ public class Yunxian {
         }
         ModFeatures.register(modEventBus);
         ModArmInteractionPointTypes.register(modEventBus);
+        ModDisplaySources.register(modEventBus);
         modEventBus.addListener(ModBlockEntities::registerCapabilities);
         // 数据生成（./gradlew runData）：只在 data 运行里触发，正常游戏不受影响
         modEventBus.addListener(YunxianDataGen::gatherData);
@@ -95,6 +96,8 @@ public class Yunxian {
             BuddingGrowthEngine.setGrowthListener(YunxianAdvancements::onBuddingGrown);
             BlockStressValues.IMPACTS.register(ModBlocks.SMART_DRILL.get(), () -> 8.0);
             BlockStressValues.IMPACTS.register(ModBlocks.MECHANICAL_ACCELERATOR.get(), () -> 32.0);
+            // 显示链接器的数据源要等方块注册完才能挂上去（见 ModDisplaySources 的类注释）
+            ModDisplaySources.associateBlocks();
             BlockStressValues.IMPACTS.register(ModBlocks.MECHANICAL_CLEANER.get(), () -> 4.0);
             MovementBehaviour.REGISTRY.register(
                     ModBlocks.SMART_DRILL.get(),

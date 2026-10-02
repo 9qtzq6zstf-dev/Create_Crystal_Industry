@@ -30,17 +30,18 @@ import java.util.UUID;
  * （它在构造器里就把 18 格读进 containedItems 了）。本类的解析发生在 {@link #resolveAll} 里、
  * 按游戏刻缓存。
  * <p>
- * 空与非空的分界，就分在「<b>读得到</b>吗」这一条线上：
- * <ul>
- *   <li><b>台子是空的 → 不加限制，什么都放行</b>，和「过滤槽里没插过滤器」同一个意思
- *       （空的 {@code FilterItemStack} 的 test 恒为 true）。</li>
+ * 三种情况，界限划得很清楚：
+ * <ol>
+ *   <li><b>网络里有台子放着东西 → 取并集，空台面被忽略。</b>
+ *       空台子不产出过滤器、也不影响别人 —— 否则一张空台子就能把整个网络放开，
+ *       其余台子放什么都白搭。</li>
+ *   <li><b>台子全都空着 → 全集</b>，和「过滤槽里没插过滤器」同一个意思
+ *       （空的 {@code FilterItemStack} 的 test 恒为 true，物品和流体都是）。</li>
  *   <li><b>根本读不到 → 什么都不通过</b>（fail-closed）：没绑网络、网络里一台都没有、
- *       台子的区块没加载、被拆了。这几种都返回 false。</li>
- * </ul>
- * 这条分界是有意为之：台面空了是玩家自己动的手，看得见，跟空过滤槽一致；
+ *       台子的区块没加载、被拆了。</li>
+ * </ol>
+ * 2 与 3 的分界是有意为之：台面空了是玩家自己动的手、看得见，跟空过滤槽一致；
  * 而"读不到"是环境造成的，那时候放开就等于「区块一卸载漏斗突然放行全部物品」。
- * <p>
- * 顺带一提，并集的后果是：<b>网络里只要有一张台子是空的，整个网络就放行一切</b>。
  * <p>
  * 注意并集的一个后果，这是有意为之、但要心里有数：<b>一张台子的区块没加载时，它就不在并集里</b>
  * （{@code getAllPresent} 只给得出有效的方块实体），于是它那一份过滤规则会暂时消失。
@@ -154,6 +155,8 @@ public class ResonanceFilterItemStack extends FilterItemStack {
             return List.of();                   // 没绑网络
 
         List<FilterItemStack> filters = new ArrayList<>();
+        int reachable = 0;   // 够得着的台子数
+        int empty = 0;       // 其中台面为空的
         // 客户端读的是另一张表（CLIENT_LINKS），两边各自由 lazyTick 里的 keepAlive 维护。
         // 这里不碰 getBlockEntity，也就不会为了一个过滤器去加载区块。
         for (LogisticallyLinkedBehaviour link : LogisticallyLinkedBehaviour.getAllPresent(
@@ -168,12 +171,13 @@ public class ResonanceFilterItemStack extends FilterItemStack {
             if (!(link.blockEntity instanceof ResonanceTableBlockEntity table))
                 continue;
 
+            reachable++;
             ItemStack onTable = table.getFilterSource();
             if (onTable.isEmpty()) {
-                // 空台面 = 不加限制，跟"过滤槽里没插过滤器"一个意思。
-                // 并集里放一个"接受一切"的过滤器即可：FilterItemStack.empty() 的 test 恒为 true。
-                // 注意它对流体也是恒 true，所以空台面同样会放开流体。
-                filters.add(FilterItemStack.empty());
+                // 空台面本身不产出过滤器，但要记一笔：全靠它们的时候才退化成"全集"，
+                // 见方法末尾。这里刻意不往 filters 里塞"接受一切"——那样一张空台子就能
+                // 把整个网络放开，别的台子放什么都白搭。
+                empty++;
                 continue;
             }
 
@@ -190,6 +194,19 @@ public class ResonanceFilterItemStack extends FilterItemStack {
             // 返回的是台面上那个物品栈本身，直接传进去等于把台上物品的附魔和属性修饰符抹掉。
             filters.add(FilterItemStack.of(onTable.copy()));
         }
-        return filters;
+
+        // 一台都够不着（没加载 / 被拆）→ 什么都不通过，fail-closed，见类注释
+        if (reachable == 0)
+            return List.of();
+
+        // 有实货 → 就按并集来，空台面被忽略
+        if (!filters.isEmpty())
+            return filters;
+
+        // 走到这里 = 够得着，但一张都没产出过滤器。两种情况要分开：
+        //   - 台面全空 → 全集（"过滤槽里什么都没插"），用空的 FilterItemStack，
+        //     它的 test 恒为 true（物品和流体都是）
+        //   - 全被递归护栏挡下（台面上放的都是共振过滤器）→ 什么都不通过，不能当成全集
+        return empty > 0 ? List.of(FilterItemStack.empty()) : List.of();
     }
 }

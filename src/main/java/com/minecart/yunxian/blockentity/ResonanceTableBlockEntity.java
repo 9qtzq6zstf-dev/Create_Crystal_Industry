@@ -1,25 +1,36 @@
 package com.minecart.yunxian.blockentity;
 
 import com.minecart.yunxian.block.ResonanceTableBlock;
+import com.minecart.yunxian.item.ResonanceFilterItem;
 import com.minecart.yunxian.mixin.DepotBehaviourAccessor;
 import com.minecart.yunxian.registry.ModBlockEntities;
 import com.simibubi.create.content.logistics.depot.DepotBehaviour;
+import com.simibubi.create.content.logistics.filter.FilterItemStack;
+import com.simibubi.create.content.logistics.item.filter.attribute.ItemAttribute;
 import com.simibubi.create.content.logistics.packagerLink.LogisticallyLinkedBehaviour;
 import com.simibubi.create.foundation.blockEntity.SmartBlockEntity;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
 import com.simibubi.create.foundation.blockEntity.behaviour.ValueBoxTransform;
 import com.simibubi.create.foundation.blockEntity.behaviour.scrollValue.ScrollValueBehaviour;
 import com.simibubi.create.foundation.utility.CreateLang;
+import net.createmod.catnip.data.Pair;
 import net.createmod.catnip.math.VecHelper;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.UUID;
 
 /**
@@ -173,6 +184,130 @@ public class ResonanceTableBlockEntity extends SmartBlockEntity {
     /** 本台所在网络的 id。新放下的台子各有一个随机 id，也就是默认自成一个网络。 */
     public UUID getNetwork() {
         return linkBehaviour.freqId;
+    }
+
+    /**
+     * 本网络在过滤些什么 —— 给显示链接器用。
+     * <p>
+     * 台面上放着什么就展开成什么：
+     * <ul>
+     *   <li>列表过滤器 → 它 18 格里装的物品（里面还套着过滤器就继续展开）；</li>
+     *   <li>属性过滤器 → 它选中的属性（取反的用 Create 自带的那条 {@code .inverted} 文案）；</li>
+     *   <li>普通物品 → 就是它自己。</li>
+     * </ul>
+     * 展开不出东西时（空列表过滤器、没配过的属性过滤器）就退回显示它本身，免得这一项从列表里凭空消失。
+     * <p>
+     * <b>结果按文案排序去重</b> —— 顺序必须是确定的，否则客户端和服务端各算各的、显示板上的行会来回跳。
+     * <p>
+     * 台面空着、或台面上是另一个共振过滤器（递归护栏那种）的，都不算进列表。
+     */
+    public List<Component> getNetworkFilterText() {
+        Level level = getLevel();
+        if (level == null)
+            return List.of();
+
+        UUID network = getNetwork();
+        Map<String, Component> texts = new TreeMap<>();
+        // 双端各读各的那张注册表，和滤波器那边一样
+        for (LogisticallyLinkedBehaviour link : LogisticallyLinkedBehaviour.getAllPresent(
+                network, false, level.isClientSide)) {
+
+            if (!link.freqId.equals(network))
+                continue;
+            if (!(link.blockEntity instanceof ResonanceTableBlockEntity other))
+                continue;
+
+            ItemStack onTable = other.getFilterSource();
+            if (onTable.isEmpty() || onTable.getItem() instanceof ResonanceFilterItem)
+                continue;
+
+            collectFilterText(onTable, texts, 0);
+        }
+
+        return List.copyOf(texts.values());
+    }
+
+    /** 展开深度上限：列表过滤器可以套列表过滤器，而不设限就是个自引用陷阱 */
+    private static final int MAX_EXPAND_DEPTH = 4;
+
+    /**
+     * 黑名单条目的叉号，以及它在去重表里的键前缀。
+     * <p>
+     * <b>用的是大写字母 X，不是「✗」。</b> 显示链接器的主要去向是显示板（翻牌显示器），
+     * 而它的字符集是 lang 里写死的 {@code create.flap_display.cycles.alphabet} ——
+     * 只有大写 A-Z 和空格（{@code FlapDisplaySection} 会先把文字 toUpperCase 再按这个集合出字），
+     * 集合外的字符一律显示成空白。用「✗」的话在板上是一片空，叉号反而看不见。
+     * <p>
+     * 顺带：去重键也带上了前缀，所以白名单里的"铁锭"和黑名单里的"X 铁锭"是两条、不会互相顶掉。
+     */
+    private static final String DENY_MARKER = "X ";
+    private static final String DENY_KEY_PREFIX = "deny:";
+
+    private static void collectFilterText(ItemStack filterStack, Map<String, Component> out, int depth) {
+        if (depth > MAX_EXPAND_DEPTH) {
+            putItemName(out, filterStack);
+            return;
+        }
+
+        // 必须传副本：FilterItemStack.of 对 FilterItem 会调 trimFilterComponents，
+        // 那个方法会 remove 掉附魔与属性修饰符 —— 直接传等于把台面上那份物品改掉。
+        FilterItemStack filter = FilterItemStack.of(filterStack.copy());
+
+        if (filter instanceof FilterItemStack.ListFilterItemStack list) {
+            if (list.containedItems.isEmpty()) {
+                putItemName(out, filterStack);   // 空列表过滤器：展开不出东西，显示它本身
+                return;
+            }
+
+            if (!list.isBlacklist) {
+                for (FilterItemStack contained : list.containedItems)
+                    collectFilterText(contained.item(), out, depth + 1);
+                return;
+            }
+
+            // 黑名单模式：里面的东西是"排除"的意思，逐条加个叉号再并进来 ——
+            // 不然它和白名单在板上长得一模一样。
+            // 先在临时表里展开：递归是直接往传进去的那张表里写的，事后没法逐条加前缀。
+            Map<String, Component> denied = new TreeMap<>();
+            for (FilterItemStack contained : list.containedItems)
+                collectFilterText(contained.item(), denied, depth + 1);
+            for (Map.Entry<String, Component> entry : denied.entrySet())
+                out.putIfAbsent(DENY_KEY_PREFIX + entry.getKey(),
+                        Component.literal(DENY_MARKER).append(entry.getValue()));
+            return;
+        }
+
+        if (filter instanceof FilterItemStack.AttributeFilterItemStack attribute) {
+            if (attribute.attributeTests.isEmpty()) {
+                putItemName(out, filterStack);
+                return;
+            }
+            // 这里不能用 ItemAttribute#format —— 它标了 @OnlyIn(CLIENT)，而 provideText 是
+            // 服务端跑的（DisplayLinkBlockEntity#tickSource 里 `if (!level.isClientSide)`），
+            // 专用服务端调到它会直接崩。所以照它的写法自己拼，用的都是双端都有的 getter。
+            for (Pair<ItemAttribute, Boolean> test : attribute.attributeTests) {
+                ItemAttribute attr = test.getFirst();
+                boolean inverted = test.getSecond();
+                // 去重键必须带上参数：属性是可以带参数的（比如"某个标签"），
+                // 只看 translationKey 的话两个不同的标签会被当成同一条丢掉。
+                out.putIfAbsent(
+                        "attribute:" + attr.getTranslationKey() + inverted
+                                + Arrays.toString(attr.getTranslationParameters()),
+                        Component.translatable(
+                                "create.item_attributes." + attr.getTranslationKey()
+                                        + (inverted ? ".inverted" : ""),
+                                attr.getTranslationParameters()));
+            }
+            return;
+        }
+
+        putItemName(out, filterStack);   // 普通物品（也含没配过的过滤器）
+    }
+
+    private static void putItemName(Map<String, Component> out, ItemStack stack) {
+        Item item = stack.getItem();
+        out.putIfAbsent("item:" + BuiltInRegistries.ITEM.getKey(item),
+                new ItemStack(item).getHoverName());
     }
 
     /**
