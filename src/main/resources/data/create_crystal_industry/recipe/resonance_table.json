@@ -1,0 +1,22 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "pattern": [
+        "A",
+        "B",
+        "C"
+    ],
+    "key": {
+        "A": {
+            "item": "create:polished_rose_quartz"
+        },
+        "B": {
+            "item": "create:electron_tube"
+        },
+        "C": {
+            "item": "create:brass_casing"
+        }
+    },
+    "result": {
+        "id": "create_crystal_industry:resonance_table"
+    }
+}

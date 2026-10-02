@@ -1,0 +1,17 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "pattern": [
+        "ABA"
+    ],
+    "key": {
+        "A": {
+            "item": "create:polished_rose_quartz"
+        },
+        "B": {
+            "tag": "minecraft:wool"
+        }
+    },
+    "result": {
+        "id": "create_crystal_industry:resonance_filter"
+    }
+}
