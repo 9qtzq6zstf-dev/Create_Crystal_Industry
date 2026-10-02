@@ -33,6 +33,12 @@ public final class ModCreativeTabs {
                         // 母岩家族：顺序与物品栏一致，AE2 联动的家族排在工具之后
                         for (RegisteredFamily family : BuddingFamilies.ALL) {
                             if (family.isRegistered() && !family.spec().ae2Gated()) {
+                                // 弧光石那条链（母岩 / 三档芽 / 晶簇，外加上面 tabExtras 里的弧光石
+                                // 与失活母岩）还是半成品，暂时不上物品栏——方块与物品仍在注册表里，
+                                // /give 能拿到；做完之后把这一判去掉即可
+                                if (family == BuddingFamilies.ARCLIGHT) {
+                                    continue;
+                                }
                                 acceptFamily(output, family);
                             }
                         }
@@ -47,8 +53,8 @@ public final class ModCreativeTabs {
                         output.accept(ModItems.RESONANCE_FILTER.get());
                         output.accept(ModItems.ECHO_SPYGLASS.get());
                         output.accept(ModItems.NIGHT_VISION_GOGGLES.get());
-                        // 电流浆桶：弧光石那条链的产物容器（弧光石本身跟在它家族的晶簇后面）
-                        output.accept(ModItems.CURRENT_SLURRY_BUCKET.get());
+                        // 电流浆桶：弧光石那条链的产物容器，同样是半成品，跟那条链一起先不上物品栏
+                        // （流体、方块与桶都在注册表里，/give 能拿到；做完之后把这一行加回来即可）
 
                         for (RegisteredFamily family : BuddingFamilies.ALL) {
                             if (family.isRegistered() && family.spec().ae2Gated()) {
