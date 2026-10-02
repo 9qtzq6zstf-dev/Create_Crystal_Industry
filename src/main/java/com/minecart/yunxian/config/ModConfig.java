@@ -98,7 +98,7 @@ public final class ModConfig {
                         "Chance (0.0–1.0) that a naturally generated glowstone cluster gets its lowest block replaced with glowstone budding.",
                         "0.0 = never, 1.0 = every cluster.")
                 .translation(LANG_PREFIX + "glowstoneBuddingChance")
-                .defineInRange("glowstoneBuddingChance", 0.5, 0.0, 1.0);
+                .defineInRange("glowstoneBuddingChance", 0.1, 0.0, 1.0);
 
         // ★ 两个新字段：必须在 SPEC = BUILDER.build() 之前定义 ★
         public static final ModConfigSpec.BooleanValue GLOWSTONE_GENERATE_BUDS = BUILDER

@@ -172,7 +172,7 @@ Each budding block generates at the depth of its corresponding ore, usually embe
 | Redstone | Overworld | −63 – 15 | Vein, rarity 1/16 |
 | Quartz | Nether | 10 above bedrock to 10 below the top | Vein, rarity 1/8 |
 | Ancient Debris | Nether | 8 – 22 | Vein, rarity 1/16, with 2 Ancient Debris next to the budding block; the tank generates empty |
-| Glowstone | Nether | At natural glowstone blobs | Replaces the lowest block of a glowstone blob, at a chance set by `glowstoneBuddingChance` (default 0.5); `glowstoneGenerateBuds` and related keys control the buds that come with it |
+| Glowstone | Nether | At natural glowstone blobs | Replaces the lowest block of a glowstone blob, at a chance set by `glowstoneBuddingChance` (default 0.1); `glowstoneGenerateBuds` and related keys control the buds that come with it |
 | Echo | Overworld | −64 – 0 | Deep Dark, generated inside Sculk |
 | Flammable Ice | Overworld | Below the deep-ocean seafloor | Structure, 1-in-256 per chunk (`flammableIceChance`), with soul sand scattered around it |
 | Rose Quartz | — | — | Does not generate naturally |
