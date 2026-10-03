@@ -17,6 +17,9 @@ import com.minecart.yunxian.budding.BuddingFamilies.Stage;
 import com.minecart.yunxian.budding.BuddingFamily.BlockEntityKind;
 import com.minecart.yunxian.budding.BuddingFamily.LightRequirement;
 import com.minecart.yunxian.budding.BuddingGrowthEngine;
+import com.minecart.yunxian.budding.BuddingConversions;
+import com.minecart.yunxian.budding.BuddingFamily.BlockConversion;
+import com.minecart.yunxian.budding.BuddingFamily.Replacement;
 import com.minecart.yunxian.budding.BuddingOverrides;
 import com.minecart.yunxian.budding.BuddingRegistration;
 import com.minecart.yunxian.budding.FluidRequirement;
@@ -40,6 +43,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
@@ -205,7 +209,9 @@ public final class CustomBudding {
 
         // 母岩本体：用模组自己的方块类（它自带随机刻 → 生长引擎，且带共享展示 BE，护目镜才显示信息）
         ResourceLocation buddingId = ResourceLocation.fromNamespaceAndPath(namespace, base.getPath() + "_budding");
-        LazyDefinition definition = new LazyDefinition(stages, options, fluid);
+        // 转化规则同理先解析一遍：id 写法错了当场报错（方块存在与否要等定义构建时才知道）
+        List<BlockConversion> transforms = transformRules(options);
+        LazyDefinition definition = new LazyDefinition(stages, options, fluid, transforms);
         BlockBuilder budding = new MotherBuilder(buddingId, definition);
         budding.sourceLine = SourceLine.UNKNOWN;
         budding.texture(options.buddingTexture);
@@ -275,12 +281,12 @@ public final class CustomBudding {
         boolean clearsFluid = NO_FLUID.equals(fluidName(options));
         rejectFluidOnEnergyFamily(blockId, requirement);
 
-        // 生长定义那一层：概率 / 光照 / 含水 / 环境 / 流体
+        // 生长定义那一层：概率 / 光照 / 含水 / 环境 / 流体 / 转化
         BuddingOverrides.declareTarget(blockId);
         BuddingOverrides.modify(blockId, new BuddingOverrides.Override(
                 options.chance, options.maxLight, options.minLight, options.requiresWater,
                 dimensions(options.growthDimensions), biomeEntries(options.growthBiomes),
-                options.outsideGrowthChance, requirement, clearsFluid));
+                options.outsideGrowthChance, requirement, clearsFluid, transformRules(options)));
 
         // 流体罐的方块实体类型在注册期就定死了（见 BuddingRegistration），所以"这块有没有罐"
         // 必须在这里登记：加罐的进流体罐那张表；取消的回到共享护目镜那张表。
@@ -477,6 +483,60 @@ public final class CustomBudding {
     /** {@link Options#dropCount} 补上出厂默认值（没写就是 1） */
     private static int dropCount(Options options) {
         return options.dropCount != null ? options.dropCount : Options.DEFAULT_DROP_COUNT;
+    }
+
+    /**
+     * 脚本写的 {@code .transform(输入, 产物, n)} → 转化规则（空表 = 脚本没写这一项）。
+     * <p>
+     * <b>每条 transform 各算一条规则</b>：各有各的概率，每随机刻各掷一次、各取一格
+     * （写成一条规则让它们共享一次掷骰会让概率互相干扰）。半径统一是自带家族再生传播的
+     * {@link BuddingConversions#INFECTION_RADIUS}。
+     */
+    private static List<BlockConversion> transformRules(Options options) {
+        if (options.transforms.isEmpty()) {
+            return List.of();
+        }
+        List<BlockConversion> rules = new ArrayList<>(options.transforms.size());
+        for (Options.Transform transform : options.transforms) {
+            rules.add(BlockConversion.of(transform.chance(), BuddingConversions.INFECTION_RADIUS,
+                    transformReplacement(transform)));
+        }
+        return List.copyOf(rules);
+    }
+
+    /**
+     * 一条 {@code .transform(输入, 产物)} → {@link Replacement}。
+     * <p>
+     * 输入可以写方块 id，也可以写 {@code '#方块标签'}（标签覆盖的方块全都算）；产物必须是一个方块 id
+     * （写成标签没有意义，当场报错）。这里只校验 id 的写法<b>合法</b>——脚本执行时方块还没注册，
+     * 查不出"这个方块存不存在"：那一步推迟到定义构建时（见 {@code BuddingConversions#prepare}），
+     * 真写错了会在游戏日志里报一条错并禁用这一条规则。
+     */
+    private static Replacement transformReplacement(Options.Transform transform) {
+        Supplier<Block> output = blockSupplier(transform.output(), ".transform 的产物");
+        String input = transform.input().trim();
+        if (input.startsWith("#")) {
+            return new Replacement(null, blockTag(input.substring(1), transform.input()), output);
+        }
+        return new Replacement(blockSupplier(input, ".transform 的输入"), null, output);
+    }
+
+    /** 方块 id → 延迟解析的 Supplier（脚本执行时方块还没注册，只能等定义构建时再查） */
+    private static Supplier<Block> blockSupplier(String id, String what) {
+        ResourceLocation location = ResourceLocation.tryParse(id.trim());
+        if (location == null) {
+            throw new IllegalArgumentException(what + "不是合法的方块 id：" + id);
+        }
+        return BuddingConversions.blockSupplier(location);
+    }
+
+    /** {@code '#方块标签'} → 方块标签键；id 写错当场报错 */
+    private static TagKey<Block> blockTag(String id, String original) {
+        ResourceLocation location = ResourceLocation.tryParse(id.trim());
+        if (location == null) {
+            throw new IllegalArgumentException("不是合法的方块标签 id：" + original);
+        }
+        return TagKey.create(Registries.BLOCK, location);
     }
 
     /**
@@ -706,7 +766,8 @@ public final class CustomBudding {
             // 自然生长为 0，只能被催生器硬催（见 YunxianAdvancements#acceleratedRandomTick）。
             Block.Properties properties = createProperties();
             properties.randomTicks();
-            return new ScriptedBuddingBlock(definition, properties);
+            // 方块 id 一起传进去：配置里的侵染名单按它匹配（见 BuddingConversions#infectionAllowed）
+            return new ScriptedBuddingBlock(id, definition, properties);
         }
     }
 
@@ -981,6 +1042,17 @@ public final class CustomBudding {
         public @Nullable Integer dropCount = null;
         /** 四个阶段的贴图，顺序：小芽 → 中芽 → 大芽 → 晶簇 */
         public String[] stageTextures = DEFAULT_STAGE_TEXTURES.clone();
+        /** 脚本写的转化规则（{@code .transform(输入, 产物)} 按调用顺序累积） */
+        public final List<Transform> transforms = new ArrayList<>();
+
+        /**
+         * 一条转化：{@code input} 是方块 id 或 {@code '#方块标签'}，{@code output} 是方块 id。
+         * <p>
+         * 只是把脚本写的字符串原样存着（解析见 {@code transformReplacement}），
+         * 所以这个嵌套类型对脚本没什么用，不要直接构造它。
+         */
+        public record Transform(String input, String output, int chance) {
+        }
 
         // ==================== 链式设置（与上面的字段等价，可混用） ====================
 
@@ -1175,6 +1247,46 @@ public final class CustomBudding {
             this.stageTextures = stageTextures;
             return this;
         }
+
+        /**
+         * 让母岩<b>转化 / 侵染周围的方块</b>：命中 {@code input} 的方块会被换成 {@code output}。
+         * <pre>{@code
+         * .transform('minecraft:iron_block', 'kubejs:my_crystal_budding')   // 把紧邻的粗铁块变成自己
+         * .transform('#c:storage_blocks/iron', 'kubejs:my_crystal_budding') // 输入也能写方块标签
+         * .transform('minecraft:stone', 'minecraft:iron_ore', 20)           // 第三个参数：1/20 的概率
+         * }</pre>
+         * <b>可以写多个</b>：每条各算一条规则、各有各的概率，每随机刻各掷一次、各取一格
+         * （不是"哪条先命中算哪条"——两条规则互不干扰）。输入是方块 id 或 {@code '#方块标签'}，
+         * 产物必须是方块 id；不写第三个参数时概率与自带家族的再生传播同档（1/{@code 25000}）。
+         * <p>
+         * 想把自己做成"会繁殖"的母岩，就把产物写成自己：
+         * {@code .transform('minecraft:diamond_block', 'mypack:my_crystal_budding')}
+         * （脚本母岩的方块 id 是 {@code <命名空间>:<id>_budding}）。
+         * <p>
+         * <b>产物是母岩方块的规则受配置管</b>（{@code buddingInfection} / {@code infectingBudding}）：
+         * 服主关掉侵染之后它不再生效，而"石头 → 铁矿石"这种普通转化不受影响。
+         * 在 {@code modify} 里写它则是<b>追加</b>到方块原有的转化之后，不会把家族表里的规则顶掉。
+         */
+        public Options transform(String input, String output) {
+            return transform(input, output, BuddingConversions.INFECTION_CHANCE);
+        }
+
+        /**
+         * 同上，并指定概率：<b>每随机刻有 1/n 的概率</b>发生一次转化（n 必须 ≥ 1）。
+         * <pre>{@code
+         * .transform('minecraft:iron_block', 'kubejs:my_crystal_budding', 20)  // 1/20，很快能看见
+         * }</pre>
+         * 不写 n 就用自带家族再生传播的那一档（{@code 1/25000}）。
+         * 每条 transform 各有各的 n，互不影响（每随机刻各掷各的）。
+         */
+        public Options transform(String input, String output, int chance) {
+            if (chance < 1) {
+                throw new IllegalArgumentException(".transform 的概率基数必须 ≥ 1（每随机刻 1/n 的概率发生一次），收到 "
+                        + chance);
+            }
+            transforms.add(new Transform(input, output, chance));
+            return this;
+        }
     }
 
     /** 注册结果：五样方块的 id，方便脚本接着写配方、标签、战利品表 */
@@ -1196,10 +1308,12 @@ public final class CustomBudding {
         private final @Nullable String[] growthBiomes;
         private final double outsideGrowthChance;
         private final @Nullable FluidRequirement fluid;
+        private final List<BlockConversion> transforms;
 
         private GrowthDefinition cached;
 
-        LazyDefinition(ResourceLocation[] stages, Options options, @Nullable FluidRequirement fluid) {
+        LazyDefinition(ResourceLocation[] stages, Options options, @Nullable FluidRequirement fluid,
+                       List<BlockConversion> transforms) {
             this.stages = stages;
             // 选项只在注册时读一次，之后脚本再改 Options 不影响这个家族。
             // 选项里"没写"的项是 null（为的是让 modify 能区分"没写"与"写成默认值"），
@@ -1212,8 +1326,9 @@ public final class CustomBudding {
             this.growthBiomes = options.growthBiomes;
             this.outsideGrowthChance = options.outsideGrowthChance != null
                     ? options.outsideGrowthChance : Options.DEFAULT_OUTSIDE_GROWTH_CHANCE;
-            // 流体需求在 create 里就解析好了（那时报错更准），这里只是带着走
+            // 流体需求与转化规则都在 create 里就解析好了（那时报错更准），这里只是带着走
             this.fluid = fluid;
+            this.transforms = transforms;
         }
 
         @Override
@@ -1237,6 +1352,9 @@ public final class CustomBudding {
                 }
                 if (fluid != null) {
                     definition = definition.fluidRequirement(fluid);
+                }
+                if (!transforms.isEmpty()) {
+                    definition = definition.conversions(transforms);
                 }
                 cached = definition;
             }

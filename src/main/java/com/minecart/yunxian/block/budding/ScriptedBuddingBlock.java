@@ -1,15 +1,18 @@
 package com.minecart.yunxian.block.budding;
 
+import java.util.List;
 import java.util.function.Supplier;
 
 import com.minecart.yunxian.blockentity.budding.BuddingGrowthBlockEntity;
 import com.minecart.yunxian.blockentity.budding.FluidTankBuddingBlockEntity;
+import com.minecart.yunxian.budding.BuddingConversions;
 import com.minecart.yunxian.budding.BuddingGrowthEngine;
 import com.minecart.yunxian.budding.BuddingOverrides;
 import com.minecart.yunxian.budding.FluidRequirement;
 import com.minecart.yunxian.budding.GrowthDefinition;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
@@ -48,8 +51,18 @@ public class ScriptedBuddingBlock extends BuddingAmethystBlock implements Entity
     private volatile GrowthDefinition cachedDefinition;
     private volatile int cachedRevision = -1;
 
-    public ScriptedBuddingBlock(Supplier<GrowthDefinition> definition, Properties properties) {
+    /** 本方块的 id 字符串（{@code kubejs:foo_budding}）：配置里的侵染名单按它匹配，见 BuddingConversions */
+    private final String ownerId;
+
+    // 转化规则表缓存：与生长定义一样按对象比对（脚本 modify 追加的转化也在定义里）
+    @Nullable
+    private volatile List<BuddingConversions.Prepared> preparedConversions;
+    @Nullable
+    private volatile GrowthDefinition preparedFor;
+
+    public ScriptedBuddingBlock(ResourceLocation id, Supplier<GrowthDefinition> definition, Properties properties) {
         super(properties);
+        this.ownerId = id.toString();
         this.definition = definition;
     }
 
@@ -98,6 +111,22 @@ public class ScriptedBuddingBlock extends BuddingAmethystBlock implements Entity
             gate = FluidTankBuddingBlockEntity::consumeGrowthCost;
         }
         BuddingGrowthEngine.tryGrow(level, pos, random, growth, gate);
+        // 随机刻副作用（脚本用 .transform(输入, 产物) 写的转化/侵染）：与自带家族同一个执行器，
+        // 顺序也一样——先生长那一轮，再逐条转化规则
+        BuddingConversions.run(level, pos, random, prepared(growth), gate,
+                BuddingConversions.infectionAllowed(ownerId));
+    }
+
+    /** 解析（并缓存）本母岩的转化规则表；定义变了（脚本改过）就重解析 */
+    private List<BuddingConversions.Prepared> prepared(GrowthDefinition growth) {
+        List<BuddingConversions.Prepared> cached = preparedConversions;
+        if (cached != null && preparedFor == growth) {
+            return cached;
+        }
+        List<BuddingConversions.Prepared> prepared = BuddingConversions.prepare(ownerId, this, growth.conversions());
+        preparedConversions = prepared;
+        preparedFor = growth;
+        return prepared;
     }
 
     /**

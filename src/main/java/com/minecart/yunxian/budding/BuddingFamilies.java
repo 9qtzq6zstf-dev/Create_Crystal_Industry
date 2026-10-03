@@ -71,8 +71,13 @@ public final class BuddingFamilies {
 
     /** 石头/深板岩 → 对应矿石 */
     private static final int ORE_CONVERSION_CHANCE = 20;
-    /** 粗矿块（下界岩 → 石英矿同档）/平滑石英/福鲁伊克斯块 → 母岩自身 */
-    private static final int SPREAD_CHANCE = 25_000;
+    /**
+     * 粗矿块 / 平滑石英 / 福鲁伊克斯块 → 母岩自身（也就是再生传播）的概率基数与半径。
+     * 数值本身定义在 {@link BuddingConversions} 里：脚本的 {@code .transform} 用的是同一对常量，
+     * 两处必须一致——这是母岩会自己变多的唯一途径。
+     */
+    private static final int SPREAD_CHANCE = BuddingConversions.INFECTION_CHANCE;
+    private static final int SPREAD_RADIUS = BuddingConversions.INFECTION_RADIUS;
 
     /** 回响母岩：幽匿转化的概率与半径 */
     private static final int ECHO_CONVERSION_CHANCE = 4;
@@ -216,7 +221,7 @@ public final class BuddingFamilies {
                 BlockConversion.of(ORE_CONVERSION_CHANCE, 1,
                         Replacement.of(() -> Blocks.STONE, stoneOre),
                         Replacement.of(() -> Blocks.DEEPSLATE, deepslateOre)),
-                BlockConversion.of(SPREAD_CHANCE, 1, Replacement.toSelf(veinBlock)));
+                BlockConversion.of(SPREAD_CHANCE, SPREAD_RADIUS, Replacement.toSelf(veinBlock)));
 
         Growth growth = new Growth(GrowthRule.STANDARD, LightRequirement.ANY,
                 EnergyRequirement.FREE, conversions, ClusterKind.STANDARD, 0, GrowthEnvironment.ANY, speed, null);
@@ -250,7 +255,7 @@ public final class BuddingFamilies {
         List<BlockConversion> conversions = List.of(
                 BlockConversion.of(ORE_CONVERSION_CHANCE, 1,
                         Replacement.of(() -> Blocks.NETHERRACK, () -> Blocks.NETHER_QUARTZ_ORE)),
-                BlockConversion.of(SPREAD_CHANCE, 1, Replacement.toSelf(() -> Blocks.SMOOTH_QUARTZ)));
+                BlockConversion.of(SPREAD_CHANCE, SPREAD_RADIUS, Replacement.toSelf(() -> Blocks.SMOOTH_QUARTZ)));
 
         // 石英是下界特产：只有在下界才满速，搬到别的维度每次判定通过后再掷 1/2 失败
         Growth growth = new Growth(GrowthRule.STANDARD, LightRequirement.ANY,
@@ -274,7 +279,7 @@ public final class BuddingFamilies {
      */
     private static RegisteredFamily ancientDebris() {
         List<BlockConversion> conversions = List.of(
-                BlockConversion.of(SPREAD_CHANCE, 1, Replacement.toSelf(() -> Blocks.ANCIENT_DEBRIS)).gated());
+                BlockConversion.of(SPREAD_CHANCE, SPREAD_RADIUS, Replacement.toSelf(() -> Blocks.ANCIENT_DEBRIS)).gated());
 
         // 慢档（1/20）：它的晶簇掉下界合金碎片，按稀缺资源处理，所以比其余母岩慢一档。
         // 再往下的极慢档（1/50）现在没有出厂成员，留给脚本与附属模组；
@@ -320,7 +325,7 @@ public final class BuddingFamilies {
                 BlockConversion.of(ORE_CONVERSION_CHANCE, 1,
                         Replacement.of(() -> Blocks.STONE, () -> Blocks.REDSTONE_ORE),
                         Replacement.of(() -> Blocks.DEEPSLATE, () -> Blocks.DEEPSLATE_REDSTONE_ORE)),
-                BlockConversion.of(SPREAD_CHANCE, 1, Replacement.toSelf(() -> Blocks.REDSTONE_BLOCK)));
+                BlockConversion.of(SPREAD_CHANCE, SPREAD_RADIUS, Replacement.toSelf(() -> Blocks.REDSTONE_BLOCK)));
 
         // 快档：红石是基础材料，且它的晶簇只掉 1 个红石，产量高一点才好用
         Growth growth = new Growth(GrowthRule.STANDARD, LightRequirement.ANY,
@@ -356,7 +361,7 @@ public final class BuddingFamilies {
     /** 福鲁伊克斯母岩：只在 AE2 存在时注册；生长与传播都要求 AE 供电 */
     private static RegisteredFamily fluix() {
         List<BlockConversion> conversions = List.of(
-                BlockConversion.of(SPREAD_CHANCE, 1,
+                BlockConversion.of(SPREAD_CHANCE, SPREAD_RADIUS,
                         Replacement.toSelf(() -> externalBlock("ae2:fluix_block"))).gated());
 
         Growth growth = new Growth(GrowthRule.STANDARD, LightRequirement.ANY,

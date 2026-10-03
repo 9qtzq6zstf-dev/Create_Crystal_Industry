@@ -101,6 +101,15 @@ Budding Ancient Debris is the one family with no Stone → Ore conversion at all
 | Ancient Debris | Block of Ancient Debris (itself) |
 | Fluix | Fluix Block (requires power) |
 
+This one **can be turned off**: two options in `config/create_crystal_industry-common.toml`.
+
+| Option | Default | Effect |
+| --- | --- | --- |
+| `buddingInfection` | `true` | Whether budding blocks may infect neighbours into new budding blocks. Turning it off stops budding blocks from multiplying themselves — **ore conversion (stone → ore) and the Echo block's sculk spread are unaffected** |
+| `infectingBudding` | empty | Which budding blocks may still infect. Write **family ids** (`raw_iron`, `quartz` — the same id as `generate_<id>`) or **block ids** (`kubejs:my_crystal_budding`, which scripted budding blocks need). Empty = keep every family's default; a non-empty list means **only** those can infect |
+
+A server owner who wants no "budding blocks multiplying" at all sets the first to `false`; one who wants to keep just a couple sets the second. Both apply to scripted budding blocks too — the test is whether the produced block is a budding block (see `.transform` in section 6).
+
 ### Growth Speed
 
 The chance lives in the family table (each family's own `Growth.speed` in `BuddingFamilies`), there is no config key for it:
@@ -260,6 +269,16 @@ kubejs/assets/<namespace>/textures/block/<file>.png
 
 (the namespace is the part before the `:` in the block id; without one it is `kubejs`), then point `buddingTexture('mypack:block/my_budding')` / `stageTextures(...)` at them. The simplest way to name things is `.displayName('My Budding Block').stageDisplayNames('Small Bud', 'Medium Bud', 'Large Bud', 'Cluster')` — one call covers every language; omit it and KubeJS derives English names from the ids, or write per-language keys (`block.<namespace>.<block id>`) in `kubejs/assets/<namespace>/lang/zh_cn.json`. Sounds need no assets — just name a vanilla sound (`'stone'` / `'amethyst'` / `'crop'` …).
 
+**Step 7 — let it convert its neighbours.** `transform(input, output, n)` makes the budding block swap an adjacent block, once per random tick with a 1-in-n chance. You can call it repeatedly (each call is its own rule with its own n); the input may also be a block tag:
+
+```js
+    .transform('minecraft:iron_block', 'mypack:my_crystal_budding')   // turn adjacent iron blocks into itself
+    .transform('#c:storage_blocks/iron', 'mypack:my_crystal_budding') // tag input: every block in the tag counts
+    .transform('minecraft:stone', 'minecraft:iron_ore', 20)           // pick the output and the chance: 1-in-20
+```
+
+Naming your own budding block as the output (`<namespace>:<id>_budding` for scripted blocks) is exactly how the built-in families multiply themselves, and rules whose **output is a budding block** obey the infection config (see "Budding Block Reproduction" in section 1); plain conversions like stone → iron ore do not. The third argument is the chance base: a **1-in-n chance per random tick** (radius 1). Omitting it means 25000, the same tier as the built-in regeneration, so put accelerators next to it if you want to see it soon; pick a small n (say 20) for a conversion you want to watch happen — a stone-to-iron-ore rule fires every few seconds next to an accelerator. Each transform has its own n and they do not interfere.
+
 ### Tutorial 2: Retuning a Built-in Family (Budding Flammable Ice)
 
 Goal: **Budding Flammable Ice must be fed water before it grows, its chance becomes 1, and its growth space needs light 12.** Add it one line at a time with `modify`:
@@ -391,6 +410,7 @@ Chained methods share their names with the fields; the two forms are equivalent 
 | `buddingSound(s)` / `stageSound(s)` | vanilla sound name (`amethyst`) | Break sound; an unknown name throws immediately and lists every valid name |
 | `buddingTool(s)` / `stageTool(s)` / `tool(s)` | tool name or full tag id (`pickaxe`) | Mining tool; `tool` sets both at once |
 | `buddingLevel(s)` / `stageLevel(s)` | tier name or full tag id (unset) | Mining tier; `'none'` or `null` = no tier |
+| `transform(input, output, n)` / `transform(input, output)` | block id, input may be `'#tag'`, may be called repeatedly; n = the chance base (25000) | Converts neighbouring blocks: a 1-in-n chance per random tick (radius 1); rules whose output is a budding block obey the config |
 | `group(s)` | tab id (`kubejs`) | Creative tab; `null` = no tab |
 
 ### Growth Environment
@@ -467,6 +487,7 @@ The id is the **block id** (`..._budding`); the trailing `_budding` may be omitt
 | `needfluid(...)` | Give **any** budding block a fluid cost, change it, or drop it — the tank is generic (`FluidTankBuddingBlockEntity`), and Ancient Debris' lava runs on it too |
 | `dropItem(...)` / `dropCount(...)` | Changes the cluster's drops; it takes over for built-in families too (their loot table no longer applies). `.dropItem('none')` = drop nothing. Writing `.dropCount(...)` alone throws — overriding drops replaces the loot table wholesale, so name the item too. JEI's budding page (the slot in the corner) and pressing R on the product follow the override |
 | `buddingLevel(...)` / `stageLevel(...)` | Mining tier, enforced at runtime: vanilla's three tiers only (`stone` / `iron` / `diamond`), and only the "do you get drops" step — the block tags themselves are unchanged |
+| `transform(input, output, n)` | Appends conversion rules (call it repeatedly, each with its own n); they are added **after** the block's own rules, so a family's ore conversion is never displaced. To stop the built-in regeneration, use the config switch/list instead |
 
 **Cannot be changed** (fixed at registration; a script that sets them throws on the spot): textures `buddingTexture` / `stageTextures`, break sounds `buddingSound` / `stageSound`, break tools `buddingTool` / `stageTool`, translated names `displayName` / `stageDisplayNames`, and the **creative tab `group`**. The first four are baked into block properties and resources; `group` is which page the block belongs to. `modify` exists to **add traits to a budding block**, not to change its identity — use `create` for that.
 

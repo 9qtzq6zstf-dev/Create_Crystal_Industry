@@ -1,23 +1,19 @@
 package com.minecart.yunxian.block.budding;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.OptionalInt;
-import java.util.function.Predicate;
 import java.util.function.Supplier;
 
-import com.minecart.yunxian.advancement.YunxianAdvancements;
 import com.minecart.yunxian.blockentity.budding.BuddingGrowthBlockEntity;
 import com.minecart.yunxian.blockentity.budding.EchoConvertingBuddingBlockEntity;
 import com.minecart.yunxian.blockentity.budding.ArclightBuddingBlockEntity;
 import com.minecart.yunxian.blockentity.budding.FlammableIceBuddingBlockEntity;
 import com.minecart.yunxian.blockentity.budding.FluidTankBuddingBlockEntity;
 import com.minecart.yunxian.budding.BuddingFamily;
-import com.minecart.yunxian.budding.BuddingFamily.BlockConversion;
 import com.minecart.yunxian.budding.BuddingFamily.EnergyRequirement;
 import com.minecart.yunxian.budding.BuddingFamily.GrowthRule;
 import com.minecart.yunxian.budding.BuddingFamily.LightRequirement;
-import com.minecart.yunxian.budding.BuddingFamily.Replacement;
+import com.minecart.yunxian.budding.BuddingConversions;
 import com.minecart.yunxian.budding.BuddingGrowthEngine;
 import com.minecart.yunxian.budding.BuddingOverrides;
 import com.minecart.yunxian.budding.FluidRequirement;
@@ -33,21 +29,17 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.tags.TagKey;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.BuddingAmethystBlock;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * 母岩方块：把家族定义合成一个 {@link GrowthDefinition}，
@@ -62,7 +54,6 @@ import org.slf4j.LoggerFactory;
  * {@code createBlockStateDefinition}（此时子类字段尚未赋值），无法从 family 读取。
  */
 public class GenericBuddingBlock extends BuddingAmethystBlock implements EntityBlock, FluidTankBudding {
-    private static final Logger LOGGER = LoggerFactory.getLogger("create_crystal_industry.budding");
 
     protected final BuddingFamily family;
     protected final Block smallBud;
@@ -80,9 +71,16 @@ public class GenericBuddingBlock extends BuddingAmethystBlock implements EntityB
      */
     private final BuddingGrowthEngine.GrowthGate energyGate = this::payGrowthCost;
 
-    /** 转化规则在首次随机刻（注册表已冻结）后解析并缓存，避免每 tick 查注册表 */
+    /**
+     * 转化规则表缓存：首次随机刻（注册表已冻结）后解析一次，之后只跟着定义走。
+     * <p>
+     * 跟着定义而不是只在首次解析，是为了让脚本 {@code CustomBudding.modify} 追加的转化也生效
+     * （定义是按 {@link BuddingOverrides#revision()} 重建的，这里比对的就是那两个对象）。
+     */
     @Nullable
-    private List<PreparedConversion> preparedConversions;
+    private volatile List<BuddingConversions.Prepared> preparedConversions;
+    @Nullable
+    private volatile GrowthDefinition preparedFor;
 
     // 生长定义缓存：脚本改过覆盖（版本号变了）才重建。
     // 两个字段都 volatile、且**先写定义再写版本号**：护目镜与 JEI 在客户端线程读、随机刻在服务端线程读，
@@ -203,8 +201,23 @@ public class GenericBuddingBlock extends BuddingAmethystBlock implements EntityB
 
     @Override
     public void randomTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
-        BuddingGrowthEngine.tryGrow(level, pos, random, growthDefinition(), energyGate);
-        runConversions(level, pos, random);
+        GrowthDefinition definition = growthDefinition();
+        BuddingGrowthEngine.tryGrow(level, pos, random, definition, energyGate);
+        // 随机刻副作用的随机数消耗顺序与历史实现一致：先生长那一轮，再逐条转化规则
+        BuddingConversions.run(level, pos, random, prepared(definition), energyGate,
+                BuddingConversions.infectionAllowed(family.id()));
+    }
+
+    /** 解析（并缓存）本母岩的转化规则表；定义变了（脚本改过）就重解析 */
+    private List<BuddingConversions.Prepared> prepared(GrowthDefinition definition) {
+        List<BuddingConversions.Prepared> cached = preparedConversions;
+        if (cached != null && preparedFor == definition) {
+            return cached;
+        }
+        List<BuddingConversions.Prepared> prepared = BuddingConversions.prepare(family.id(), this, definition.conversions());
+        preparedConversions = prepared;
+        preparedFor = definition;
+        return prepared;
     }
 
     /**
@@ -236,11 +249,12 @@ public class GenericBuddingBlock extends BuddingAmethystBlock implements EntityB
 
         // 光照下限留空：家族表的 LightRequirement 只有"无要求 / 必须低于某个亮度"两种，没有下限
         // 流体需求来自家族表（远古残骸的熔岩罐就是这么声明的）：方块实体、付费钩子、护目镜与
-        // 比较器都读定义里的这一项，于是脚本的 modify 能统一地加、改、取消它
+        // 比较器都读定义里的这一项，于是脚本的 modify 能统一地加、改、取消它。
+        // 转化规则同样从家族表带进来（运行时读的是定义里的这一栏），于是脚本能往任何一块母岩上追加
         GrowthDefinition built = new GrowthDefinition(smallBud, mediumBud, largeBud, cluster,
                 family.growth().speed().chance(),
                 familyMaxLight(), OptionalInt.empty(), family.growth().rule() == GrowthRule.SUBMERGED,
-                family.growth().growthEnvironment(), family.growth().fluid());
+                family.growth().growthEnvironment(), family.growth().fluid(), family.growth().conversions());
         GrowthDefinition resolved = BuddingOverrides.apply(this, built);
         cachedDefinition = resolved;
         cachedRevision = revision;
@@ -285,123 +299,4 @@ public class GenericBuddingBlock extends BuddingAmethystBlock implements EntityB
         };
     }
 
-    // ==================== 随机刻副作用（转化/传播） ====================
-
-    private void runConversions(ServerLevel level, BlockPos pos, RandomSource random) {
-        List<PreparedConversion> conversions = preparedConversions();
-        for (int i = 0; i < conversions.size(); i++) {
-            PreparedConversion conversion = conversions.get(i);
-            // 每条规则各消耗一次随机数，即使最终没有可替换的目标
-            if (random.nextInt(conversion.chance()) != 0) {
-                continue;
-            }
-            applyConversion(level, pos, random, conversion);
-        }
-    }
-
-    private void applyConversion(ServerLevel level, BlockPos pos, RandomSource random, PreparedConversion conversion) {
-        int radius = conversion.radius();
-        BlockPos targetPos = pos.offset(
-                random.nextInt(2 * radius + 1) - radius,
-                random.nextInt(2 * radius + 1) - radius,
-                random.nextInt(2 * radius + 1) - radius);
-        if (targetPos.equals(pos)) {
-            return;
-        }
-
-        BlockState targetState = level.getBlockState(targetPos);
-        for (int i = 0; i < conversion.targets().size(); i++) {
-            PreparedTarget target = conversion.targets().get(i);
-            if (!target.matches().test(targetState)) {
-                continue;
-            }
-            if (conversion.energyGated() && !payGrowthCost(level, pos)) {
-                return;
-            }
-            level.setBlockAndUpdate(targetPos, target.output());
-            // 矿石母岩侵蚀出矿石 / 回响母岩蔓延出幽匿——这一条也是"母岩会自己扩张"的关键
-            YunxianAdvancements.awardNear(level, pos, target.output().is(Blocks.SCULK)
-                    ? YunxianAdvancements.DEEP_SCULK_SPREAD
-                    : YunxianAdvancements.BUDDING_MOTHERLODE);
-            return;
-        }
-    }
-
-    private List<PreparedConversion> preparedConversions() {
-        if (preparedConversions == null) {
-            preparedConversions = prepareConversions();
-        }
-        return preparedConversions;
-    }
-
-    private List<PreparedConversion> prepareConversions() {
-        List<BlockConversion> conversions = family.growth().conversions();
-        List<PreparedConversion> prepared = new ArrayList<>(conversions.size());
-
-        for (int i = 0; i < conversions.size(); i++) {
-            BlockConversion conversion = conversions.get(i);
-            List<Replacement> replacements = conversion.replacements();
-            List<PreparedTarget> targets = new ArrayList<>(replacements.size());
-
-            for (int j = 0; j < replacements.size(); j++) {
-                Replacement replacement = replacements.get(j);
-                Predicate<BlockState> matches = matcher(replacement);
-                // output 为 null 表示“替换为本母岩自身”
-                BlockState output = replacement.output() == null
-                        ? defaultBlockState()
-                        : resolveState(replacement.output(), "输出方块");
-                if (output == null) {
-                    continue; // 解析失败：该条替换禁用
-                }
-                targets.add(new PreparedTarget(matches, output));
-            }
-
-            prepared.add(new PreparedConversion(conversion.chance(), conversion.radius(),
-                    conversion.energyGated(), targets));
-        }
-        return prepared;
-    }
-
-    private Predicate<BlockState> matcher(Replacement replacement) {
-        if (replacement.input() != null) {
-            Block input = resolveBlock(replacement.input(), "输入方块");
-            // 解析失败（方块不存在）时永不匹配，绝不把空气当匹配目标
-            return input == null ? state -> false : state -> state.is(input);
-        }
-        if (replacement.inputTag() != null) {
-            TagKey<Block> tag = replacement.inputTag();
-            return state -> state.is(tag);
-        }
-        LOGGER.error("[Budding] 母岩 {} 的转化规则既没有输入方块也没有输入标签，已禁用", family.id());
-        return state -> false;
-    }
-
-    @Nullable
-    private BlockState resolveState(Supplier<Block> supplier, String description) {
-        Block block = resolveBlock(supplier, description);
-        return block == null ? null : block.defaultBlockState();
-    }
-
-    /**
-     * 解析目标方块。首次随机刻时注册表已冻结，查到的才是真实方块；
-     * 解析失败时记一次错误并禁用该规则。
-     */
-    @Nullable
-    private Block resolveBlock(Supplier<Block> supplier, String description) {
-        Block block = supplier.get();
-        if (block == null || block == Blocks.AIR) {
-            LOGGER.error("[Budding] 母岩 {} 未能解析{}——资源位置写错或该方块不存在，相关规则已禁用",
-                    family.id(), description);
-            return null;
-        }
-        return block;
-    }
-
-    /** 一条已解析的转化规则 */
-    private record PreparedConversion(int chance, int radius, boolean energyGated, List<PreparedTarget> targets) {
-    }
-
-    /** 一条已解析的替换规则：匹配即写入 output（“替换为本母岩自身”已在解析时展开） */
-    private record PreparedTarget(Predicate<BlockState> matches, BlockState output) {
-    }
 }

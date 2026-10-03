@@ -253,17 +253,6 @@ public final class BuddingInfoCollector {
         // 流体消耗（远古残骸的熔岩、脚本加的）不在这里：它是定义里的字段，由
         // definitionConditions(...) 出一行带流体名与数字的，家族与脚本两条路共用
 
-        // 转化规则合并成一行：矿石族有两条（矿石 + 母岩再生），分行写会把版面撑满
-        List<BlockConversion> conversions = growth.conversions();
-        if (!conversions.isEmpty()) {
-            List<Component> parts = new ArrayList<>(conversions.size());
-            for (BlockConversion conversion : conversions) {
-                parts.add(describeConversion(conversion));
-            }
-            rows.add(Row.line(Component.translatable(LANG + "growth.conversion",
-                    BuddingInfoText.join(parts, BuddingInfoText.sentenceSeparator()))));
-        }
-
         return rows;
     }
 
@@ -293,6 +282,17 @@ public final class BuddingInfoCollector {
         }
         if (definition.growthEnvironment().restricts()) {
             rows.addAll(environmentRows(definition.growthEnvironment()));
+        }
+        // 侵染 / 转化规则也读定义：家族表声明的（矿石转化、再生传播）与脚本
+        // 用 .transform(...) 追加的都在这一栏里，两边共用同一段渲染
+        List<BlockConversion> conversions = definition.conversions();
+        if (!conversions.isEmpty()) {
+            List<Component> parts = new ArrayList<>(conversions.size());
+            for (BlockConversion conversion : conversions) {
+                parts.add(describeConversion(conversion));
+            }
+            rows.add(Row.line(Component.translatable(LANG + "growth.conversion",
+                    BuddingInfoText.join(parts, BuddingInfoText.sentenceSeparator()))));
         }
         return rows;
     }

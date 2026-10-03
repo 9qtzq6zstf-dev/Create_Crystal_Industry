@@ -1,6 +1,7 @@
 package com.minecart.yunxian.config;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import com.minecart.yunxian.budding.BuddingFamilies;
@@ -125,6 +126,51 @@ public final class ModConfig {
         public static boolean enabled(String key) {
             ModConfigSpec.BooleanValue flag = GENERATE_BUDDING.get(key);
             return flag == null || flag.get();
+        }
+
+        // ===== 母岩侵染（再生传播） =====
+
+        /**
+         * 母岩会不会把紧邻的方块"传染"成新的母岩（粗铁块 → 粗铁母岩、平滑石英 → 石英母岩、
+         * 远古残骸 → 远古残骸母岩……）。关掉之后，母岩不再自己变多——矿石转化
+         * （石头 → 矿石）与回响母岩的幽匿蔓延不受影响。
+         */
+        public static final ModConfigSpec.BooleanValue BUDDING_INFECTION = BUILDER
+                .comment(
+                        "Whether budding blocks can infect neighbouring blocks into new budding blocks",
+                        "(raw iron block -> Budding Raw Iron, smooth quartz -> Budding Quartz, ...).",
+                        "Turning this off stops budding blocks from multiplying themselves. Ore conversion",
+                        "(stone -> ore) and the Echo block's sculk spread are not affected.")
+                .translation(LANG_PREFIX + "buddingInfection")
+                .define("buddingInfection", true);
+
+        /**
+         * 还能侵染的母岩名单：写<b>母岩家族 id</b>（{@code raw_iron}、{@code quartz}，即
+         * {@code generate_<id>} 那个 id）或<b>方块 id</b>（{@code kubejs:my_crystal_budding}，
+         * 脚本注册的母岩只能用这一种写法）。
+         * <p>
+         * 写空 = 按各家族出厂设置（凡是在家族表里声明了再生规则的都照旧侵染）；写了名单 =
+         * <b>只有</b>名单里的母岩还能侵染。{@link #BUDDING_INFECTION} 关掉时这份名单不起作用。
+         */
+        public static final ModConfigSpec.ConfigValue<List<? extends String>> INFECTING_BUDDING = BUILDER
+                .comment(
+                        "Budding blocks that may still infect neighbours, as family ids (raw_iron, quartz)",
+                        "or block ids (kubejs:my_crystal_budding). An empty list keeps every family's default;",
+                        "a non-empty list means ONLY those budding blocks can infect.",
+                        "Does nothing while buddingInfection is false.")
+                .translation(LANG_PREFIX + "infectingBudding")
+                // 宽松校验：只挡非字符串。拼错的 id 不会静默——凡是不在名单里的母岩都不再侵染，
+                // 效果是"名单写错 = 谁都不侵染"，服主一眼就能看出自己写错了
+                .defineListAllowEmpty("infectingBudding", List.of(), () -> "", element -> element instanceof String);
+
+        /** 母岩能不能侵染（总开关）；读配置见 {@code BuddingConversions#infectionAllowed} */
+        public static boolean buddingInfectionEnabled() {
+            return BUDDING_INFECTION.get();
+        }
+
+        /** 还能侵染的母岩名单（家族 id 或方块 id）；空 = 按各家族出厂设置 */
+        public static List<? extends String> infectingBudding() {
+            return INFECTING_BUDDING.get();
         }
 
         // ===== 催生器 =====

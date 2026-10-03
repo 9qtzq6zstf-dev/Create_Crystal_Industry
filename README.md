@@ -86,7 +86,7 @@
 
 弧光石母岩目前既不自然生成也没有合成配方，暂时只能从创造模式取得。
 
-### 母岩再生
+### 母岩再生（侵染）
 
 矿石母岩还会以 1/25000 的概率把紧邻的对应矿块传染成新的母岩。石英母岩侵蚀平滑石英，福鲁伊克斯母岩侵蚀福鲁伊克斯块。
 
@@ -100,6 +100,15 @@
 | 石英 | 平滑石英 |
 | 远古残骸 | 远古残骸自身 |
 | 福鲁伊克斯 | 福鲁伊克斯块（需供电） |
+
+这一条**可以关**，两个配置项（`config/create_crystal_industry-common.toml`）：
+
+| 配置项 | 默认 | 作用 |
+| --- | --- | --- |
+| `buddingInfection` | `true` | 母岩能不能把紧邻方块传染成新的母岩。关掉之后母岩不再自己变多——**矿石转化（石头 → 矿石）与回响母岩的幽匿蔓延不受影响** |
+| `infectingBudding` | 空 | 还能侵染的母岩名单。填**母岩家族 id**（`raw_iron`、`quartz`，与 `generate_<id>` 同名）或**方块 id**（`kubejs:my_crystal_budding`，脚本注册的母岩用这种）。留空 = 按各家族出厂设置（凡是在表里声明了再生规则的都照旧）；填了名单 = **只有**名单里的还能侵染 |
+
+服务器主想彻底关掉"母岩自己变多"就把第一项设为 `false`；只想留一两种母岩的再生就往第二项里填名单。脚本注册的母岩也能被这两项管住（判据是"产出的方块是不是母岩"，见第六节的 `.transform`）。
 
 ### 生长速度
 
@@ -260,6 +269,18 @@ kubejs/assets/<命名空间>/textures/block/<文件名>.png
 
 （命名空间就是方块 id 里 `:` 前那段，不写命名空间就是 `kubejs`），再用 `buddingTexture('mypack:block/my_budding')` / `stageTextures(...)` 指过去。显示名最省事的是 `.displayName('我的母岩').stageDisplayNames('小芽', '中芽', '大芽', '晶簇')`（一次设好、所有语言都显示它）；不写就由 KubeJS 按 id 自动生成英文名，要按语言分别翻就在 `kubejs/assets/<命名空间>/lang/zh_cn.json` 里写 `block.<命名空间>.<方块 id>`。音效不用资源文件，写原版音效名即可（`'stone'` / `'amethyst'` / `'crop'` …）。
 
+**第 7 步 · 让它转化周围的方块。** `transform(输入, 产物, n)` 让母岩把紧邻的方块换掉：每随机刻 1/n 的概率发生一次。可以写多个（各算一条规则、各有各的 n），输入还能写方块标签：
+
+```js
+    .transform('minecraft:iron_block', 'mypack:my_crystal_budding')   // 把紧邻的粗铁块变成自己
+    .transform('#c:storage_blocks/iron', 'mypack:my_crystal_budding') // 输入写标签：标签里的方块都算
+    .transform('minecraft:stone', 'minecraft:iron_ore', 20)           // 产物与概率都自己填：1/20
+```
+
+产物写自己的方块 id（脚本母岩是 `<命名空间>:<id>_budding`）就成了自带家族那种「母岩会自己变多」；这类**产物是母岩**的规则受配置里的侵染开关管（见「一、母岩」的「母岩再生」），而「石头 → 铁矿石」这种普通转化不受影响。
+
+第三个参数是概率基数：**每随机刻 1/n 的概率**发生一次（半径 1 格）。不写就是 25000（与自带家族的再生传播同档，想快点看到效果就靠催生器堆随机刻）；想让它经常发生（比如做石头变铁矿这种玩法）就写小一点，1/20 配一台催生器几秒就能看见一次。每条 transform 各有各的 n，互不干扰。
+
 ### 教程二：改一块自带母岩（以可燃冰母岩为例）
 
 需求：**可燃冰母岩要通入水才能生长，概率改成 1，生长格亮度至少 12**。用 `modify` 一行一行加：
@@ -390,6 +411,7 @@ StartupEvents.registry('block', event => {
 | `buddingSound(s)` / `stageSound(s)` | 原版音效名（`amethyst`） | 破坏音效；写不认识的名字会当场报错并列出全部可用名字 |
 | `buddingTool(s)` / `stageTool(s)` / `tool(s)` | 工具名或完整标签 id（`pickaxe`） | 开采工具；`tool` 一次设两份 |
 | `buddingLevel(s)` / `stageLevel(s)` | 等级名或完整标签 id（不设） | 开采等级；`'none'` 或 `null` = 不设 |
+| `transform(输入, 产物, n)` / `transform(输入, 产物)` | 方块 id，输入也可写 `'#标签'`，可写多次；n = 概率基数（25000） | 转化周围方块：每随机刻 1/n 的概率发生一次（半径 1）；产物是母岩的规则受配置管 |
 | `group(s)` | 标签页 id（`kubejs`） | 创造栏归属；`null` = 不进标签页 |
 
 ### 生长环境
@@ -466,6 +488,7 @@ StartupEvents.registry('block', event => {
 | `needfluid(...)` | 给**任何一块**母岩加、改、取消流体消耗——罐是通用的（`FluidTankBuddingBlockEntity`），远古残骸那份熔岩也是它 |
 | `dropItem(...)` / `dropCount(...)` | 改的是晶簇的掉落；自带家族也会被这条规则接管（原本的战利品表不再生效），`.dropItem('none')` = 什么都不掉。只写 `.dropCount(...)` 会报错——改掉落是整条规则接管战利品表，得连物品一起写。JEI 母岩信息页左上角那栏与对着产物按 R 都跟着新掉落走 |
 | `buddingLevel(...)` / `stageLevel(...)` | 开采等级改在运行时判定：只认原版三档（`stone` / `iron` / `diamond`），只影响"拿不拿得到掉落"这一步，方块标签本身不变 |
+| `transform(输入, 产物, n)` | 追加转化规则（可写多次、各有各的 n），**加在方块原有规则之后**——不会把家族表里的矿石转化顶掉。要去掉自带的再生传播请用配置里的侵染开关/名单 |
 
 **改不了**的项（在方块注册时就固定下来，脚本里写了会当场报错）：材质 `buddingTexture` / `stageTextures`、破坏音效 `buddingSound` / `stageSound`、破坏工具 `buddingTool` / `stageTool`、翻译名 `displayName` / `stageDisplayNames`，以及**创造栏归属 `group`**——前四样是烘进方块属性与资源里的身份，`group` 是"这块母岩属于哪一页"，而 `modify` 只管**给母岩加特性**，不改它的身份。要换这些请用 `create` 注册一块新的母岩。
 
