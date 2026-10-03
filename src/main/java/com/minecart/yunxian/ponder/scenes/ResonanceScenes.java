@@ -3,8 +3,12 @@ package com.minecart.yunxian.ponder.scenes;
 import com.minecart.yunxian.blockentity.ResonanceTableBlockEntity;
 import com.minecart.yunxian.registry.ModBlocks;
 import com.minecart.yunxian.registry.ModItems;
+import com.simibubi.create.AllDataComponents;
+import com.simibubi.create.AllItems;
 import com.simibubi.create.content.kinetics.belt.transport.TransportedItemStack;
 import com.simibubi.create.content.logistics.funnel.FunnelBlockEntity;
+import com.simibubi.create.content.logistics.item.filter.attribute.ItemAttribute;
+import com.simibubi.create.content.logistics.item.filter.attribute.attributes.InTagAttribute;
 import com.simibubi.create.foundation.ponder.CreateSceneBuilder;
 
 import net.createmod.catnip.math.Pointing;
@@ -16,13 +20,18 @@ import net.createmod.ponder.api.scene.SceneBuildingUtil;
 import net.createmod.ponder.api.scene.Selection;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.component.ItemContainerContents;
 import net.minecraft.world.phys.Vec3;
 
+import java.util.List;
+
 /**
- * 共振台一族的六条分镜：台面、组网、过滤规则、并集、红石冻结、显示。
+ * 共振台一族的六条分镜：台面、组网与共享过滤、过滤规则、列表与属性、红石冻结、显示。
  * <p>
  * <b>蓝图一 {@code resonance_table/resonance_table.nbt}（5×5×5）</b>：台子 (1,1,2)，第二张台子 (3,1,2)。
  * <br><b>蓝图二 {@code resonance_table/resonance_filter.nbt}（7×5×7）</b>：台子 (2,1,3) 与 (2,1,5)，
@@ -38,7 +47,12 @@ import net.minecraft.world.phys.Vec3;
  *   <li>物品的飞入与被弹开全是脚本演绎，轨迹为近似值，可调参数集中在 {@link #dropItem}。</li>
  *   <li>过滤判定本身在思索世界里不真跑（漏斗不 tick），「过得去 / 被挡下」由脚本给出，
  *       文案则严格按 {@code ResonanceFilterItemStack} 的真实语义写。</li>
- *   <li>三条过滤器分镜共用同一张蓝图，靠演示重点与物品不同来区分。</li>
+ *   <li>四条分镜共用「过滤器」那张蓝图，靠演示重点与物品不同来区分。</li>
+ *   <li><b>蓝图里两张共振台写的是同一个网络 id（{@code Freq}）</b>，否则「同一网络共享过滤」
+ *       与并集这些演示根本演不出来——共振台的网络 id 本来是放下时随机生成的，
+ *       不写进蓝图的话每张台子各成一个网络。</li>
+ *   <li>「全空 / 半空 / 全不空」三种网络状态各配一句短文案，与各自的演示同步；这张分镜因此
+ *       有四条文字，比平常多一条 —— 文字条数是可读性的提醒，不是硬上限。</li>
  * </ol>
  */
 public class ResonanceScenes {
@@ -47,7 +61,7 @@ public class ResonanceScenes {
 
     public static void resonanceTable(SceneBuilder builder, SceneBuildingUtil util) {
         CreateSceneBuilder scene = new CreateSceneBuilder(builder);
-        scene.title("resonance_table", "The Table Surface");
+        scene.title("resonance_table", "The Resonance Table");
         scene.configureBasePlate(0, 0, 5);
         scene.world().showSection(util.select().layer(0), Direction.UP);
         scene.idle(5);
@@ -61,7 +75,7 @@ public class ResonanceScenes {
 
         scene.overlay().showText(85)
                 .attachKeyFrame()
-                .text("A Resonance Table holds a single stack of items.")
+                .text("A Resonance Table can only ever hold one kind of item.")
                 .placeNearTarget()
                 .pointAt(util.vector().centerOf(table));
         scene.idle(15);
@@ -74,7 +88,7 @@ public class ResonanceScenes {
 
         scene.overlay().showText(85)
                 .attachKeyFrame()
-                .text("Right-Click to place items on top, and Right-Click again to take them back.")
+                .text("Right-Click to place an item on a Resonance Table, and Right-Click again to take it back.")
                 .placeNearTarget()
                 .pointAt(util.vector().topOf(table));
         scene.idle(20);
@@ -86,7 +100,7 @@ public class ResonanceScenes {
 
         scene.overlay().showText(90)
                 .attachKeyFrame()
-                .text("The sliders on its sides set how many items the table may hold.")
+                .text("The sliders on its sides set how many items a Resonance Table may hold, just like the Weighted Ejector.")
                 .placeNearTarget()
                 .pointAt(util.vector().centerOf(table));
         scene.overlay().showCenteredScrollInput(table, Direction.WEST, 70);
@@ -101,15 +115,29 @@ public class ResonanceScenes {
 
     public static void resonanceNetwork(SceneBuilder builder, SceneBuildingUtil util) {
         CreateSceneBuilder scene = new CreateSceneBuilder(builder);
-        scene.title("resonance_network", "Joining a Network");
-        scene.configureBasePlate(0, 0, 5);
+        scene.title("resonance_network", "Configuring the Filter with Several Tables");
+        scene.configureBasePlate(0, 0, 7);
         scene.world().showSection(util.select().layer(0), Direction.UP);
         scene.idle(5);
 
-        BlockPos table = util.grid().at(1, 1, 2);
-        BlockPos second = util.grid().at(3, 1, 2);
+        BlockPos table = util.grid().at(2, 1, 3);
+        BlockPos second = util.grid().at(2, 1, 5);
+        BlockPos chest = util.grid().at(5, 1, 3);
+        BlockPos funnel = util.grid().at(5, 2, 3);
+
+        ItemStack filterStack = new ItemStack(ModItems.RESONANCE_FILTER.get());
+        ItemStack ironIngot = new ItemStack(Items.IRON_INGOT);
+        ItemStack goldIngot = new ItemStack(Items.GOLD_INGOT);
 
         scene.world().showSection(util.select().position(table), Direction.DOWN);
+        scene.idle(4);
+        scene.world().showSection(util.select().position(chest).add(util.select().position(funnel)), Direction.DOWN);
+        scene.idle(10);
+
+        // 过滤器装进漏斗；第一张台子放铁锭
+        scene.world().setFilterData(util.select().position(funnel), FunnelBlockEntity.class, filterStack);
+        scene.world().modifyBlockEntity(table, ResonanceTableBlockEntity.class,
+                be -> be.depotBehaviour.setCenteredHeldItem(new TransportedItemStack(ironIngot)));
         scene.idle(10);
 
         scene.overlay().showText(100)
@@ -126,26 +154,67 @@ public class ResonanceScenes {
         scene.effects().indicateSuccess(table);
         scene.idle(10);
 
-        // 第二张台子带着同一个网络落位
+        // 第二张台子带着同一个网络落位，台面放金锭
         scene.world().showSection(util.select().position(second), Direction.DOWN);
         scene.idle(10);
+        scene.world().modifyBlockEntity(second, ResonanceTableBlockEntity.class,
+                be -> be.depotBehaviour.setCenteredHeldItem(new TransportedItemStack(goldIngot)));
         scene.effects().indicateSuccess(second);
         scene.overlay().showBigLine(PonderPalette.GREEN, util.vector().topOf(table), util.vector().topOf(second), 70);
         scene.idle(20);
 
         scene.overlay().showText(90)
                 .attachKeyFrame()
-                .text("Every table placed from that item joins the same network.")
+                .text("Every table placed from that item joins the same network, and they filter together.")
                 .placeNearTarget()
                 .pointAt(util.vector().topOf(second));
-        scene.idle(100);
+        scene.idle(15);
+
+        // 同一个过滤器同时按两张共振台的台面判定
+        dropItem(scene, util.vector().centerOf(funnel).add(0, 1.7, 0), ironIngot, true);
+        scene.effects().indicateSuccess(funnel);
+        scene.idle(15);
+        dropItem(scene, util.vector().centerOf(funnel).add(0, 1.7, 0), goldIngot, true);
+        scene.effects().indicateSuccess(funnel);
+        scene.idle(60);
+
+        // 半空：拿走第二张台子上的金锭，金锭随之被挡下，铁锭照过
+        scene.overlay().showText(100)
+                .attachKeyFrame()
+                .text("A table holding nothing is simply left out of the filter.")
+                .placeNearTarget()
+                .pointAt(util.vector().topOf(second));
+        scene.idle(15);
+        scene.world().modifyBlockEntity(second, ResonanceTableBlockEntity.class,
+                be -> be.depotBehaviour.removeHeldItem());
+        scene.idle(20);
+        dropItem(scene, util.vector().centerOf(funnel).add(0, 1.7, 0), goldIngot, false);
+        scene.effects().indicateRedstone(funnel);
+        scene.idle(15);
+        dropItem(scene, util.vector().centerOf(funnel).add(0, 1.7, 0), ironIngot, true);
+        scene.effects().indicateSuccess(funnel);
+        scene.idle(60);
+
+        // 全空：两张台子都空着，过滤器不再限制任何物品
+        scene.overlay().showText(100)
+                .attachKeyFrame()
+                .text("Only when every table of the network is empty does it pass everything.")
+                .placeNearTarget()
+                .pointAt(util.vector().topOf(table));
+        scene.idle(15);
+        scene.world().modifyBlockEntity(table, ResonanceTableBlockEntity.class,
+                be -> be.depotBehaviour.removeHeldItem());
+        scene.idle(20);
+        dropItem(scene, util.vector().centerOf(funnel).add(0, 1.7, 0), goldIngot, true);
+        scene.effects().indicateSuccess(funnel);
+        scene.idle(70);
     }
 
     // ==================== 3) 过滤规则来自网络 ====================
 
     public static void resonanceFilter(SceneBuilder builder, SceneBuildingUtil util) {
         CreateSceneBuilder scene = new CreateSceneBuilder(builder);
-        scene.title("resonance_filter", "Where the Rules Come From");
+        scene.title("resonance_filter", "Automating the Filter");
         scene.configureBasePlate(0, 0, 7);
         scene.world().showSection(util.select().layer(0), Direction.UP);
         scene.idle(5);
@@ -198,7 +267,7 @@ public class ResonanceScenes {
 
         scene.overlay().showText(90)
                 .attachKeyFrame()
-                .text("Change the item on the table, and the filter follows at once.")
+                .text("Change the item on the Resonance Table, and the filter follows at once.")
                 .placeNearTarget()
                 .pointAt(util.vector().topOf(table));
         scene.idle(10);
@@ -210,62 +279,66 @@ public class ResonanceScenes {
         scene.idle(70);
     }
 
-    // ==================== 4) 网络取并集 ====================
+    // ==================== 4) 台面上放过滤器：列表与属性 ====================
 
-    public static void resonanceFilterUnion(SceneBuilder builder, SceneBuildingUtil util) {
+    public static void resonanceFilterTypes(SceneBuilder builder, SceneBuildingUtil util) {
         CreateSceneBuilder scene = new CreateSceneBuilder(builder);
-        scene.title("resonance_filter_union", "Combining Tables");
+        scene.title("resonance_filter_types", "List and Attribute Filters");
         scene.configureBasePlate(0, 0, 7);
         scene.world().showSection(util.select().layer(0), Direction.UP);
         scene.idle(5);
 
         BlockPos table = util.grid().at(2, 1, 3);
-        BlockPos secondTable = util.grid().at(2, 1, 5);
         BlockPos chest = util.grid().at(5, 1, 3);
         BlockPos funnel = util.grid().at(5, 2, 3);
 
         ItemStack filterStack = new ItemStack(ModItems.RESONANCE_FILTER.get());
         ItemStack ironIngot = new ItemStack(Items.IRON_INGOT);
         ItemStack goldIngot = new ItemStack(Items.GOLD_INGOT);
+        ItemStack stick = new ItemStack(Items.STICK);
 
         scene.world().showSection(util.select().position(table), Direction.DOWN);
         scene.idle(4);
         scene.world().showSection(util.select().position(chest).add(util.select().position(funnel)), Direction.DOWN);
         scene.idle(10);
-
-        // 一台过滤器、一张台子：只有铁锭过得去
         scene.world().setFilterData(util.select().position(funnel), FunnelBlockEntity.class, filterStack);
-        scene.world().modifyBlockEntity(table, ResonanceTableBlockEntity.class,
-                be -> be.depotBehaviour.setCenteredHeldItem(new TransportedItemStack(ironIngot)));
         scene.idle(10);
-        dropItem(scene, util.vector().centerOf(funnel).add(0, 1.7, 0), goldIngot, false);
-        scene.effects().indicateRedstone(funnel);
-        scene.idle(30);
+
+        // 台面放列表过滤器：装着的两样东西都过得去
+        scene.world().modifyBlockEntity(table, ResonanceTableBlockEntity.class,
+                be -> be.depotBehaviour.setCenteredHeldItem(new TransportedItemStack(listFilter())));
+        scene.idle(10);
 
         scene.overlay().showText(95)
                 .attachKeyFrame()
-                .text("A network reads every table linked to it, and passes whatever any of them allows.")
+                .text("A Resonance Table also accepts a List Filter, and passes every item that filter holds.")
                 .placeNearTarget()
-                .pointAt(util.vector().centerOf(secondTable));
+                .pointAt(util.vector().topOf(table));
         scene.idle(15);
-        scene.world().showSection(util.select().position(secondTable), Direction.DOWN);
-        scene.idle(10);
-        scene.world().modifyBlockEntity(secondTable, ResonanceTableBlockEntity.class,
-                be -> be.depotBehaviour.setCenteredHeldItem(new TransportedItemStack(goldIngot)));
-        scene.effects().indicateSuccess(secondTable);
+        dropItem(scene, util.vector().centerOf(funnel).add(0, 1.7, 0), ironIngot, true);
+        scene.effects().indicateSuccess(funnel);
         scene.idle(15);
-
-        // 金锭现在也过得去了
         dropItem(scene, util.vector().centerOf(funnel).add(0, 1.7, 0), goldIngot, true);
         scene.effects().indicateSuccess(funnel);
-        scene.idle(45);
+        scene.idle(60);
 
-        scene.overlay().showText(85)
+        // 换成属性过滤器：按属性匹配，木棍被挡下
+        scene.world().modifyBlockEntity(table, ResonanceTableBlockEntity.class,
+                be -> be.depotBehaviour.setCenteredHeldItem(new TransportedItemStack(ingotAttributeFilter())));
+        scene.idle(15);
+
+        scene.overlay().showText(95)
                 .attachKeyFrame()
-                .text("An empty table contributes nothing, and does not open the network up.")
+                .text("An Attribute Filter on a table is read the same way, and passes whatever its attributes match.")
                 .placeNearTarget()
-                .pointAt(util.vector().topOf(secondTable));
-        scene.idle(95);
+                .pointAt(util.vector().topOf(table));
+        scene.idle(15);
+        dropItem(scene, util.vector().centerOf(funnel).add(0, 1.7, 0), stick, false);
+        scene.effects().indicateRedstone(funnel);
+        scene.idle(15);
+        dropItem(scene, util.vector().centerOf(funnel).add(0, 1.7, 0), ironIngot, true);
+        scene.effects().indicateSuccess(funnel);
+        scene.idle(70);
     }
 
     // ==================== 5) 红石充能冻结过滤 ====================
@@ -278,6 +351,7 @@ public class ResonanceScenes {
         scene.idle(5);
 
         BlockPos table = util.grid().at(2, 1, 3);
+        BlockPos power = util.grid().at(1, 1, 3);
         BlockPos chest = util.grid().at(5, 1, 3);
         BlockPos funnel = util.grid().at(5, 2, 3);
 
@@ -300,9 +374,11 @@ public class ResonanceScenes {
 
         scene.overlay().showText(95)
                 .attachKeyFrame()
-                .text("Supplying Redstone Power to a table freezes its filter.")
+                .text("Supplying Redstone Power to a Resonance Table freezes its filter.")
                 .placeNearTarget()
                 .pointAt(util.vector().centerOf(table));
+        // 红石块是给观众看的「电源」，充能时才出现
+        scene.world().showSection(util.select().position(power), Direction.DOWN);
         scene.world().toggleRedstonePower(util.select().position(table));
         scene.effects().indicateRedstone(table);
         scene.idle(60);
@@ -328,13 +404,19 @@ public class ResonanceScenes {
         // 撤掉信号，规则立刻回到台面上
         scene.overlay().showText(90)
                 .attachKeyFrame()
-                .text("Remove the signal and the filter follows the table again.")
+                .text("Remove the signal and the filter follows the Resonance Table again.")
                 .placeNearTarget()
                 .pointAt(util.vector().centerOf(table));
+        scene.world().hideSection(util.select().position(power), Direction.DOWN);
         scene.world().toggleRedstonePower(util.select().position(table));
         scene.idle(15);
         dropItem(scene, util.vector().centerOf(funnel).add(0, 1.7, 0), goldIngot, true);
         scene.effects().indicateSuccess(funnel);
+        scene.idle(15);
+
+        // 台面这会儿是金锭，铁锭反过来过不去了
+        dropItem(scene, util.vector().centerOf(funnel).add(0, 1.7, 0), ironIngot, false);
+        scene.effects().indicateRedstone(funnel);
         scene.idle(85);
     }
 
@@ -408,13 +490,35 @@ public class ResonanceScenes {
 
         scene.overlay().showText(95)
                 .attachKeyFrame()
-                .text("The list covers every table of the network, so a second table adds a second line.")
+                .text("The list covers every Resonance Table of the network, so a second Resonance Table adds a second line.")
                 .placeNearTarget()
                 .pointAt(util.vector().centerOf(board));
         scene.idle(105);
     }
 
     // ---- 工具方法 ----
+
+    /** 一个装着铁锭与金锭的 Create 列表过滤器（演示用） */
+    private static ItemStack listFilter() {
+        ItemStack filter = new ItemStack(AllItems.FILTER.get());
+        filter.set(AllDataComponents.FILTER_ITEMS, ItemContainerContents.fromItems(
+                List.of(new ItemStack(Items.IRON_INGOT), new ItemStack(Items.GOLD_INGOT))));
+        return filter;
+    }
+
+    /**
+     * 一个「属于 {@code #c:ingots} 标签」的属性过滤器（演示用）。
+     * <p>
+     * 属性过滤器的内容平时由它自己的界面写进去，这里直接构造那一条属性。
+     * 白名单模式留默认值，即任选一条属性命中就通过。
+     */
+    private static ItemStack ingotAttributeFilter() {
+        ItemStack filter = new ItemStack(AllItems.ATTRIBUTE_FILTER.get());
+        ItemAttribute.ItemAttributeEntry entry = new ItemAttribute.ItemAttributeEntry(
+                new InTagAttribute(ItemTags.create(ResourceLocation.fromNamespaceAndPath("c", "ingots"))), false);
+        filter.set(AllDataComponents.ATTRIBUTE_FILTER_MATCHED_ATTRIBUTES, List.of(entry));
+        return filter;
+    }
 
     /**
      * 竖着放的漏斗的过滤槽位置（叠加层高亮用）。

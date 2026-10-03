@@ -70,29 +70,35 @@ public class AllYunxianPonderScenes {
                 .addStoryBoard("mechanical_cleaner/mechanical_cleaner", MechanicalCleanerScenes::cleanerConfig,
                         AllYunxianPonderTags.MACHINES);
 
-        // 6) 共振台一族：台面 / 组网 / 规则来源 / 并集 / 红石冻结 / 显示
+        // 6) 共振台一族：台面 / 组网与共享过滤 / 规则来源 / 列表与属性 / 红石冻结 / 显示
         blocks.forComponents(ModBlocks.RESONANCE_TABLE.get())
                 .addStoryBoard("resonance_table/resonance_table", ResonanceScenes::resonanceTable,
                         AllYunxianPonderTags.MACHINES)
-                .addStoryBoard("resonance_table/resonance_table", ResonanceScenes::resonanceNetwork,
+                .addStoryBoard("resonance_table/resonance_filter", ResonanceScenes::resonanceNetwork,
                         AllYunxianPonderTags.MACHINES)
                 .addStoryBoard("resonance_table/resonance_filter", ResonanceScenes::resonanceFilter,
                         AllYunxianPonderTags.MACHINES)
-                .addStoryBoard("resonance_table/resonance_filter", ResonanceScenes::resonanceFilterUnion,
+                .addStoryBoard("resonance_table/resonance_filter", ResonanceScenes::resonanceFilterTypes,
                         AllYunxianPonderTags.MACHINES)
                 .addStoryBoard("resonance_table/resonance_filter", ResonanceScenes::resonanceFilterRedstone,
                         AllYunxianPonderTags.MACHINES)
                 .addStoryBoard("resonance_table/resonance_display", ResonanceScenes::resonanceDisplay,
                         AllYunxianPonderTags.MACHINES);
 
-        // 7) 共振过滤器：同一条「过滤」系列挂到物品上，鼠标停在物品上也能直接看
+        // 7) 共振过滤器：与共振台挂同一整套分镜，鼠标停在物品上也能直接看全部
         helper.withKeyFunction(BuiltInRegistries.ITEM::getKey)
                 .forComponents(ModItems.RESONANCE_FILTER.get())
+                .addStoryBoard("resonance_table/resonance_table", ResonanceScenes::resonanceTable,
+                        AllYunxianPonderTags.MACHINES)
+                .addStoryBoard("resonance_table/resonance_filter", ResonanceScenes::resonanceNetwork,
+                        AllYunxianPonderTags.MACHINES)
                 .addStoryBoard("resonance_table/resonance_filter", ResonanceScenes::resonanceFilter,
                         AllYunxianPonderTags.MACHINES)
-                .addStoryBoard("resonance_table/resonance_filter", ResonanceScenes::resonanceFilterUnion,
+                .addStoryBoard("resonance_table/resonance_filter", ResonanceScenes::resonanceFilterTypes,
                         AllYunxianPonderTags.MACHINES)
                 .addStoryBoard("resonance_table/resonance_filter", ResonanceScenes::resonanceFilterRedstone,
+                        AllYunxianPonderTags.MACHINES)
+                .addStoryBoard("resonance_table/resonance_display", ResonanceScenes::resonanceDisplay,
                         AllYunxianPonderTags.MACHINES);
     }
 
