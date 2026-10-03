@@ -33,7 +33,8 @@ import org.jetbrains.annotations.Nullable;
 /**
  * 母岩“当前生长速度”的共享计算/渲染辅助。
  * <p>
- * 浮窗里的数字只有<b>当前环境算出来的倍率</b>（玩家自己摆出来的催生器给的），
+ * 浮窗里的数字是<b>当前的真实倍率</b>：玩家自己摆出来的催生器给的那份，再乘上本母岩的
+ * 生长环境系数（石英、荧石这种只在下界满速的母岩，出了下界会打折，见 {@link #environmentFactor}）；
  * 方块固有的参数一律只说定性话（「缓慢」「必须足够暗」）：「平均多少秒一级」这类换算
  * 本类故意不提供，具体数值由玩家自己在世界里体会。
  */
@@ -99,16 +100,22 @@ public final class BuddingGrowthHelper {
         return perSecond;
     }
 
-    /** 向护目镜浮窗追加“当前生长速度”行 */
-    public static void appendGrowthTooltip(Level level, BlockPos pos, List<Component> tooltip) {
+    /**
+     * 向护目镜浮窗追加“当前生长速度”行。
+     * <p>
+     * 报的是<b>真实速率</b>——受维度 / 群系限制的母岩站在地盘外时，把
+     * {@link #environmentFactor} 那个折扣也算进去；不限制环境的母岩系数恒为 1，显示与从前一致。
+     */
+    public static void appendGrowthTooltip(Level level, BlockPos pos, BlockState state, List<Component> tooltip) {
         if (level == null)
             return;
 
         double natural = naturalRandomTicksPerSecond(level);
         double accel = acceleratorRandomTicksPerSecond(level, pos);
+        double environment = environmentFactor(level, pos, state);
 
-        // 无催生器：自然生长（= ×1 基准）
-        if (accel <= 0) {
+        // 无催生器、又没出地盘：自然生长（= ×1 基准）
+        if (accel <= 0 && environment >= 1) {
             CreateLang.builder()
                     .add(Component.translatable("create_crystal_industry.goggles.growth_speed.natural")
                             .withStyle(ChatFormatting.GRAY))
@@ -116,11 +123,13 @@ public final class BuddingGrowthHelper {
             return;
         }
 
-        // 有催生器：倍数 = 催生器贡献 / 自然基底（自然占比极小，按需求忽略）
-        double multiplier = accel / natural;
-        String text = multiplier >= 10
-                ? String.format(Locale.ROOT, "%.0f", multiplier)
-                : String.format(Locale.ROOT, "%.1f", multiplier);
+        // 真实倍数 = 催生器贡献 / 自然基底 × 环境系数（自然占比极小，按需求忽略）
+        double multiplier = (accel <= 0 ? 1 : accel / natural) * environment;
+        String text = multiplier <= 0
+                ? "0"
+                : multiplier >= 10
+                        ? String.format(Locale.ROOT, "%.0f", multiplier)
+                        : String.format(Locale.ROOT, "%.1f", multiplier);
 
         CreateLang.builder()
                 .add(Component.translatable("create_crystal_industry.goggles.growth_speed.label")
@@ -227,6 +236,25 @@ public final class BuddingGrowthHelper {
             return scripted.growthDefinition().growthEnvironment();
         }
         return null;
+    }
+
+    /**
+     * 生长环境对生长速率的折扣系数：在自己的地盘上（或压根不限制环境）是 1，
+     * 出了地盘就是定义里那个「地盘外仍能生长的概率」（0 = 完全不长）。
+     * <p>
+     * 与 {@link com.minecart.yunxian.budding.BuddingGrowthEngine} 的判定一致：环境这一关在
+     * {@code 1/chance} 之后才掷，是<b>相乘</b>关系；而催生器灌进来的随机刻走的是同一条随机刻路径，
+     * 同样要过这一关，所以这个系数对自然生长与催生加速一视同仁（浮窗里把两者一起打折才对）。
+     * <p>
+     * 不限制环境的母岩（{@link GrowthEnvironment#restricts()} 为假）直接得 1，
+     * 连群系查询都不会做——绝大多数母岩走的就是这条捷径。
+     */
+    private static double environmentFactor(Level level, BlockPos pos, BlockState state) {
+        GrowthEnvironment environment = growthEnvironmentOf(state);
+        if (environment == null || !environment.restricts() || environment.allows(level, pos)) {
+            return 1;
+        }
+        return environment.outsideGrowthChance();
     }
 
     /** 「生长速度: <定性词>」那一行：后接 {@code .<档位后缀>} 就是四个定性词 */

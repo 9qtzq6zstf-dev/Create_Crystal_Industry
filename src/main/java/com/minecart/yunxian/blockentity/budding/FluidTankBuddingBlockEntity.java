@@ -254,7 +254,7 @@ public class FluidTankBuddingBlockEntity extends BlockEntity implements IHaveGog
     @Override
     public boolean addToGoggleTooltip(List<Component> tooltip, boolean isPlayerSneaking) {
         if (level != null) {
-            BuddingGrowthHelper.appendGrowthTooltip(level, worldPosition, tooltip);
+            BuddingGrowthHelper.appendGrowthTooltip(level, worldPosition, getBlockState(), tooltip);
             BuddingGrowthHelper.appendScriptedInfo(getBlockState(), tooltip);
             BuddingGrowthHelper.appendGrowthEnvironment(getBlockState(), tooltip);
         }

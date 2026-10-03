@@ -52,7 +52,7 @@ public class FlammableIceBuddingBlockEntity extends BlockEntity implements IHave
 
         // 追加“当前生长速度”（与其它母岩一致）
         if (level != null)
-            BuddingGrowthHelper.appendGrowthTooltip(level, worldPosition, tooltip);
+            BuddingGrowthHelper.appendGrowthTooltip(level, worldPosition, getBlockState(), tooltip);
 
         return true;
     }

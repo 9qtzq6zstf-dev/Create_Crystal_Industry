@@ -170,13 +170,17 @@ public class ArclightBuddingBlockEntity extends BlockEntity implements IHaveGogg
     // ==================== 护目镜 ====================
 
     /**
-     * 本家族不挑维度与群系，所以不调 {@code appendGrowthEnvironment}；
-     * 哪天给它加了环境要求，记得在这里补一行（那条链专用 BE 得各自记着，共用的 BE 才会代劳）。
+     * 本家族不挑维度与群系，所以不调 {@code appendGrowthEnvironment}。
+     * <p>
+     * 注意「生长速度」那一行会<b>自己</b>认出环境要求并把折扣算进数字里
+     * （{@code appendGrowthTooltip} 读的就是家族定义的生长环境），
+     * 所以哪天给它加了环境要求，这里不补的话数字会变小、却少一句解释
+     * （那条链专用 BE 得各自记着，共用的 BE 才会代劳）。
      */
     @Override
     public boolean addToGoggleTooltip(List<Component> tooltip, boolean isPlayerSneaking) {
         if (level != null) {
-            BuddingGrowthHelper.appendGrowthTooltip(level, worldPosition, tooltip);
+            BuddingGrowthHelper.appendGrowthTooltip(level, worldPosition, getBlockState(), tooltip);
         }
         boolean enough = energy >= COST_PER_GROWTH;
         CreateLang.builder()

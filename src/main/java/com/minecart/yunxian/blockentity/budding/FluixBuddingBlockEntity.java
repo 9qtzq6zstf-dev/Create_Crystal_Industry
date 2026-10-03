@@ -158,7 +158,7 @@ public class FluixBuddingBlockEntity extends AENetworkedPoweredBlockEntity
     @Override
     public boolean addToGoggleTooltip(List<Component> tooltip, boolean isPlayerSneaking) {
         if (level != null) {
-            BuddingGrowthHelper.appendGrowthTooltip(level, worldPosition, tooltip);
+            BuddingGrowthHelper.appendGrowthTooltip(level, worldPosition, getBlockState(), tooltip);
         }
         // 读客户端已同步的 gridActive，而不是 getMainNode().isActive()（客户端恒为 false）
         if (this.gridActive) {
