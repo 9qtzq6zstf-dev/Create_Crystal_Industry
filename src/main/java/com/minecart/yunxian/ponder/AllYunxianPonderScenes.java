@@ -70,13 +70,13 @@ public class AllYunxianPonderScenes {
                 .addStoryBoard("mechanical_cleaner/mechanical_cleaner", MechanicalCleanerScenes::cleanerConfig,
                         AllYunxianPonderTags.MACHINES);
 
-        // 6) 共振台一族：台面 / 组网与共享过滤 / 规则来源 / 列表与属性 / 红石冻结 / 显示
+        // 6) 共振台一族：台面 / 规则来源 / 组网与共享过滤 / 列表与属性 / 红石冻结 / 显示
         blocks.forComponents(ModBlocks.RESONANCE_TABLE.get())
                 .addStoryBoard("resonance_table/resonance_table", ResonanceScenes::resonanceTable,
                         AllYunxianPonderTags.MACHINES)
-                .addStoryBoard("resonance_table/resonance_filter", ResonanceScenes::resonanceNetwork,
-                        AllYunxianPonderTags.MACHINES)
                 .addStoryBoard("resonance_table/resonance_filter", ResonanceScenes::resonanceFilter,
+                        AllYunxianPonderTags.MACHINES)
+                .addStoryBoard("resonance_table/resonance_filter", ResonanceScenes::resonanceNetwork,
                         AllYunxianPonderTags.MACHINES)
                 .addStoryBoard("resonance_table/resonance_filter", ResonanceScenes::resonanceFilterTypes,
                         AllYunxianPonderTags.MACHINES)
@@ -90,9 +90,9 @@ public class AllYunxianPonderScenes {
                 .forComponents(ModItems.RESONANCE_FILTER.get())
                 .addStoryBoard("resonance_table/resonance_table", ResonanceScenes::resonanceTable,
                         AllYunxianPonderTags.MACHINES)
-                .addStoryBoard("resonance_table/resonance_filter", ResonanceScenes::resonanceNetwork,
-                        AllYunxianPonderTags.MACHINES)
                 .addStoryBoard("resonance_table/resonance_filter", ResonanceScenes::resonanceFilter,
+                        AllYunxianPonderTags.MACHINES)
+                .addStoryBoard("resonance_table/resonance_filter", ResonanceScenes::resonanceNetwork,
                         AllYunxianPonderTags.MACHINES)
                 .addStoryBoard("resonance_table/resonance_filter", ResonanceScenes::resonanceFilterTypes,
                         AllYunxianPonderTags.MACHINES)
