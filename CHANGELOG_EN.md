@@ -18,9 +18,8 @@ section at the top.
 
 - Budding Glowstone's chance to replace Glowstone: default 0.5 → 0.1 (config key
   `glowstoneBuddingChance`).
-- Ponder rework: one scene per feature. The budding blocks with their Accelerators, the Smart
-  Drill, the Mechanical Cleaner and the Resonance family now total 16 scenes, each carrying 2-3
-  lines of text instead of 5-7, with block changes, item movement and gesture cues covering the rest.
+- Three new Ponder scenes for the Resonance family: the table, the filter, and a Display Link
+  reading a table.
 - The text of the five existing Ponder scenes was rewritten: the subject is the machine or the
   mechanic itself, no second person, no em dashes, no semicolons in Chinese.
 
