@@ -144,12 +144,12 @@ public final class BuddingInfoCollector {
             return fromFamily(generic, generic.family(), generic.stages());
         }
         if (block instanceof ScriptedBuddingBlock scripted) {
-            return fromDefinition(block, scripted.growthDefinition(), LANG + "origin.scripted");
+            return fromDefinition(block, scripted.growthDefinition());
         }
 
         GrowthDefinition declared = declaredDefinition(block);
         if (declared != null) {
-            return fromDefinition(block, declared, LANG + "origin.declared");
+            return fromDefinition(block, declared);
         }
 
         if (block == Blocks.BUDDING_AMETHYST) {
@@ -180,8 +180,12 @@ public final class BuddingInfoCollector {
         return info(block, stages, rows);
     }
 
-    /** 带生长定义的母岩：KubeJS 的 {@code CustomBudding} 与声明过定义的低阶方块 */
-    private static BuddingInfo fromDefinition(Block block, GrowthDefinition definition, String originKey) {
+    /**
+     * 带生长定义的母岩：KubeJS 的 {@code CustomBudding} 与声明过定义的低阶方块。
+     * <p>
+     * 只说「不能自然生成」，不写"谁注册的"——脚本还是附属模组注册，是开发者关心的事。
+     */
+    private static BuddingInfo fromDefinition(Block block, GrowthDefinition definition) {
         List<Row> rows = new ArrayList<>();
         addGrowthSections(rows, definition, List.of());
 
@@ -191,7 +195,6 @@ public final class BuddingInfoCollector {
 
         rows.add(Row.header(section("generation")));
         rows.add(Row.note(Component.translatable(LANG + "generation.none")));
-        rows.add(Row.note(Component.translatable(originKey)));
 
         return info(block, definition.stages(), rows);
     }
@@ -213,13 +216,10 @@ public final class BuddingInfoCollector {
         return info(Blocks.BUDDING_AMETHYST, stages, rows);
     }
 
-    /** 读不出规则的母岩：只说明它是什么、以及它进没进通用母岩标签 */
+    /** 读不出规则的母岩：只说明它是什么——这一页本来就没有别的内容可写 */
     private static BuddingInfo foreign(Block block) {
-        List<Row> rows = new ArrayList<>(2);
+        List<Row> rows = new ArrayList<>(1);
         rows.add(Row.note(Component.translatable(LANG + "unknown.foreign")));
-        if (block.defaultBlockState().is(ModTags.BUDDING_BLOCKS)) {
-            rows.add(Row.note(Component.translatable(LANG + "unknown.tag")));
-        }
         return new BuddingInfo(block.defaultBlockState(), null, ItemStack.EMPTY, lookupItems(block, List.of()), rows);
     }
 
@@ -265,8 +265,8 @@ public final class BuddingInfoCollector {
         if (growth.energy() == EnergyRequirement.FE) {
             rows.add(Row.line(Component.translatable(LANG + "growth.fe")));
         }
-        // 流体消耗（远古残骸的熔岩、脚本加的）不在这里：它是定义里的字段，由
-        // definitionConditions(...) 出一行带流体名与数字的，家族与脚本两条路共用
+        // 流体消耗（远古残骸的熔岩、可燃冰的水罐、脚本加的）不在这里：它是定义里的字段，
+        // 由 definitionConditions(...) 出一行「生长需要消耗X」
 
         return rows;
     }
@@ -288,12 +288,13 @@ public final class BuddingInfoCollector {
         if (definition.requiresWater()) {
             rows.add(Row.line(Component.translatable(LANG + "growth.water")));
         }
-        // 流体消耗：与家族母岩的「熔岩 / FE」同一层意思，只是流体名、消耗量、容量都是定义给的
-        // （家族那边写死在专用 BE 里，只能写一句固定文案，见上面 familyConditions(Growth)）
+        // 流体消耗：与家族母岩的「熔岩 / FE」同一层意思。只写要什么流体，不写消耗量、容量与
+        // 通入方式——那几项是声明方定的数字（家族表里也是），进页面只是一行数字噪音；
+        // 罐里还有多少、够不够一次生长，方块本身的护目镜浮窗与容器界面都会实时报
+        // （见 FluidTankBuddingBlockEntity）
         FluidRequirement fluid = definition.fluid();
         if (fluid != null) {
-            rows.add(Row.line(Component.translatable(LANG + "growth.fluid",
-                    fluid.displayName(), fluid.costPerGrowth(), fluid.capacity())));
+            rows.add(Row.line(Component.translatable(LANG + "growth.fluid", fluid.displayName())));
         }
         if (definition.growthEnvironment().restricts()) {
             rows.addAll(environmentRows(definition.growthEnvironment()));

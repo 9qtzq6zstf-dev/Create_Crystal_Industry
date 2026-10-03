@@ -15,10 +15,8 @@ import com.minecart.yunxian.budding.BuddingFamily;
 import com.minecart.yunxian.budding.BuddingFamily.WorldGen;
 import com.minecart.yunxian.client.budding.EnvironmentDisplay;
 import com.minecart.yunxian.compat.jei.BuddingInfo.Row;
-import com.minecart.yunxian.config.ModConfig;
 import com.mojang.logging.LogUtils;
 
-import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.core.Holder;
@@ -42,7 +40,12 @@ import net.minecraft.world.level.biome.Biome;
  * 不存在「文档与现实漂移」。读取方式见 {@link InfoJson}（客户端读不到 {@code data/}，只能读自己的 mod 文件）。
  * <p>
  * <b>读出来的数值不直接上页面</b>：高度范围折成「深层地下 / 地表附近」这类位置词，
- * 稀有度折成「极为罕见 / 分布稀疏」，数据本身留给玩家自己在世界里摸（见 {@link #describeExtent}）。
+ * 稀有度折成「极为罕见 / 分布稀疏」，数据本身留给玩家自己在世界里摸（见 {@link #describeExtent}）；
+ * 认不出的 placement 修饰器、以及配置开关的键名也不上页面——那是给数据包作者看的东西，
+ * 玩家在页面上只该看到"在世界里的什么位置、多常见"。
+ * <p>
+ * 群系与维度一律走 {@link EnvironmentDisplay} 的译名（具体群系用原版 {@code biome.*} 键、
+ * 标签用本模组的 {@code biome_tag.*} 键、维度用 {@code dimension.*} 键），查不到才照实写 id。
  * <p>
  * 方块类里没有对应 feature 的母岩（荧石走原版荧石团的替换、玫瑰石英只有配方、福鲁伊克斯靠扩散）
  * 显示「不自然生成」+ 可选的 {@code origin.<id>} 手写补充行。
@@ -55,9 +58,6 @@ final class GenerationInfoReader {
     private static final Logger LOGGER = LogUtils.getLogger();
 
     private static final String LANG = BuddingInfoText.LANG;
-
-    /** 认不出的 placement 修饰器最多列几个（正常只有 Create 的 config_filter 一个） */
-    private static final int MAX_UNKNOWN_SHOWN = 3;
 
     private GenerationInfoReader() {
     }
@@ -84,17 +84,6 @@ final class GenerationInfoReader {
             if (extent != null) {
                 rows.add(Row.line(extent));
             }
-
-            if (!placement.unknownTypes.isEmpty()) {
-                rows.add(Row.note(Component.translatable(LANG + "generation.other", joinUnknown(placement))));
-            }
-
-            if (spec.generateInWorld()) {
-                rows.add(Row.line(Component.translatable(LANG + "generation.config",
-                        Component.literal("worldgen.generate_" + spec.id()).withStyle(ChatFormatting.DARK_AQUA),
-                        Component.translatable(LANG + (ModConfig.Common.enabled(spec.id())
-                                ? "config.on" : "config.off")))));
-            }
         } else {
             rows.add(Row.note(Component.translatable(LANG + "generation.none")));
         }
@@ -109,13 +98,12 @@ final class GenerationInfoReader {
 
     // ==================== placed_feature ====================
 
-    /** 一条 placed_feature 里我们认得出来的部分；认不出的修饰器收进 {@link #unknownTypes} 如实列出 */
+    /** 一条 placed_feature 里我们认得出来的部分：稀有度、每区块次数、高度范围 */
     private static final class Placement {
         int rarity;
         int count;
         @Nullable Component minHeight;
         @Nullable Component maxHeight;
-        final List<Component> unknownTypes = new ArrayList<>();
     }
 
     private static Placement readPlacement(String feature) {
@@ -145,16 +133,11 @@ final class GenerationInfoReader {
                     case "minecraft:rarity_filter" -> placement.rarity = asInt(modifier.get("chance"));
                     case "minecraft:count" -> placement.count = countOf(modifier.get("count"));
                     case "minecraft:height_range" -> readHeight(modifier.getAsJsonObject("height"), placement);
-                    // 位置与群系过滤不用单独成行：群系来自 biome_modifier，位置就是「每区块随机取点」
-                    case "minecraft:in_square", "minecraft:biome" -> {
+                    // 其余修饰器都不上页面：位置与群系过滤已有别的行说明（群系来自 biome_modifier，
+                    // 位置就是「每区块随机取点」），按地表/海床放置的不写高度比写错好，
+                    // 而 Create 的 config_filter 写出来只是一串 JSON 里的 type id
+                    default -> {
                     }
-                    // 荧石、可燃冰那两条按地表/海床高度放置的 feature 会走到这里；不写高度比写错好
-                    case "minecraft:heightmap" -> {
-                    }
-                    // create:config_filter：Create 自己的世界生成开关，写出来让玩家知道还有一层门槛
-                    case "create:config_filter" ->
-                            placement.unknownTypes.add(Component.translatable(LANG + "generation.filter"));
-                    default -> placement.unknownTypes.add(Component.literal(type));
                 }
             }
         } catch (RuntimeException e) {
@@ -232,12 +215,6 @@ final class GenerationInfoReader {
     private static final int SPARSE_CHANCE = 4;
     /** 每区块尝试次数超过这个数就说「成片出现」 */
     private static final int CLUSTERED_COUNT = 4;
-
-    private static Component joinUnknown(Placement placement) {
-        List<Component> types = placement.unknownTypes.subList(0,
-                Math.min(MAX_UNKNOWN_SHOWN, placement.unknownTypes.size()));
-        return BuddingInfoText.join(types);
-    }
 
     private static void readHeight(@Nullable JsonObject height, Placement placement) {
         if (height == null) {
@@ -336,14 +313,19 @@ final class GenerationInfoReader {
     }
 
     /**
-     * 群系 id → 显示名：走原版就有的 {@code biome.<命名空间>.<路径>} 语言键（「下界荒地」），
-     * 查不到就照实写 id——与「生长群系」那一行同一套名字（见 {@link EnvironmentDisplay}）。
-     * 整合包写错的 id 因此也会原样显示出来，不会被悄悄替换成别的名字。
+     * 群系 id → 显示名：具体群系走原版 {@code biome.<命名空间>.<路径>} 语言键（「下界荒地」），
+     * 标签走本模组的 {@code create_crystal_industry.biome_tag.<命名空间>.<路径>}（{@code #minecraft:is_overworld}
+     * →「主世界群系」），两者都没有才照实写 id——与「生长群系」那一行同一套名字
+     * （见 {@link EnvironmentDisplay}）。整合包写错的 id 因此也会原样显示出来，不会被悄悄替换成别的名字。
      */
     private static Component biomeLabel(String id) {
-        ResourceLocation location = ResourceLocation.tryParse(id);
-        return location == null
-                ? Component.literal(id)
+        ResourceLocation location = ResourceLocation.tryParse(
+                id.startsWith("#") ? id.substring(1) : id);
+        if (location == null) {
+            return Component.literal(id);
+        }
+        return id.startsWith("#")
+                ? EnvironmentDisplay.biomeTagName(TagKey.create(Registries.BIOME, location))
                 : EnvironmentDisplay.biomeName(ResourceKey.create(Registries.BIOME, location));
     }
 
