@@ -18,14 +18,18 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 
+/**
+ * 思索分镜的注册表：<b>一个功能一条分镜</b>，同一台机器的几条按「入门 → 进阶」排。
+ * <p>
+ * 多条分镜共用同一张蓝图是刻意为之：蓝图只决定场上摆了什么，讲什么由脚本决定。
+ */
 public class AllYunxianPonderScenes {
 
     public static void register(PonderSceneRegistrationHelper<ResourceLocation> helper) {
         // 把所有“方块 → ResourceLocation”的注册统一换成 Block 视角
         PonderSceneRegistrationHelper<Block> blocks = helper.withKeyFunction(BuiltInRegistries.BLOCK::getKey);
 
-        // 1) 母岩通用分镜：原版紫水晶 + 本模组全部母岩共用同一份蓝图/脚本
-        //    名单由中央定义表派生；AE2 缺席时福鲁伊克斯那条 isRegistered() 为 false，自然跳过
+        // 1) 母岩：怎么长、催生器怎么帮它
         List<Block> buddingBlocks = new ArrayList<>();
         buddingBlocks.add(Blocks.BUDDING_AMETHYST);
         for (RegisteredFamily family : BuddingFamilies.ALL) {
@@ -36,36 +40,59 @@ public class AllYunxianPonderScenes {
         blocks.forComponents(buddingBlocks)
                 .addStoryBoard("budding/accelerated_growth", CrystalScenes::buddingGrowth, AllYunxianPonderTags.BUDDING);
 
-        // 2) 电力催生器
+        // 2) 电力催生器：供能 / 随机刻还加速什么
         blocks.forComponents(ModBlocks.ACCELERATOR.get())
-                .addStoryBoard("accelerator/electric", CrystalScenes::electricAccelerator, AllYunxianPonderTags.ACCELERATORS);
+                .addStoryBoard("accelerator/electric", CrystalScenes::electricAccelerator,
+                        AllYunxianPonderTags.ACCELERATORS)
+                .addStoryBoard("accelerator/electric", CrystalScenes::randomTickTargets,
+                        AllYunxianPonderTags.ACCELERATORS);
 
-        // 3) 动力催生器
+        // 3) 动力催生器：供能（转速决定快慢）
         blocks.forComponents(ModBlocks.MECHANICAL_ACCELERATOR.get())
-                .addStoryBoard("accelerator/mechanical", CrystalScenes::mechanicalAccelerator, AllYunxianPonderTags.ACCELERATORS);
+                .addStoryBoard("accelerator/mechanical", CrystalScenes::mechanicalAccelerator,
+                        AllYunxianPonderTags.ACCELERATORS);
 
-        // 4) 智能钻头
+        // 4) 智能钻头：速度 / 切模式 / 精准采集母岩
         blocks.forComponents(ModBlocks.SMART_DRILL.get())
-                .addStoryBoard("smart_drill/smart_drill", SmartDrillScenes::smartDrill, AllYunxianPonderTags.MACHINES);
-
-        // 5) 动力吸尘器
-        blocks.forComponents(ModBlocks.MECHANICAL_CLEANER.get())
-                .addStoryBoard("mechanical_cleaner/mechanical_cleaner", MechanicalCleanerScenes::mechanicalCleaner,
+                .addStoryBoard("smart_drill/smart_drill", SmartDrillScenes::smartDrillSpeed,
+                        AllYunxianPonderTags.MACHINES)
+                .addStoryBoard("smart_drill/smart_drill", SmartDrillScenes::smartDrillModes,
+                        AllYunxianPonderTags.MACHINES)
+                .addStoryBoard("smart_drill/smart_drill", SmartDrillScenes::smartDrillSilkTouch,
                         AllYunxianPonderTags.MACHINES);
 
-        // 6) 共振台：三张分镜 —— 台子本身、接了共振过滤器之后的过滤，以及用显示链接器把网络读出来
+        // 5) 动力吸尘器：气流与收集 / 前方容器 / 配置
+        blocks.forComponents(ModBlocks.MECHANICAL_CLEANER.get())
+                .addStoryBoard("mechanical_cleaner/mechanical_cleaner", MechanicalCleanerScenes::cleanerAirflow,
+                        AllYunxianPonderTags.MACHINES)
+                .addStoryBoard("mechanical_cleaner/mechanical_cleaner", MechanicalCleanerScenes::cleanerContainer,
+                        AllYunxianPonderTags.MACHINES)
+                .addStoryBoard("mechanical_cleaner/mechanical_cleaner", MechanicalCleanerScenes::cleanerConfig,
+                        AllYunxianPonderTags.MACHINES);
+
+        // 6) 共振台一族：台面 / 组网 / 规则来源 / 并集 / 红石冻结 / 显示
         blocks.forComponents(ModBlocks.RESONANCE_TABLE.get())
                 .addStoryBoard("resonance_table/resonance_table", ResonanceScenes::resonanceTable,
                         AllYunxianPonderTags.MACHINES)
+                .addStoryBoard("resonance_table/resonance_table", ResonanceScenes::resonanceNetwork,
+                        AllYunxianPonderTags.MACHINES)
                 .addStoryBoard("resonance_table/resonance_filter", ResonanceScenes::resonanceFilter,
+                        AllYunxianPonderTags.MACHINES)
+                .addStoryBoard("resonance_table/resonance_filter", ResonanceScenes::resonanceFilterUnion,
+                        AllYunxianPonderTags.MACHINES)
+                .addStoryBoard("resonance_table/resonance_filter", ResonanceScenes::resonanceFilterRedstone,
                         AllYunxianPonderTags.MACHINES)
                 .addStoryBoard("resonance_table/resonance_display", ResonanceScenes::resonanceDisplay,
                         AllYunxianPonderTags.MACHINES);
 
-        // 7) 共振过滤器：同一条「过滤」分镜挂到物品上，鼠标停在物品上也能直接看
+        // 7) 共振过滤器：同一条「过滤」系列挂到物品上，鼠标停在物品上也能直接看
         helper.withKeyFunction(BuiltInRegistries.ITEM::getKey)
                 .forComponents(ModItems.RESONANCE_FILTER.get())
                 .addStoryBoard("resonance_table/resonance_filter", ResonanceScenes::resonanceFilter,
+                        AllYunxianPonderTags.MACHINES)
+                .addStoryBoard("resonance_table/resonance_filter", ResonanceScenes::resonanceFilterUnion,
+                        AllYunxianPonderTags.MACHINES)
+                .addStoryBoard("resonance_table/resonance_filter", ResonanceScenes::resonanceFilterRedstone,
                         AllYunxianPonderTags.MACHINES);
     }
 

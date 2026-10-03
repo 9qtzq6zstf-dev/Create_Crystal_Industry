@@ -1,8 +1,12 @@
 package com.minecart.yunxian.ponder.scenes;
 
+import com.minecart.yunxian.blockentity.SmartDrillBlockEntity;
 import com.minecart.yunxian.budding.BuddingFamilies;
-import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
+import com.simibubi.create.foundation.ponder.CreateSceneBuilder;
 
+import net.createmod.catnip.math.Pointing;
+import net.createmod.ponder.api.element.ElementLink;
+import net.createmod.ponder.api.element.EntityElement;
 import net.createmod.ponder.api.scene.SceneBuilder;
 import net.createmod.ponder.api.scene.SceneBuildingUtil;
 import net.minecraft.core.BlockPos;
@@ -14,156 +18,223 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
+/**
+ * 智能钻头的三条分镜：速度、切换模式、精准采集母岩。三条共用同一张蓝图
+ * {@code smart_drill/smart_drill.nbt}（5×5×5）：
+ * <ul>
+ *   <li>(1,1,2) 智能钻头（朝北），背面 (1,1,3) 链式传动箱</li>
+ *   <li>(3,1,2) 普通机械钻头（朝北），背面 (3,1,3) 链式传动箱 → (3,1,4) 小齿轮 → (2,2,4) 大齿轮</li>
+ *   <li>(1,0,3)/(2,0,3)/(3,0,3) 底层取力回路，随基座层 (layer 0) 显示</li>
+ *   <li>演示位（空气格）(1,1,1)/(3,1,1) 由脚本放置方块</li>
+ * </ul>
+ * 三条分镜讲同一台机器，靠不同的演示物（石头 / 母岩）与镜头错开构图。
+ * 挖掘、模式切换、掉落一律脚本演绎；碎裂用 destroyBlock + 一簇 BLOCK 粒子代替裂纹动画。
+ */
 public class SmartDrillScenes {
 
     /*
-     * ============ 智能钻头分镜 ============
-     * 蓝图 smart_drill/smart_drill.nbt：
-     *   - (1,1,2)  智能钻头（朝北），背面 (1,1,3) 链式传动箱
-     *   - (3,1,2)  普通机械钻头（朝北），背面 (3,1,3) 链式传动箱 → (3,1,4) 小齿轮 → (2,2,4) 大齿轮
-     *   - (1,0,3)/(2,0,3)/(3,0,3) 底层取力回路（链式传动箱-包壳轴-链式传动箱），随基座层 (layer 0) 显示
-     *   - 挖掘演示方块（石头/母岩）由脚本放置在钻头正前方 (1,1,1)/(3,1,1)
-     *
-     * 出场顺序：
-     *   基座层 → 全部链式传动箱与齿轮先就位 → 智能钻头单独出场 → 普通钻头单独出场
-     *
-     * 说明：
-     *  1. 模式切换与挖掘节奏均为脚本演绎（不修改方块实体数据）；
-     *  2. 精准采集的产出用 createItemEntity 模拟；
-     *  3. 演示位（空气格）已并入 showSection，运行时 setBlock 的方块才会显示；
-     *  4. 方块碎裂用 destroyBlock + 一簇 BLOCK 粒子代替裂纹动画。
+     * ============ 1) 普通采集比普通钻头快一倍 ============
+     * 演出：两台钻头同刻开挖同一块石头，智能钻头先挖穿 —— 这正是它两倍速的意思。
      */
-    public static void smartDrill(SceneBuilder scene, SceneBuildingUtil util) {
-        scene.title("smart_drill", "Using the Smart Drill");
+    public static void smartDrillSpeed(SceneBuilder builder, SceneBuildingUtil util) {
+        CreateSceneBuilder scene = new CreateSceneBuilder(builder);
+        scene.title("smart_drill_speed", "Normal Harvesting");
         scene.configureBasePlate(0, 0, 5);
         scene.world().showSection(util.select().layer(0), Direction.UP);
         scene.idle(5);
 
         BlockPos smart = util.grid().at(1, 1, 2);
-        BlockPos smartBack = util.grid().at(1, 1, 3);
         BlockPos vanilla = util.grid().at(3, 1, 2);
+        BlockPos smartBack = util.grid().at(1, 1, 3);
         BlockPos vanillaBack = util.grid().at(3, 1, 3);
         BlockPos cog = util.grid().at(3, 1, 4);
         BlockPos largeCog = util.grid().at(2, 2, 4);
-
         BlockPos spotSmart = util.grid().at(1, 1, 1);
         BlockPos spotVanilla = util.grid().at(3, 1, 1);
 
-        // 0) 传动部分先全部就位：两个链式传动箱同拍出现，随后小齿轮、大齿轮
-        //    （底层两个链式传动箱已随基座层出现）
-        scene.world().showSection(util.select()
-                .position(smartBack)
-                .add(util.select().position(vanillaBack)), Direction.NORTH);
+        // 传动部分先就位，两台钻头随后各自出场
+        scene.world().showSection(util.select().position(smartBack).add(util.select().position(vanillaBack)), Direction.NORTH);
         scene.idle(4);
         scene.world().showSection(util.select().position(cog), Direction.NORTH);
         scene.idle(4);
         scene.world().showSection(util.select().position(largeCog), Direction.DOWN);
         scene.idle(8);
-
-        // 1) 智能钻头单独出场（其前方演示位一并纳入）
         scene.world().showSection(util.select().fromTo(spotSmart, smart), Direction.DOWN);
+        scene.idle(8);
+
+        scene.overlay().showText(90)
+                .attachKeyFrame()
+                .text("The Smart Drill is a Mechanical Drill with two harvesting modes. This scene covers Normal Harvesting.")
+                .placeNearTarget()
+                .pointAt(util.vector().centerOf(smart));
+        scene.idle(20);
+        scene.world().showSection(util.select().fromTo(spotVanilla, vanilla), Direction.DOWN);
+        scene.idle(90);
+
+        // 通电：整机转起来
+        powerUp(scene, util, largeCog, cog, smartBack, vanillaBack, smart, vanilla);
+
+        // 同刻开挖同一块石头
+        scene.world().setBlock(spotSmart, Blocks.STONE.defaultBlockState(), false);
+        scene.world().setBlock(spotVanilla, Blocks.STONE.defaultBlockState(), false);
         scene.idle(10);
 
         scene.overlay().showText(95)
                 .attachKeyFrame()
-                .text("The Smart Drill is a Mechanical Drill with two harvesting modes: Normal Harvesting and Silk Touch Harvesting.")
+                .text("In Normal Harvesting the Smart Drill mines twice as fast as a regular Mechanical Drill.")
                 .placeNearTarget()
-                .pointAt(util.vector().centerOf(smart));
-        scene.idle(105);
+                .pointAt(util.vector().topOf(spotSmart));
+        scene.idle(15);
+        destroyWithDebris(scene, util, spotSmart, Blocks.STONE.defaultBlockState());
+        scene.idle(20);
+        destroyWithDebris(scene, util, spotVanilla, Blocks.STONE.defaultBlockState());
+        scene.idle(80);
+    }
 
-        // 2) 对照的普通机械钻头单独出场
-        scene.world().showSection(util.select().fromTo(spotVanilla, vanilla), Direction.DOWN);
+    /*
+     * ============ 2) 侧面的设置槽切换模式 ============
+     * 演出：手势右键侧槽 → 槽位高亮 → 写入 Mode 让槽位图标切换 → 再挖一次，速度与普通钻头持平。
+     */
+    public static void smartDrillModes(SceneBuilder builder, SceneBuildingUtil util) {
+        CreateSceneBuilder scene = new CreateSceneBuilder(builder);
+        scene.title("smart_drill_modes", "Switching Modes");
+        scene.configureBasePlate(0, 0, 5);
+        scene.world().showSection(util.select().layer(0), Direction.UP);
+        scene.idle(5);
+
+        BlockPos smart = util.grid().at(1, 1, 2);
+        BlockPos vanilla = util.grid().at(3, 1, 2);
+        BlockPos smartBack = util.grid().at(1, 1, 3);
+        BlockPos vanillaBack = util.grid().at(3, 1, 3);
+        BlockPos cog = util.grid().at(3, 1, 4);
+        BlockPos largeCog = util.grid().at(2, 2, 4);
+        BlockPos spotSmart = util.grid().at(1, 1, 1);
+        BlockPos spotVanilla = util.grid().at(3, 1, 1);
+
+        // 朝向为北时四个垂直于轴向的面都能配置，这里指朝西那一面
+        Vec3 slot = util.vector().centerOf(smart).add(-0.47, 0.0, 0.19);
+
+        scene.world().showSection(util.select().layer(1), Direction.DOWN);
+        scene.idle(4);
+        scene.world().showSection(util.select().position(largeCog), Direction.DOWN);
+        scene.idle(10);
+        powerUp(scene, util, largeCog, cog, smartBack, vanillaBack, smart, vanilla);
         scene.idle(10);
 
-        scene.overlay().showOutlineWithText(util.select()
-                        .position(smart)
-                        .add(util.select().position(vanilla)), 105)
-                .text("A regular Mechanical Drill stands on the left for comparison. Both drills take Rotational Force at the back and mine the block in front of the head.")
-                .placeNearTarget();
-        scene.idle(115);
+        scene.overlay().showText(85)
+                .attachKeyFrame()
+                .text("The setting slot on its side switches harvesting modes.")
+                .placeNearTarget()
+                .pointAt(slot);
+        scene.overlay().showFilterSlotInput(slot, 55);
+        scene.idle(20);
+        scene.overlay().showControls(slot, Pointing.DOWN, 45)
+                .rightClick();
+        scene.idle(45);
 
-        // 3) 供电：整机转动（大齿轮为动力输入端 16 rpm；小齿轮/钻头按啮合与链传动取值）
-        scene.world().modifyBlockEntityNBT(util.select().position(largeCog), KineticBlockEntity.class,
-                nbt -> nbt.putFloat("Speed", 16f));
-        scene.world().modifyBlockEntityNBT(util.select()
-                        .position(cog)
-                        .add(util.select().position(vanillaBack))
-                        .add(util.select().position(vanilla))
-                        .add(util.select().position(smartBack))
-                        .add(util.select().position(smart))
-                        .add(util.select().fromTo(util.grid().at(1, 0, 3), util.grid().at(3, 0, 3))),
-                KineticBlockEntity.class, nbt -> nbt.putFloat("Speed", -32f));
+        // 切到精准采集：只改槽里的模式值，槽位图标与行为随之改变
+        scene.world().modifyBlockEntityNBT(util.select().position(smart), SmartDrillBlockEntity.class,
+                nbt -> nbt.putInt("Mode", SmartDrillBlockEntity.DrillMode.PRECISE.ordinal()));
         scene.effects().indicateSuccess(smart);
-        scene.effects().indicateSuccess(vanilla);
         scene.idle(10);
 
-        // 4) 普通采集：速度是普通钻头的两倍（同刻开挖，智能钻头先挖穿）
         scene.world().setBlock(spotSmart, Blocks.STONE.defaultBlockState(), false);
         scene.world().setBlock(spotVanilla, Blocks.STONE.defaultBlockState(), false);
+        scene.idle(25);
+
+        scene.overlay().showText(95)
+                .attachKeyFrame()
+                .text("Silk Touch Harvesting mines at the speed of a regular drill: both drills break the block at the same moment.")
+                .placeNearTarget()
+                .pointAt(util.vector().topOf(spotSmart));
+        scene.idle(15);
+        destroyWithDebris(scene, util, spotSmart, Blocks.STONE.defaultBlockState());
+        destroyWithDebris(scene, util, spotVanilla, Blocks.STONE.defaultBlockState());
+        scene.idle(100);
+    }
+
+    /*
+     * ============ 3) 精准采集把母岩整块采下 ============
+     * 演出：普通钻头把母岩打碎（碎屑散去、什么也不掉）↔ 智能钻头采下母岩方块本身（掉落物飞出）。
+     */
+    public static void smartDrillSilkTouch(SceneBuilder builder, SceneBuildingUtil util) {
+        CreateSceneBuilder scene = new CreateSceneBuilder(builder);
+        scene.title("smart_drill_silk_touch", "Harvesting Budding Blocks");
+        scene.configureBasePlate(0, 0, 5);
+        scene.world().showSection(util.select().layer(0), Direction.UP);
+        scene.idle(5);
+
+        BlockPos smart = util.grid().at(1, 1, 2);
+        BlockPos vanilla = util.grid().at(3, 1, 2);
+        BlockPos smartBack = util.grid().at(1, 1, 3);
+        BlockPos vanillaBack = util.grid().at(3, 1, 3);
+        BlockPos cog = util.grid().at(3, 1, 4);
+        BlockPos largeCog = util.grid().at(2, 2, 4);
+        BlockPos spotSmart = util.grid().at(1, 1, 1);
+        BlockPos spotVanilla = util.grid().at(3, 1, 1);
+
+        BlockState budding = BuddingFamilies.ROSE_QUARTZ.budding().get().defaultBlockState();
+
+        scene.world().showSection(util.select().layer(1), Direction.DOWN);
+        scene.idle(4);
+        scene.world().showSection(util.select().position(largeCog), Direction.DOWN);
+        scene.idle(10);
+        powerUp(scene, util, largeCog, cog, smartBack, vanillaBack, smart, vanilla);
+        scene.idle(10);
+
+        scene.world().setBlock(spotVanilla, budding, false);
         scene.idle(10);
 
         scene.overlay().showText(100)
                 .attachKeyFrame()
-                .text("In Normal Harvesting, the Smart Drill mines twice as fast as a regular drill.")
-                .placeNearTarget()
-                .pointAt(util.vector().centerOf(smart));
-        scene.idle(20);
-        destroyWithDebris(scene, util, spotSmart, Blocks.STONE.defaultBlockState());
-        scene.idle(20);
-        destroyWithDebris(scene, util, spotVanilla, Blocks.STONE.defaultBlockState());
-        scene.idle(75);
-
-        // 5) 切换精准采集：速度与普通钻头相同（两块石头同时挖穿）
-        scene.world().setBlock(spotSmart, Blocks.STONE.defaultBlockState(), false);
-        scene.world().setBlock(spotVanilla, Blocks.STONE.defaultBlockState(), false);
-        scene.idle(5);
-
-        scene.overlay().showText(120)
-                .attachKeyFrame()
-                .text("The setting slot on its side switches modes at any time. In Silk Touch Harvesting, the mining speed matches a regular drill, but blocks drop as if mined with Silk Touch.")
-                .placeNearTarget()
-                .pointAt(util.vector().centerOf(smart));
-        // 模式槽位指示：朝向为北时，四个垂直于轴向的面（上/下/东/西）均可配置；这里指向面向默认镜头的西面槽位。
-        // 坐标取自 SmartDrillValueBoxTransform：西面槽位本地偏移 (0.03125, 0.5, 0.3125) + 方块 (1,1,2)
-        scene.overlay().showFilterSlotInput(new Vec3(1.03125, 1.5, 2.6875), 80);
-        scene.idle(30);
-        destroyWithDebris(scene, util, spotSmart, Blocks.STONE.defaultBlockState());
-        destroyWithDebris(scene, util, spotVanilla, Blocks.STONE.defaultBlockState());
-        scene.idle(105);
-
-        // 6) 母岩：普通钻头打碎后无法采集
-        scene.world().setBlock(spotSmart, BuddingFamilies.ROSE_QUARTZ.budding().get().defaultBlockState(), false);
-        scene.world().setBlock(spotVanilla, BuddingFamilies.ROSE_QUARTZ.budding().get().defaultBlockState(), false);
-        scene.idle(10);
-
-        scene.overlay().showText(110)
-                .attachKeyFrame()
-                .text("Budding Blocks are a special case. A regular drill, or the Smart Drill in Normal Harvesting, shatters them, and the block itself cannot be collected.")
+                .text("Budding Blocks are a special case: a regular drill shatters them, and the block itself cannot be collected.")
                 .placeNearTarget()
                 .pointAt(util.vector().centerOf(spotVanilla));
         scene.idle(20);
-        destroyWithDebris(scene, util, spotVanilla, BuddingFamilies.ROSE_QUARTZ.budding().get().defaultBlockState());
-        scene.idle(105);
+        destroyWithDebris(scene, util, spotVanilla, budding);
+        scene.idle(90);
 
-        // 7) 母岩：精准采集完整采下（掉落物留在场景中）
-        scene.overlay().showText(110)
+        // 换成精准采集
+        scene.world().modifyBlockEntityNBT(util.select().position(smart), SmartDrillBlockEntity.class,
+                nbt -> nbt.putInt("Mode", SmartDrillBlockEntity.DrillMode.PRECISE.ordinal()));
+        scene.effects().indicateSuccess(smart);
+        scene.world().setBlock(spotSmart, budding, false);
+        scene.idle(15);
+
+        scene.overlay().showText(100)
                 .attachKeyFrame()
-                .text("In Silk Touch Harvesting, the Smart Drill collects the Budding Block itself. This is one of the ways Crystal Industry provides for obtaining Budding Blocks.")
+                .text("In Silk Touch Harvesting the Smart Drill collects the Budding Block itself.")
                 .placeNearTarget()
                 .pointAt(util.vector().centerOf(spotSmart));
-        scene.idle(10);
-        destroyWithDebris(scene, util, spotSmart, BuddingFamilies.ROSE_QUARTZ.budding().get().defaultBlockState());
-        scene.world().createItemEntity(util.vector().centerOf(spotSmart), Vec3.ZERO,
+        scene.idle(15);
+        destroyWithDebris(scene, util, spotSmart, budding);
+        ElementLink<EntityElement> drop = scene.world().createItemEntity(util.vector().centerOf(spotSmart), Vec3.ZERO,
                 new ItemStack(BuddingFamilies.ROSE_QUARTZ.budding().get().asItem()));
         scene.effects().indicateSuccess(spotSmart);
-        scene.idle(120);
+        scene.idle(100);
     }
 
-    /**
-     * 破坏方块并喷出一小簇该方块的碎屑粒子（替代原版挖掘裂纹动画的视觉演出）。
-     * 观感调整点：emitParticles 末尾的 8、2 = 每次每刻粒子数、持续刻数。
-     */
-    private static void destroyWithDebris(SceneBuilder scene, SceneBuildingUtil util, BlockPos pos, BlockState state) {
+    // ---- 工具方法 ----
+
+    /** 大齿轮为动力输入端 16 rpm，其余按啮合与链传动取值 */
+    private static void powerUp(CreateSceneBuilder scene, SceneBuildingUtil util, BlockPos largeCog, BlockPos cog,
+                                BlockPos smartBack, BlockPos vanillaBack, BlockPos smart, BlockPos vanilla) {
+        scene.world().setKineticSpeed(util.select().position(largeCog), 16f);
+        scene.world().setKineticSpeed(util.select()
+                .position(cog)
+                .add(util.select().position(vanillaBack))
+                .add(util.select().position(vanilla))
+                .add(util.select().position(smartBack))
+                .add(util.select().position(smart))
+                .add(util.select().fromTo(util.grid().at(1, 0, 3), util.grid().at(3, 0, 3))), -32f);
+        scene.effects().indicateSuccess(smart);
+        scene.effects().indicateSuccess(vanilla);
+        scene.effects().rotationDirectionIndicator(largeCog);
+        scene.idle(10);
+    }
+
+    /** 破坏方块并喷出一小簇该方块的碎屑（替代原版挖掘裂纹动画） */
+    private static void destroyWithDebris(CreateSceneBuilder scene, SceneBuildingUtil util, BlockPos pos, BlockState state) {
         scene.world().destroyBlock(pos);
         scene.effects().emitParticles(
                 util.vector().centerOf(pos),

@@ -195,7 +195,7 @@ Breaking a naturally generated Budding Echo summons a Warden. The check reads th
 | JEI | Optional | Adds a "Budding Block Info" page: one page per budding block covering growth conditions, growth speed and generation conditions, reachable from the budding block, its buds, its cluster and the cluster's output |
 | KubeJS | Optional | Register your own budding blocks from a script, see the next section |
 
-Without AE2 the mod starts normally and simply does not register any Fluix content. The budding blocks (including vanilla Budding Amethyst), both Accelerators, the Smart Drill and the Mechanical Cleaner each ship with a Ponder scene, and Engineer's Goggles read out how they are running.
+Without AE2 the mod starts normally and simply does not register any Fluix content. The budding blocks (including vanilla Budding Amethyst), both Accelerators, the Smart Drill, the Mechanical Cleaner, and the Resonance Table together with its Resonance Filter all ship with Ponder scenes, one scene per feature, and Engineer's Goggles read out how they are running.
 
 The mod provides 31 advancements across five branches: budding blocks, accelerators, machines, equipment, and the deep ocean and Deep Dark.
 
