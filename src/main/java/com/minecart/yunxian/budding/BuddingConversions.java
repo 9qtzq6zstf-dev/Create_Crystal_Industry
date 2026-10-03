@@ -37,7 +37,7 @@ import org.slf4j.LoggerFactory;
  * 改顺序会改变所有母岩的手感，也会让附属模组的行为跟着变。
  * <p>
  * 「把方块变成母岩」这一类（也就是<em>侵染/再生传播</em>）另外受配置的两个开关管：
- * {@code enableBuddingInfection} 与 {@code infectingBudding}（见 {@link #infectionAllowed}）。
+ * {@code infection.buddingInfection} 与 {@code infection.infectingBudding}（见 {@link #infectionAllowed}）。
  * 判定看的是<b>产物</b>是不是母岩方块，所以家族表里的再生规则与脚本写的
  * {@code .transform('粗铁块', '我的母岩')} 一视同仁；「石头 → 铁矿」那种普通转化不受影响。
  */
@@ -148,11 +148,11 @@ public final class BuddingConversions {
     }
 
     /**
-     * 配置里"这块母岩还能不能侵染周围方块"：
+     * 配置里"这块母岩允不允许侵染周围方块"：
      * <ul>
-     *   <li>{@code enableBuddingInfection} 关掉 = 谁都不能（总开关）；</li>
-     *   <li>{@code infectingBudding} 写空 = 按各家族出厂设置（都随家族表）；
-     *       写了名单 = <b>只有</b>名单里的还能侵染。</li>
+     *   <li>{@code infection.buddingInfection} 关掉 = 谁都不能（总开关）；</li>
+     *   <li>{@code infection.infectingBudding} 写空 = 按各家族出厂设置（都随家族表）；
+     *       写了名单 = <b>只有</b>名单里的允许。</li>
      * </ul>
      * 名单里可以写<b>母岩家族 id</b>（{@code raw_iron}、{@code quartz}）或<b>方块 id</b>
      * （{@code kubejs:my_crystal_budding}——脚本注册的母岩得用这一种写法），

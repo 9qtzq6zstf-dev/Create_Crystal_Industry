@@ -1263,7 +1263,7 @@ public final class CustomBudding {
          * {@code .transform('minecraft:diamond_block', 'mypack:my_crystal_budding')}
          * （脚本母岩的方块 id 是 {@code <命名空间>:<id>_budding}）。
          * <p>
-         * <b>产物是母岩方块的规则受配置管</b>（{@code buddingInfection} / {@code infectingBudding}）：
+         * <b>产物是母岩方块的规则受配置管</b>（{@code infection.buddingInfection} / {@code infection.infectingBudding}）：
          * 服主关掉侵染之后它不再生效，而"石头 → 铁矿石"这种普通转化不受影响。
          * 在 {@code modify} 里写它则是<b>追加</b>到方块原有的转化之后，不会把家族表里的规则顶掉。
          */

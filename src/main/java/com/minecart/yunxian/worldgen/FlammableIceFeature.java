@@ -28,6 +28,17 @@ public class FlammableIceFeature extends Feature<NoneFeatureConfiguration> {
     public static final ResourceLocation TEMPLATE_ID =
             ResourceLocation.fromNamespaceAndPath("create_crystal_industry", "flammable_ice");
 
+    /**
+     * 结构周围灵魂沙的数量、散布范围与埋深：这几个数值绑在一起才有那片"海底冒泡"的样子，
+     * 拆开单独调没有意义，所以只留 {@link ModConfig.Common#SOUL_SAND_GENERATE} 一个开关。
+     */
+    private static final int SOUL_SAND_MIN = 3;
+    private static final int SOUL_SAND_MAX = 6;
+    /** 从结构边缘向外最多多少格还能长灵魂沙 */
+    private static final int SOUL_SAND_MARGIN = 5;
+    /** 灵魂沙埋在海床表面下几格（1 = 一格深的坑） */
+    private static final int SOUL_SAND_SINK = 1;
+
     public FlammableIceFeature(Codec<NoneFeatureConfiguration> codec) {
         super(codec);
     }
@@ -79,22 +90,17 @@ public class FlammableIceFeature extends Feature<NoneFeatureConfiguration> {
 
     private void scatterSoulSand(WorldGenLevel level, RandomSource random,
                                  int originX, int originZ, int sizeX, int sizeZ) {
-        // 配置读取
         if (!ModConfig.Common.SOUL_SAND_GENERATE.get()) {
             return;
         }
-        int min = ModConfig.Common.SOUL_SAND_MIN.get();
-        int max = Math.max(min, ModConfig.Common.SOUL_SAND_MAX.get());
-        int margin = ModConfig.Common.SOUL_SAND_MARGIN.get();
-        int sink = ModConfig.Common.SOUL_SAND_SINK.get();
 
-        int count = min + random.nextInt(max - min + 1);
+        int count = SOUL_SAND_MIN + random.nextInt(SOUL_SAND_MAX - SOUL_SAND_MIN + 1);
         int seaLevel = level.getSeaLevel();
 
-        int minX = originX - margin;
-        int maxX = originX + sizeX - 1 + margin;
-        int minZ = originZ - margin;
-        int maxZ = originZ + sizeZ - 1 + margin;
+        int minX = originX - SOUL_SAND_MARGIN;
+        int maxX = originX + sizeX - 1 + SOUL_SAND_MARGIN;
+        int minZ = originZ - SOUL_SAND_MARGIN;
+        int maxZ = originZ + sizeZ - 1 + SOUL_SAND_MARGIN;
 
         int placed = 0;
         for (int attempt = 0; attempt < 200 && placed < count; attempt++) {
@@ -110,12 +116,12 @@ public class FlammableIceFeature extends Feature<NoneFeatureConfiguration> {
                 continue;
             }
 
-            // 灵魂沙埋到海床表面下 sink 格
-            BlockPos soulPos = new BlockPos(x, y - sink, z);
+            // 灵魂沙埋到海床表面下 SOUL_SAND_SINK 格
+            BlockPos soulPos = new BlockPos(x, y - SOUL_SAND_SINK, z);
             level.setBlock(soulPos, Blocks.SOUL_SAND.defaultBlockState(), 2);
 
-            // 把灵魂沙顶面到海床表面之间挖成水（形成 sink 格深的坑）
-            for (int dy = y - sink + 1; dy <= y; dy++) {
+            // 把灵魂沙顶面到海床表面之间挖成水（形成 SOUL_SAND_SINK 格深的坑）
+            for (int dy = y - SOUL_SAND_SINK + 1; dy <= y; dy++) {
                 BlockPos fill = new BlockPos(x, dy, z);
                 if (level.getBlockState(fill).getBlock() != Blocks.WATER) {
                     level.setBlock(fill, Blocks.WATER.defaultBlockState(), 2);
@@ -127,7 +133,7 @@ public class FlammableIceFeature extends Feature<NoneFeatureConfiguration> {
             // 必须显式置 false 才是灵魂沙的上升气泡柱（否则只能等邻居更新触发的 5 tick 纠正）
             BlockState upwardColumn = Blocks.BUBBLE_COLUMN.defaultBlockState()
                     .setValue(BubbleColumnBlock.DRAG_DOWN, false);
-            BlockPos.MutableBlockPos bub = new BlockPos(x, y - sink + 1, z).mutable();
+            BlockPos.MutableBlockPos bub = new BlockPos(x, y - SOUL_SAND_SINK + 1, z).mutable();
             while (bub.getY() < seaLevel
                     && (level.getBlockState(bub).is(Blocks.WATER)
                     || level.getBlockState(bub).is(Blocks.BUBBLE_COLUMN))) {

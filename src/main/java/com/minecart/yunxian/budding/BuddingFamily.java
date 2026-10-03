@@ -29,13 +29,13 @@ import net.minecraft.world.level.block.state.BlockState;
  * （原因见 {@code integration.ae2.AE2BlockEntities} 的类注释）。
  */
 public record BuddingFamily(
-        /** 方块 id 前缀，同时是配置项 generate_&lt;id&gt; 的键名 */
+        /** 方块 id 前缀，同时是配置项 worldgen.generate_&lt;id&gt; 的键名 */
         String id,
         /** 方块模型形态（数据生成用）：普通六面体或带侧面/顶面的柱体 */
         BuddingModel buddingModel,
         /** 挖掘等级（数据生成用） */
         ToolTier toolTier,
-        /** 是否在世界中生成：决定是否产出一个 generate_&lt;id&gt; 配置开关 */
+        /** 是否在世界中生成：决定是否产出一个 worldgen.generate_&lt;id&gt; 配置开关 */
         boolean generateInWorld,
         /**
          * 世界生成 JSON 的出处；null = 本模组没给它发世界生成 JSON。

@@ -91,7 +91,7 @@ final class GenerationInfoReader {
 
             if (spec.generateInWorld()) {
                 rows.add(Row.line(Component.translatable(LANG + "generation.config",
-                        Component.literal("generate_" + spec.id()).withStyle(ChatFormatting.DARK_AQUA),
+                        Component.literal("worldgen.generate_" + spec.id()).withStyle(ChatFormatting.DARK_AQUA),
                         Component.translatable(LANG + (ModConfig.Common.enabled(spec.id())
                                 ? "config.on" : "config.off")))));
             }

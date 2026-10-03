@@ -105,8 +105,8 @@ This one **can be turned off**: two options in `config/create_crystal_industry-c
 
 | Option | Default | Effect |
 | --- | --- | --- |
-| `buddingInfection` | `true` | Whether budding blocks may infect neighbours into new budding blocks. Turning it off stops budding blocks from multiplying themselves — **ore conversion (stone → ore) and the Echo block's sculk spread are unaffected** |
-| `infectingBudding` | empty | Which budding blocks may still infect. Write **family ids** (`raw_iron`, `quartz` — the same id as `generate_<id>`) or **block ids** (`kubejs:my_crystal_budding`, which scripted budding blocks need). Empty = keep every family's default; a non-empty list means **only** those can infect |
+| `infection.buddingInfection` | `true` | Whether budding blocks may infect neighbours into new budding blocks. Turning it off stops budding blocks from multiplying themselves — **ore conversion (stone → ore) and the Echo block's sculk spread are unaffected** |
+| `infection.infectingBudding` | empty | Which budding blocks are allowed to infect. Empty = every budding block with an infection rule keeps it (the default); a non-empty list means **only** those may infect. Write **family ids** (`raw_iron`, `quartz` — the same id as `worldgen.generate_<id>`) or **block ids** (`kubejs:my_crystal_budding`, which scripted budding blocks need) |
 
 A server owner who wants no "budding blocks multiplying" at all sets the first to `false`; one who wants to keep just a couple sets the second. Both apply to scripted budding blocks too — the test is whether the produced block is a budding block (see `.transform` in section 6).
 
@@ -181,14 +181,16 @@ Each budding block generates at the depth of its corresponding ore, usually embe
 | Redstone | Overworld | −63 – 15 | Vein, rarity 1/16 |
 | Quartz | Nether | 10 above bedrock to 10 below the top | Vein, rarity 1/8 |
 | Ancient Debris | Nether | 8 – 22 | Vein, rarity 1/16, with 2 Ancient Debris next to the budding block; the tank generates empty |
-| Glowstone | Nether | At natural glowstone blobs | Replaces the lowest block of a glowstone blob, at a chance set by `glowstoneBuddingChance` (default 0.1); `glowstoneGenerateBuds` and related keys control the buds that come with it |
+| Glowstone | Nether | At natural glowstone blobs | Replaces the lowest block of a glowstone blob, at a chance set by `worldgen.glowstoneBuddingChance` (default 0.1); `worldgen.glowstoneGenerateBuds` and related keys control the buds that come with it |
 | Echo | Overworld | −64 – 0 | Deep Dark, generated inside Sculk |
-| Flammable Ice | Overworld | Below the deep-ocean seafloor | Structure, 1-in-256 per chunk (`flammableIceChance`), with soul sand scattered around it |
+| Flammable Ice | Overworld | Below the deep-ocean seafloor | Structure, 1-in-256 per chunk (`worldgen.flammableIceChance`), with soul sand scattered around it (`worldgen.soulSandGenerate`) |
 | Rose Quartz | — | — | Does not generate naturally |
 | Arclight | — | — | Does not generate naturally (how to obtain it is undecided; creative-only for now) |
 | Fluix | — | — | Does not generate naturally |
 
-Each one can be toggled individually in the config file (`generate_<budding id>`). The Flammable Ice structure and Budding Glowstone have their own additional chance settings.
+Each one can be toggled individually in the config file (`worldgen.generate_<budding id>`). The Flammable Ice structure and Budding Glowstone have their own additional chance settings.
+
+The config file groups its options into tables: `[worldgen]` world generation, `[infection]` budding infection, `[accelerator]` accelerators, `[spyglass]` Echo Spyglass, `[crystalBattery]` Crystal Battery and `[cleaner]` Mechanical Cleaner (the client config has `[goggles]` for the Night Vision Goggles). The table name is the prefix of its options.
 
 Breaking a naturally generated Budding Echo summons a Warden. The check reads the block's `can_summon` state, so a Budding Echo you placed yourself never triggers it.
 
