@@ -54,7 +54,8 @@ import net.minecraft.world.level.block.state.BlockState;
  *       以及别的模组登记进 {@code #c:budding_blocks} 的，按 id 排序追加。</li>
  * </ol>
  * <p>
- * 三类方块的参数来源各不一样，但走的是同一张模板（生长条件 / 生长速度 / 生成条件）：
+ * 三类方块的参数来源各不一样，但走的是同一张模板（生长条件 / 相邻转化 / 生长速度 / 生成条件，
+ * 其中相邻转化那一节只有会转化周围方块的母岩才有）：
  * 前两类带着自己的定义（{@code BuddingFamily} 或 {@code GrowthDefinition}），
  * 第三类读不出规则就如实写"未知"，绝不猜。
  */
@@ -159,18 +160,12 @@ public final class BuddingInfoCollector {
 
     /** 带家族特点的母岩：本模组的 13 个家族与附属模组用 {@link GenericBuddingBlock} 建的方块共用这一条路径 */
     private static BuddingInfo fromFamily(GenericBuddingBlock block, BuddingFamily spec, List<Block> stages) {
-        // 概率、光照、含水、生长环境一律从**解析后的定义**读（脚本的 modify 能改它们），
-        // 家族表里那几项只是出厂值；能量与转化脚本改不了，仍从家族表读
+        // 概率、光照、含水、生长环境、转化规则一律从**解析后的定义**读（脚本的 modify 能改它们），
+        // 家族表里那几项只是出厂值；能量脚本改不了，仍从家族表读
         GrowthDefinition definition = block.growthDefinition();
 
         List<Row> rows = new ArrayList<>();
-        rows.add(Row.header(section("growth")));
-        List<Row> growthRows = new ArrayList<>(definitionConditions(definition));
-        growthRows.addAll(familyConditions(spec.growth()));
-        if (growthRows.isEmpty()) {
-            growthRows.add(Row.line(Component.translatable(LANG + "growth.none")));
-        }
-        rows.addAll(growthRows);
+        addGrowthSections(rows, definition, familyConditions(spec.growth()));
 
         rows.add(Row.header(section("speed")));
         // 概率被脚本改过就不再挂家族声明的档位名——否则页面会写着"正常档"而实际是 1/20
@@ -188,12 +183,7 @@ public final class BuddingInfoCollector {
     /** 带生长定义的母岩：KubeJS 的 {@code CustomBudding} 与声明过定义的低阶方块 */
     private static BuddingInfo fromDefinition(Block block, GrowthDefinition definition, String originKey) {
         List<Row> rows = new ArrayList<>();
-        rows.add(Row.header(section("growth")));
-        List<Row> growthRows = new ArrayList<>(definitionConditions(definition));
-        if (growthRows.isEmpty()) {
-            growthRows.add(Row.line(Component.translatable(LANG + "growth.none")));
-        }
-        rows.addAll(growthRows);
+        addGrowthSections(rows, definition, List.of());
 
         rows.add(Row.header(section("speed")));
         // 脚本/外部定义的概率不由配置文件四档决定，所以没有档位可写，只给一个最接近的定性词
@@ -233,10 +223,35 @@ public final class BuddingInfoCollector {
         return new BuddingInfo(block.defaultBlockState(), null, ItemStack.EMPTY, lookupItems(block, List.of()), rows);
     }
 
-    // ==================== 生长条件 ====================
+    // ==================== 生长条件 / 相邻转化 ====================
 
     /**
-     * 家族独有的生长条件行：能量与方块转化。
+     * 页面前两个小节：生长条件与相邻转化。
+     * <p>
+     * 条件那一节由 {@link #definitionConditions} 与调用方给的家族独有行（{@link #familyConditions}，
+     * 脚本/外部定义的母岩没有）拼成；两条路共用同一套判定与文案。转化挪进自己的小节是因为
+     * 它讲的是母岩<b>会做什么</b>，而「生长条件」读起来是母岩<b>要什么</b>，混在一起会让人以为
+     * 转化也是一条前置要求；没有转化规则的母岩整节不出现。
+     */
+    private static void addGrowthSections(List<Row> rows, GrowthDefinition definition,
+                                          List<Row> extraConditions) {
+        List<Row> conditions = new ArrayList<>(definitionConditions(definition));
+        conditions.addAll(extraConditions);
+        if (conditions.isEmpty()) {
+            conditions.add(Row.line(Component.translatable(LANG + "growth.none")));
+        }
+        rows.add(Row.header(section("growth")));
+        rows.addAll(conditions);
+
+        List<Row> conversions = conversionRows(definition);
+        if (!conversions.isEmpty()) {
+            rows.add(Row.header(section("conversion")));
+            rows.addAll(conversions);
+        }
+    }
+
+    /**
+     * 家族独有的生长条件行：能量。
      * <p>
      * 光照、含水、生长环境这三样<b>不在这里</b>——它们在 {@link GrowthDefinition} 里，
      * 脚本能改，所以由 {@link #definitionConditions} 出（两条路共用同一套判定与文案）。
@@ -259,8 +274,8 @@ public final class BuddingInfoCollector {
     /**
      * 生长定义（家族方块解析后的定义、脚本/外部声明的定义）里的生长条件，与家族定义共用同一套文案键。
      * <p>
-     * 不写「无额外要求」的兜底行：调用方可能还要在后面接家族独有的行（能量/转化），
-     * 由它们一起判断"到底有没有条件"。
+     * 不写「无额外要求」的兜底行：调用方可能还要在后面接家族独有的行（能量），
+     * 由 {@link #addGrowthSections} 一起判断"到底有没有条件"。
      */
     private static List<Row> definitionConditions(GrowthDefinition definition) {
         List<Row> rows = new ArrayList<>(5);
@@ -283,18 +298,26 @@ public final class BuddingInfoCollector {
         if (definition.growthEnvironment().restricts()) {
             rows.addAll(environmentRows(definition.growthEnvironment()));
         }
-        // 侵染 / 转化规则也读定义：家族表声明的（矿石转化、再生传播）与脚本
-        // 用 .transform(...) 追加的都在这一栏里，两边共用同一段渲染
-        List<BlockConversion> conversions = definition.conversions();
-        if (!conversions.isEmpty()) {
-            List<Component> parts = new ArrayList<>(conversions.size());
-            for (BlockConversion conversion : conversions) {
-                parts.add(describeConversion(conversion));
-            }
-            rows.add(Row.line(Component.translatable(LANG + "growth.conversion",
-                    BuddingInfoText.join(parts, BuddingInfoText.sentenceSeparator()))));
-        }
         return rows;
+    }
+
+    /**
+     * 「相邻转化」小节的行：读定义里的转化规则，家族表声明的（矿石转化、再生传播）与脚本
+     * 用 {@code .transform(...)} 追加的都在这里，两边共用同一段渲染。没有规则时返回空表。
+     * <p>
+     * 每一条规则各自成句（{@code 石头 → 铁矿石、深板岩 → 深层铁矿石}），各条之间再连起来。
+     */
+    private static List<Row> conversionRows(GrowthDefinition definition) {
+        List<BlockConversion> conversions = definition.conversions();
+        if (conversions.isEmpty()) {
+            return List.of();
+        }
+
+        List<Component> parts = new ArrayList<>(conversions.size());
+        for (BlockConversion conversion : conversions) {
+            parts.add(describeConversion(conversion));
+        }
+        return List.of(Row.line(BuddingInfoText.join(parts, BuddingInfoText.sentenceSeparator())));
     }
 
     /**

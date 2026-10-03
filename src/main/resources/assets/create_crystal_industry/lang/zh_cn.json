@@ -337,6 +337,7 @@
 
     "create_crystal_industry.jei.budding.title": "母岩信息",
     "create_crystal_industry.jei.budding.section.growth": "生长条件",
+    "create_crystal_industry.jei.budding.section.conversion": "相邻转化",
     "create_crystal_industry.jei.budding.section.speed": "生长速度",
     "create_crystal_industry.jei.budding.section.generation": "生成条件",
     "create_crystal_industry.jei.budding.growth.none": "无额外要求",
@@ -369,7 +370,6 @@
     "create_crystal_industry.biome_tag.minecraft.is_deep_ocean": "深海群系",
     "create_crystal_industry.jei.budding.growth.energy": "生长需要已激活的 ME 网络供电（每次生长消耗 AE）",
     "create_crystal_industry.jei.budding.growth.fe": "生长需要 FE：每次成功生长消耗 10 000 FE（用电缆或任何耗能机器供能，最多存 1 M FE）",
-    "create_crystal_industry.jei.budding.growth.conversion": "相邻转化：%s",
     "create_crystal_industry.jei.budding.growth.conversion.pair": "%1$s → %2$s",
     "create_crystal_industry.jei.budding.growth.conversion.self": "本母岩自身",
     "create_crystal_industry.jei.budding.speed.rate": "生长速度：%s",

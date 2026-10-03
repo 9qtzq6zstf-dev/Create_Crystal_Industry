@@ -203,7 +203,7 @@ Breaking a naturally generated Budding Echo summons a Warden. The check reads th
 | Create | Required | 6.0.10+ |
 | AE2 | Optional | Enables Budding Fluix; AE2's own Growth Accelerator accelerates this mod's budding blocks too, and the Engineer's Goggles multiplier counts it |
 | Curios | Optional | Night Vision Goggles fit a Curios head slot (without Curios they use the vanilla helmet slot) |
-| JEI | Optional | Adds a "Budding Block Info" page: one page per budding block covering growth conditions, growth speed and generation conditions, reachable from the budding block, its buds, its cluster and the cluster's output |
+| JEI | Optional | Adds a "Budding Block Info" page: one page per budding block covering growth conditions, neighbour conversion, growth speed and generation conditions (only budding blocks that convert their neighbours get that section), reachable from the budding block, its buds, its cluster and the cluster's output |
 | KubeJS | Optional | Register your own budding blocks from a script, see the next section |
 
 Without AE2 the mod starts normally and simply does not register any Fluix content. The budding blocks (including vanilla Budding Amethyst), both Accelerators, the Smart Drill, the Mechanical Cleaner, and the Resonance Table together with its Resonance Filter all ship with Ponder scenes, one scene per feature, and Engineer's Goggles read out how they are running.

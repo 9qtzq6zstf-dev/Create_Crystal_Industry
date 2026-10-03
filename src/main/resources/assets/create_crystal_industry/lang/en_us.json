@@ -337,6 +337,7 @@
 
     "create_crystal_industry.jei.budding.title": "Budding Block Info",
     "create_crystal_industry.jei.budding.section.growth": "Growth Conditions",
+    "create_crystal_industry.jei.budding.section.conversion": "Neighbour Conversion",
     "create_crystal_industry.jei.budding.section.speed": "Growth Speed",
     "create_crystal_industry.jei.budding.section.generation": "World Generation",
     "create_crystal_industry.jei.budding.growth.none": "No extra requirements",
@@ -369,7 +370,6 @@
     "create_crystal_industry.biome_tag.minecraft.is_deep_ocean": "deep ocean biomes",
     "create_crystal_industry.jei.budding.growth.energy": "Growth requires an active ME network (consumes AE per growth)",
     "create_crystal_industry.jei.budding.growth.fe": "Growth requires FE: 10,000 FE per growth (feed it with cables or any FE source; holds 1,000,000 FE)",
-    "create_crystal_industry.jei.budding.growth.conversion": "Converts neighbours: %s",
     "create_crystal_industry.jei.budding.growth.conversion.pair": "%1$s → %2$s",
     "create_crystal_industry.jei.budding.growth.conversion.self": "this budding block",
     "create_crystal_industry.jei.budding.speed.rate": "Growth speed: %s",

@@ -36,7 +36,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 
 /**
- * JEI 的「母岩信息」页：左边 3D 渲染母岩与其晶簇，右边逐行写生长条件 / 生长速度 / 生成条件。
+ * JEI 的「母岩信息」页：左边 3D 渲染母岩与其晶簇，右边逐行写生长条件 / 相邻转化 / 生长速度 / 生成条件
+ * （相邻转化那一节只有会转化周围方块的母岩才有）。
  * <p>
  * 三条刻意的取舍：
  * <ul>
@@ -124,13 +125,13 @@ public class BuddingInfoCategory extends AbstractRecipeCategory<BuddingInfo> {
     private static final int TEXT_WIDTH = WIDTH - TEXT_X - 6;
     private static final int TEXT_TOP = 10;
     private static final int LINE_HEIGHT = 10;
-    /** 小节之间多留一点空隙，让三节读起来是分开的 */
+    /** 小节之间多留一点空隙，让各节读起来是分开的 */
     private static final int SECTION_GAP = 4;
     /**
      * 每次绘制最多写几行（含小节标题与折行后的续行）。版面高度就按它定的：
-     * {@code (HEIGHT - 4 - TEXT_TOP) / LINE_HEIGHT} 约 16 行，而最长的一条
-     * （粗锌母岩：转化 + Create 的 config_filter 说明）按 {@link #TEXT_WIDTH} 折行后约 15 行。
-     * 文案再长就该精简 {@link BuddingInfoCollector} 里的行，而不是把版面撑得更大。
+     * {@code (HEIGHT - 4 - TEXT_TOP) / LINE_HEIGHT} 约 16 行，还要再减去各小节之间的空隙，
+     * 所以文案得留一点余量——最长的一条是粗锌母岩（生长条件 + 相邻转化 + Create 的 config_filter
+     * 说明）。文案再长就该精简 {@link BuddingInfoCollector} 里的行，而不是把版面撑得更大。
      */
     private static final int MAX_LINES = 16;
 
