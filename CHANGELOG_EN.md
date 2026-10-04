@@ -12,6 +12,63 @@ section at the top.
 
 ---
 
+## 1.0.5 · 2026-10-03 ~ 2026-10-04
+
+### Added
+
+- Budding block conversion is now a single recipe type, "infection"
+  (`create_crystal_industry:budding_conversion`), and datapacks can write it. One recipe is one rule:
+  which budding block, the chance per random tick, the pick radius, and what turns into what. Leaving
+  the output empty means the budding block itself, which is how budding blocks spread. The 21 built-in
+  ones are emitted by data generation: overriding one in a datapack means dropping in a JSON with the
+  same id, and dropping in a new one adds a rule. Stone to ore, raw iron block to a budding block and
+  sculk spread are no longer separate things.
+- A JEI "Infection" page: what each budding block turns into what, at what chance and over what
+  radius, all on one page.
+- KubeJS `.transform(input, output, n[, r])` adds infection rules to scripted budding blocks. The
+  input accepts `#block_tags`, a budding block can carry several rules with their own chance and
+  radius, and the fourth argument is the pick radius. On a built-in block, `CustomBudding.modify(...)`
+  appends such rules without replacing the block's own.
+- A hidden advancement, "Causality Dissolved": put a Resonance Filter back on a table of its own
+  network and the infinite self-reference blows it apart (knockback only, no damage to blocks or
+  players).
+
+### Changed
+
+- The config file is split into tables by feature: `[worldgen]`, `[infection]`, `[accelerator]`,
+  `[spyglass]`, `[crystalBattery]` and `[cleaner]` (plus `[goggles]` client side), so keys now carry
+  the table name as a prefix (e.g. `worldgen.generate_raw_iron`). **An old config is backed up as
+  `.bak` and rewritten in the new shape, so any value you changed goes back to the default.**
+- The infection switches were widened in meaning: the master switch
+  `infection.buddingInfection` now covers every conversion (turning it off also stops stone growing
+  into ore), and any budding block left out of `infection.infectingBudding` does nothing at all.
+- The four soul sand options were merged into one switch, `worldgen.soulSandGenerate`. Count, spread
+  and sink depth are fixed at their old defaults, so generation is identical down to the block.
+- The goggles report the real growth rate: budding blocks that only run at full speed in the Nether
+  (quartz, glowstone) now show a discounted number outside it instead of always reading
+  "natural growth (×1)".
+- A Resonance Table can now read a Resonance Filter from another network sitting on top of it, and
+  that chains (a table on network A can read what network B filters, and B can read C). An empty
+  table combined with a filter whose rules cannot be read now lets nothing through, instead of
+  quietly degrading to letting everything through.
+- Ponder rework: one scene per feature, 16 in total (4 for budding blocks and the Accelerators, 3
+  for the Smart Drill, 3 for the Mechanical Cleaner, 6 for the Resonance family). Text dropped from
+  5-7 lines per scene to 2-3, with block changes, item movement and gesture cues covering the rest.
+  The Resonance Filter item now carries the same full set of scenes as the table.
+- The Resonance family scene text and demos were redone: every line names the Resonance Table, two
+  headers became "Automating the Filter" and "Configuring the Filter with Several Tables", and a new
+  "List Filters and Attribute Filters" scene was added.
+- The JEI budding info page drops the lines only an author cares about (config keys, raw JSON,
+  registration source); biomes and dimensions use their translated names (ore budding blocks read
+  "Overworld biomes", quartz and ancient debris read "Nether biomes"); and the fluid line is just
+  "Growth consumes X", leaving how much is in the tank to the goggles tooltip and the tank's own UI.
+
+### Fixed
+
+- An infection recipe whose `budding` names some other block (obsidian, say) never fires; JEI no
+  longer draws a fake page for it and instead logs which recipe and which block it was.
+- Fixed the JEI budding info page's Fluix entry pointing at a section that had been renamed.
+
 ## 1.0.4 · 2026-10-02
 
 ### Changed
