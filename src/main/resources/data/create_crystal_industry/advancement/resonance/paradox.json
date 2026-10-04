@@ -1,0 +1,27 @@
+{
+  "parent": "create_crystal_industry:root",
+  "display": {
+    "icon": {
+      "count": 1,
+      "id": "create_crystal_industry:resonance_filter"
+    },
+    "title": {
+      "translate": "advancements.create_crystal_industry.resonance.paradox.title"
+    },
+    "description": {
+      "translate": "advancements.create_crystal_industry.resonance.paradox.description"
+    },
+    "frame": "challenge",
+    "hidden": true
+  },
+  "criteria": {
+    "impossible": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "impossible"
+    ]
+  ]
+}

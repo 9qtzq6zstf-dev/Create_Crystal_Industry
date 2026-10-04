@@ -60,6 +60,9 @@ public final class YunxianAdvancements {
     public static final String MACHINE_SILK_TOUCH = "machine/silk_touch";
     public static final String MACHINE_CLEANER_SWAP = "machine/cleaner_swap";
 
+    /** 彩蛋：共振过滤器接回了自己所在的网络（见 {@code ResonanceParadox}） */
+    public static final String RESONANCE_PARADOX = "resonance/paradox";
+
     public static final String GEAR_NIGHT_VISION = "gear/night_vision";
     public static final String GEAR_REVEAL = "gear/reveal";
 

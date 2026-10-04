@@ -470,6 +470,8 @@
     "advancements.create_crystal_industry.deep.flammable_ice.description": "在深海海床挖到可燃冰母岩",
     "advancements.create_crystal_industry.deep.ice_block.title": "压缩燃料",
     "advancements.create_crystal_industry.deep.ice_block.description": "把可燃冰压成块当燃料",
+    "advancements.create_crystal_industry.resonance.paradox.title": "因果律的溶解",
+    "advancements.create_crystal_industry.resonance.paradox.description": "把共振过滤器放回它自己所在的网络，无限自指当场炸开",
 
     "block.create_crystal_industry.resonance_table": "共振台",
     "item.create_crystal_industry.resonance_filter": "共振过滤器",

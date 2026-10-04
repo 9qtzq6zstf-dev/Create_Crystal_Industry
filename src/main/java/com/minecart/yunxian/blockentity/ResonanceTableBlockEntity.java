@@ -4,6 +4,8 @@ import com.minecart.yunxian.block.ResonanceTableBlock;
 import com.minecart.yunxian.item.ResonanceFilterItem;
 import com.minecart.yunxian.mixin.DepotBehaviourAccessor;
 import com.minecart.yunxian.registry.ModBlockEntities;
+import com.minecart.yunxian.registry.ModDataComponents;
+import com.minecart.yunxian.resonance.ResonanceParadox;
 import com.simibubi.create.content.logistics.depot.DepotBehaviour;
 import com.simibubi.create.content.logistics.filter.FilterItemStack;
 import com.simibubi.create.content.logistics.item.filter.attribute.ItemAttribute;
@@ -21,6 +23,7 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -28,8 +31,10 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
 
@@ -142,6 +147,8 @@ public class ResonanceTableBlockEntity extends SmartBlockEntity {
         if (level == null || level.isClientSide)
             return;
 
+        detonateSelfReference();
+
         boolean nowPowered = getBlockState().getValue(ResonanceTableBlock.POWERED);
         if (nowPowered == powered)
             return;
@@ -150,6 +157,32 @@ public class ResonanceTableBlockEntity extends SmartBlockEntity {
         lockedFilter = nowPowered ? depotBehaviour.getHeldItemStack().copy() : ItemStack.EMPTY;
         setChanged();
         sendData();
+    }
+
+    /**
+     * 彩蛋：台面上摆着一个<b>接回自己所在网络</b>的共振过滤器时，当场炸掉它。
+     * <p>
+     * 这就是那个无限自指 —— 台面上的过滤器去读本网络，本网络又读到它自己。
+     * 判定那边会把它安静地判成"读不到"，这里给那份沉默一个说法：
+     * 一场只有击退的爆炸（爆心在台子上方一格，见 {@link ResonanceParadox}）、
+     * 一个隐藏成就，外加把这份过滤器从世上抹掉。
+     * <p>
+     * 每 tick 查一次，条件本身很便宜（一次 instanceof + 一次组件读）。炸完东西就没了，
+     * 条件不再成立，所以不会连着炸 —— 除非有人源源不断地往台面上送，那种情况每次都该炸。
+     */
+    private void detonateSelfReference() {
+        if (!ResonanceParadox.matches(getFilterSource(), getNetwork()))
+            return;
+
+        // 先抹掉再炸。留着的话下一 tick 读到的是同一份自指，会反复炸。
+        // 充能冻结下来的那一份也一起清：那才是 getFilterSource() 在充能时真正读的东西。
+        depotBehaviour.removeHeldItem();
+        lockedFilter = ItemStack.EMPTY;
+        setChanged();
+        sendData();
+
+        if (level instanceof ServerLevel serverLevel)
+            ResonanceParadox.detonate(serverLevel, getBlockPos());
     }
 
     @Override
@@ -199,32 +232,62 @@ public class ResonanceTableBlockEntity extends SmartBlockEntity {
      * <p>
      * <b>结果按文案排序去重</b> —— 顺序必须是确定的，否则客户端和服务端各算各的、显示板上的行会来回跳。
      * <p>
-     * 台面空着、或台面上是另一个共振过滤器（递归护栏那种）的，都不算进列表。
+     * 台面上放着的是<b>另一个网络的共振过滤器</b>时，跟着走进那个网络，列出来的就是那个网络在过滤的东西
+     * —— 和判定那边一致（见 {@code ResonanceFilterItemStack}）。台面空着、台上的共振过滤器接了环或没接网络的，
+     * 都不算进列表。
      */
     public List<Component> getNetworkFilterText() {
         Level level = getLevel();
         if (level == null)
             return List.of();
 
-        UUID network = getNetwork();
         Map<String, Component> texts = new TreeMap<>();
-        // 双端各读各的那张注册表，和滤波器那边一样
-        for (LogisticallyLinkedBehaviour link : LogisticallyLinkedBehaviour.getAllPresent(
-                network, false, level.isClientSide)) {
-
-            if (!link.freqId.equals(network))
-                continue;
-            if (!(link.blockEntity instanceof ResonanceTableBlockEntity other))
-                continue;
-
-            ItemStack onTable = other.getFilterSource();
-            if (onTable.isEmpty() || onTable.getItem() instanceof ResonanceFilterItem)
-                continue;
-
-            collectFilterText(onTable, texts, 0);
-        }
-
+        collectNetworkText(getNetwork(), level.isClientSide, texts, new HashSet<>(), 0);
         return List.copyOf(texts.values());
+    }
+
+    /**
+     * 把一个网络里所有台面上的东西展开进 {@code texts}；台面上是别的网络的共振过滤器时递归走进去。
+     * <p>
+     * {@code visited} 记的是<b>这条链上</b>走过的网络（离开时摘掉），用来挡互相指向的环：
+     * A 的网络里某张台子放着绑到 B 的共振过滤器、B 里又有一张放着绑回 A 的，不放环护栏就会无限递归。
+     * 判定那边（{@code ResonanceFilterItemStack.RESOLVING_NETWORKS}）是同一套思路，
+     * 只不过那边按线程记账、这边按这一次调用记账。
+     * <p>
+     * {@code depth} 顺手给链条收个上界；网络数不会真的无限多，它只是个兜底。
+     */
+    private static void collectNetworkText(UUID network, boolean clientSide, Map<String, Component> texts,
+                                           Set<UUID> visited, int depth) {
+        if (depth > MAX_EXPAND_DEPTH || !visited.add(network))
+            return;
+        try {
+            // 双端各读各的那张注册表，和滤波器那边一样
+            for (LogisticallyLinkedBehaviour link : LogisticallyLinkedBehaviour.getAllPresent(
+                    network, false, clientSide)) {
+
+                if (!link.freqId.equals(network))
+                    continue;
+                if (!(link.blockEntity instanceof ResonanceTableBlockEntity other))
+                    continue;
+
+                ItemStack onTable = other.getFilterSource();
+                if (onTable.isEmpty())
+                    continue;
+
+                // 台面上是共振过滤器：绑了别的网络就跟着走进去；绑的是这条链上的网络（环）
+                // 或者根本没绑网络的，都展开不出东西，跳过。
+                if (onTable.getItem() instanceof ResonanceFilterItem) {
+                    UUID next = onTable.get(ModDataComponents.RESONANCE_NETWORK.get());
+                    if (next != null)
+                        collectNetworkText(next, clientSide, texts, visited, depth + 1);
+                    continue;
+                }
+
+                collectFilterText(onTable, texts, 0);
+            }
+        } finally {
+            visited.remove(network);
+        }
     }
 
     /** 展开深度上限：列表过滤器可以套列表过滤器，而不设限就是个自引用陷阱 */

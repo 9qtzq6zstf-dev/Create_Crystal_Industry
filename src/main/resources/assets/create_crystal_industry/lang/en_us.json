@@ -470,6 +470,8 @@
     "advancements.create_crystal_industry.deep.flammable_ice.description": "Mined flammable ice budding under the sea floor",
     "advancements.create_crystal_industry.deep.ice_block.title": "Compressed Fuel",
     "advancements.create_crystal_industry.deep.ice_block.description": "Compressed flammable ice into a fuel block",
+    "advancements.create_crystal_industry.resonance.paradox.title": "Causality Dissolved",
+    "advancements.create_crystal_industry.resonance.paradox.description": "Put a Resonance Filter back on a table of its own network - infinite self-reference blew it apart",
 
     "block.create_crystal_industry.resonance_table": "Resonance Table",
     "item.create_crystal_industry.resonance_filter": "Resonance Filter",
