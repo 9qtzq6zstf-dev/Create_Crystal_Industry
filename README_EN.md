@@ -14,9 +14,9 @@ A budding block rolls for growth independently on each of its six faces. An empt
 
 ### Budding Blocks at a Glance
 
-"Adjacent Conversion" follows a simple rule: each random tick the budding block rolls a 1-in-20 chance, and on success it picks one random position within a radius of 1 (a 3×3×3 volume), converting it to the matching ore if that position holds Stone or Deepslate. Output therefore depends on how much of that volume is Stone or Deepslate, so burying the budding block in stone raises the hit rate. Budding Echo uses a different radius and chance, noted in the table.
+"Infection" follows a simple rule: each random tick the budding block rolls a 1-in-20 chance, and on success it picks one random position within a radius of 1 (a 3×3×3 volume), converting it to the matching ore if that position holds Stone or Deepslate. Output therefore depends on how much of that volume is Stone or Deepslate, so burying the budding block in stone raises the hit rate. Budding Echo uses a different radius and chance, noted in the table.
 
-| Budding Block | Extra Growth Condition | Cluster Output | Adjacent Conversion |
+| Budding Block | Extra Growth Condition | Cluster Output | Infection |
 | --- | --- | --- | --- |
 | Rose Quartz | — | Create's Rose Quartz | — |
 | Raw Iron | — | Raw Iron | Iron Ore / Deepslate Iron Ore |
@@ -86,7 +86,7 @@ Budding Arclight is the only budding block that runs on FE. It holds 1,000,000 F
 
 Budding Arclight currently neither generates naturally nor has a crafting recipe, it is creative-only for now.
 
-### Budding Block Reproduction
+### Budding Block Reproduction (Infection)
 
 Beyond converting ore, an ore budding block has a 1-in-25000 chance to infect an adjacent block of the matching ore block, turning it into another budding block. Budding Quartz infects Smooth Quartz Blocks instead, and Budding Fluix infects Fluix Blocks.
 
@@ -105,10 +105,50 @@ This one **can be turned off**: two options in `config/create_crystal_industry-c
 
 | Option | Default | Effect |
 | --- | --- | --- |
-| `infection.buddingInfection` | `true` | Whether budding blocks may infect neighbours into new budding blocks. Turning it off stops budding blocks from multiplying themselves — **ore conversion (stone → ore) and the Echo block's sculk spread are unaffected** |
-| `infection.infectingBudding` | empty | Which budding blocks are allowed to infect. Empty = every budding block with an infection rule keeps it (the default); a non-empty list means **only** those may infect. Write **family ids** (`raw_iron`, `quartz` — the same id as `worldgen.generate_<id>`) or **block ids** (`kubejs:my_crystal_budding`, which scripted budding blocks need) |
+| `infection.buddingInfection` | `true` | Whether budding blocks infect their neighbours. This is the **master switch**: stone growing into ore, a raw metal block turning into a new budding block, the Echo block spreading sculk all count. Turning it off stops budding blocks from converting anything at all |
+| `infection.infectingBudding` | empty | Which budding blocks infect their neighbours. Empty = all of them may; a non-empty list means **only** those may, and the rest stop converting anything. Write **family ids** (`raw_iron`, `quartz` — the same id as `worldgen.generate_<id>`) or **block ids** (`kubejs:my_crystal_budding`, which scripted budding blocks need) |
 
-A server owner who wants no "budding blocks multiplying" at all sets the first to `false`; one who wants to keep just a couple sets the second. Both apply to scripted budding blocks too — the test is whether the produced block is a budding block (see `.transform` in section 6).
+A server owner who wants no conversion at all (**including stone into ore**) sets the first to `false`; one who wants to keep just a couple of budding blocks working sets the second. Both apply to scripted budding blocks too — the test is the block's family id or block id (see `.transform` in section 6).
+
+#### Infection Recipes (datapack-writable)
+
+Stone → ore, a raw metal block → a new budding block, Echo → sculk... **there is no difference between them any more: they are all the same recipe**, `create_crystal_industry:budding_conversion`. The 21 built-in ones are generated from the family table (see "Data Generation" in section 7); a pack overrides one by shipping a JSON with the same id, and KubeJS `.transform(...)` writes the very same thing.
+
+**One recipe = one rule**, not one A → B pair:
+
+```json
+{
+  "type": "create_crystal_industry:budding_conversion",
+  "budding": "create_crystal_industry:raw_iron_budding",
+  "chance": 20,
+  "radius": 1,
+  "replacements": [
+    { "input": "minecraft:stone", "output": "minecraft:iron_ore" },
+    { "input": "minecraft:deepslate", "output": "minecraft:deepslate_iron_ore" }
+  ]
+}
+```
+
+| Field | Required | Meaning |
+| --- | --- | --- |
+| `budding` | yes | Which budding block does it |
+| `chance` | yes | Chance base n: a 1-in-n roll each random tick (≥ 1) |
+| `radius` | yes | Pick radius r: on a hit, one block is taken at random from the (2r+1)³ cube around the budding block, minus its own cell (0–8) |
+| `gated` | no | The hit must also pass an energy check (defaults to `false`) — Ancient Debris' lava and Fluix's AE |
+| `replacements` | yes | The swap table, **first match wins**; each entry has `input` (what to replace) and `output` (what to put there) |
+
+Semantics worth knowing:
+
+- **One roll covers one recipe**: in the JSON above, Stone and Deepslate share the same 1-in-20 roll and the same cell pick — splitting them into two recipes would double the ore output. JEI splits the two replacements into two pages for display, which is only presentation.
+- `input` accepts a single block id, a list of block ids, or a `"#block_tag"` (e.g. `"input": ["minecraft:stone", "minecraft:deepslate"]`, `"input": "#c:stones"`).
+- An **omitted** `output` means "turn it into this budding block itself" (that is how regeneration is written), so the recipe never has to reference its own budding block.
+- The radius is not a throughput knob: only one cell is picked per random tick, so a larger radius reaches further but each cell is proportionally less likely. To make something convert faster, change `chance`.
+
+Editing and removing:
+
+- **Edit**: ship a JSON with the same id, e.g. `data/create_crystal_industry/recipe/budding_conversion/raw_iron_budding/stone_to_iron_ore.json`.
+- **Add**: just drop in a new JSON; the engine claims it by its `budding` field.
+- **Remove**: a datapack cannot remove a recipe that ships inside the jar — use KubeJS (`ServerEvents.recipes(e => e.remove(...))`), or stop that budding block with the config options above.
 
 ### Growth Speed
 
@@ -203,7 +243,7 @@ Breaking a naturally generated Budding Echo summons a Warden. The check reads th
 | Create | Required | 6.0.10+ |
 | AE2 | Optional | Enables Budding Fluix; AE2's own Growth Accelerator accelerates this mod's budding blocks too, and the Engineer's Goggles multiplier counts it |
 | Curios | Optional | Night Vision Goggles fit a Curios head slot (without Curios they use the vanilla helmet slot) |
-| JEI | Optional | Adds a "Budding Block Info" page: one page per budding block covering growth conditions, neighbour conversion, growth speed and generation conditions (only budding blocks that convert their neighbours get that section), reachable from the budding block, its buds, its cluster and the cluster's output |
+| JEI | Optional | Adds a "Budding Block Info" page: one page per budding block covering growth conditions, growth speed and generation conditions, plus an "Infection" page listing what the block turns into what and how likely; reachable from the budding block, its buds, its cluster and the cluster's output |
 | KubeJS | Optional | Register your own budding blocks from a script, see the next section |
 
 Without AE2 the mod starts normally and simply does not register any Fluix content. The budding blocks (including vanilla Budding Amethyst), both Accelerators, the Smart Drill, the Mechanical Cleaner, and the Resonance Table together with its Resonance Filter all ship with Ponder scenes, one scene per feature, and Engineer's Goggles read out how they are running.
@@ -271,15 +311,16 @@ kubejs/assets/<namespace>/textures/block/<file>.png
 
 (the namespace is the part before the `:` in the block id; without one it is `kubejs`), then point `buddingTexture('mypack:block/my_budding')` / `stageTextures(...)` at them. The simplest way to name things is `.displayName('My Budding Block').stageDisplayNames('Small Bud', 'Medium Bud', 'Large Bud', 'Cluster')` — one call covers every language; omit it and KubeJS derives English names from the ids, or write per-language keys (`block.<namespace>.<block id>`) in `kubejs/assets/<namespace>/lang/zh_cn.json`. Sounds need no assets — just name a vanilla sound (`'stone'` / `'amethyst'` / `'crop'` …).
 
-**Step 7 — let it convert its neighbours.** `transform(input, output, n)` makes the budding block swap an adjacent block, once per random tick with a 1-in-n chance. You can call it repeatedly (each call is its own rule with its own n); the input may also be a block tag:
+**Step 7 — let it convert its neighbours.** `transform(input, output, n[, r])` makes the budding block swap a nearby block: a 1-in-n chance per random tick, then one block is picked within radius r (default 1, i.e. the immediate neighbours). You can call it repeatedly (each call is its own rule with its own n); the input may also be a block tag:
 
 ```js
     .transform('minecraft:iron_block', 'mypack:my_crystal_budding')   // turn adjacent iron blocks into itself
     .transform('#c:storage_blocks/iron', 'mypack:my_crystal_budding') // tag input: every block in the tag counts
     .transform('minecraft:stone', 'minecraft:iron_ore', 20)           // pick the output and the chance: 1-in-20
+    .transform('minecraft:stone', 'minecraft:iron_ore', 20, 3)        // 4th argument: pick radius 3 (7x7x7)
 ```
 
-Naming your own budding block as the output (`<namespace>:<id>_budding` for scripted blocks) is exactly how the built-in families multiply themselves, and rules whose **output is a budding block** obey the infection config (see "Budding Block Reproduction" in section 1); plain conversions like stone → iron ore do not. The third argument is the chance base: a **1-in-n chance per random tick** (radius 1). Omitting it means 25000, the same tier as the built-in regeneration, so put accelerators next to it if you want to see it soon; pick a small n (say 20) for a conversion you want to watch happen — a stone-to-iron-ore rule fires every few seconds next to an accelerator. Each transform has its own n and they do not interfere.
+Naming your own budding block as the output (`<namespace>:<id>_budding` for scripted blocks) is exactly how the built-in families multiply themselves. Those rules are infection recipes just like stone → ore, and the infection config governs all of them (see "Budding Block Reproduction" in section 1); stone → iron ore do not. The third argument is the chance base: a **1-in-n chance per random tick** (radius 1). Omitting it means 25000, the same tier as the built-in regeneration, so put accelerators next to it if you want to see it soon; pick a small n (say 20) for a conversion you want to watch happen — a stone-to-iron-ore rule fires every few seconds next to an accelerator. Each transform has its own n and they do not interfere.
 
 ### Tutorial 2: Retuning a Built-in Family (Budding Flammable Ice)
 
@@ -412,7 +453,7 @@ Chained methods share their names with the fields; the two forms are equivalent 
 | `buddingSound(s)` / `stageSound(s)` | vanilla sound name (`amethyst`) | Break sound; an unknown name throws immediately and lists every valid name |
 | `buddingTool(s)` / `stageTool(s)` / `tool(s)` | tool name or full tag id (`pickaxe`) | Mining tool; `tool` sets both at once |
 | `buddingLevel(s)` / `stageLevel(s)` | tier name or full tag id (unset) | Mining tier; `'none'` or `null` = no tier |
-| `transform(input, output, n)` / `transform(input, output)` | block id, input may be `'#tag'`, may be called repeatedly; n = the chance base (25000) | Converts neighbouring blocks: a 1-in-n chance per random tick (radius 1); rules whose output is a budding block obey the config |
+| `transform(input, output, n, r)` / `transform(input, output, n)` / `transform(input, output)` | block id, input may be `'#tag'`, may be called repeatedly; n = the chance base (25000), r = the pick radius (default 1, max 8) | Converts neighbouring blocks: a 1-in-n chance per random tick, then one block is picked within radius r; rules are governed by the config like the built-in ones |
 | `group(s)` | tab id (`kubejs`) | Creative tab; `null` = no tab |
 
 ### Growth Environment
@@ -489,7 +530,7 @@ The id is the **block id** (`..._budding`); the trailing `_budding` may be omitt
 | `needfluid(...)` | Give **any** budding block a fluid cost, change it, or drop it — the tank is generic (`FluidTankBuddingBlockEntity`), and Ancient Debris' lava runs on it too |
 | `dropItem(...)` / `dropCount(...)` | Changes the cluster's drops; it takes over for built-in families too (their loot table no longer applies). `.dropItem('none')` = drop nothing. Writing `.dropCount(...)` alone throws — overriding drops replaces the loot table wholesale, so name the item too. JEI's budding page (the slot in the corner) and pressing R on the product follow the override |
 | `buddingLevel(...)` / `stageLevel(...)` | Mining tier, enforced at runtime: vanilla's three tiers only (`stone` / `iron` / `diamond`), and only the "do you get drops" step — the block tags themselves are unchanged |
-| `transform(input, output, n)` | Appends conversion rules (call it repeatedly, each with its own n); they are added **after** the block's own rules, so a family's ore conversion is never displaced. To stop the built-in regeneration, use the config switch/list instead |
+| `transform(input, output, n[, r])` | Appends infection rules (call it repeatedly, each with its own n and r); the block's own rules are never displaced. To stop one budding block, list the others in the config; to stop everything, use the master switch |
 
 **Cannot be changed** (fixed at registration; a script that sets them throws on the spot): textures `buddingTexture` / `stageTextures`, break sounds `buddingSound` / `stageSound`, break tools `buddingTool` / `stageTool`, translated names `displayName` / `stageDisplayNames`, and the **creative tab `group`**. The first four are baked into block properties and resources; `group` is which page the block belongs to. `modify` exists to **add traits to a budding block**, not to change its identity — use `create` for that.
 
@@ -581,9 +622,9 @@ Growth speed is in that table too: pass a `GrowthSpeed` tier to that entry's `Gr
 
 Generate the JSON assets with `./gradlew runData`. **AE2 must be present in `run/mods` before running it**, otherwise the task aborts outright — this is what prevents the already-generated Fluix assets from being judged stale and deleted. The output directory `src/generated/resources` is under version control.
 
-Data generation owns the following files; do not write them by hand: `blockstates/`, `models/block/`, `models/item/`, the loot tables for budding blocks and buds, the `c:budding_blocks` / `c:buds` / `c:clusters` tags, and the `mineable/pickaxe` and `needs_*_tool` tags.
+Data generation owns the following files; do not write them by hand: `blockstates/`, `models/block/`, `models/item/`, the loot tables for budding blocks and buds, the `c:budding_blocks` / `c:buds` / `c:clusters` tags, the `mineable/pickaxe` and `needs_*_tool` tags, and the **infection recipes** (`data/create_crystal_industry/recipe/budding_conversion/`, produced from each family's declarations in the family table — see "Infection Recipes" in section 1).
 
-Still hand-written: textures (including `.mcmeta`), the loot tables for clusters and Fluix (their structure and mod conditions cannot be reproduced by the generator), world generation JSON, language files, plain-item models (`models/item/`) and recipes.
+Still hand-written: textures (including `.mcmeta`), the loot tables for clusters and Fluix (their structure and mod conditions cannot be reproduced by the generator), world generation JSON, language files, plain-item models (`models/item/`), and the crafting/processing recipes (everything under `data/create_crystal_industry/recipe/` except `budding_conversion/`).
 
 > The generator **validates that textures exist** (model generation reads `ExistingFileHelper`), so while a new family's textures are still being drawn you have to drop placeholder images into the target paths, run `runData`, then delete the placeholders and keep only the folders. Fluid textures and tint are not the generator's business: their paths are hard-coded in `client/ModFluidExtensions`.
 

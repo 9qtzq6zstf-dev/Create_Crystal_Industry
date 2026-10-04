@@ -1,0 +1,11 @@
+{
+  "type": "create_crystal_industry:budding_conversion",
+  "budding": "create_crystal_industry:emerald_budding",
+  "chance": 25000,
+  "radius": 1,
+  "replacements": [
+    {
+      "input": "minecraft:emerald_block"
+    }
+  ]
+}

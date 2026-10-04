@@ -30,8 +30,6 @@ import org.jetbrains.annotations.Nullable;
  * @param growthEnvironment 生长环境要求（维度 + 群系）：只在这些地方正常生长，出了地盘每次判定通过后再掷一次、
  *                          只有其中概率能继续长；{@link GrowthEnvironment#ANY}（默认）= 哪里都一样长
  * @param fluid              生长要消耗的流体（母岩自带小罐）；空 = 不消耗流体，见 {@link #fluidRequirement(String, int, int)}
- * @param conversions        随机刻副作用：母岩侵染/转化周围方块的规则；空表 = 不转化任何东西，
- *                           见 {@link #conversions(List)} 与 {@link BuddingConversions}
  */
 public record GrowthDefinition(
         Block smallBud,
@@ -43,8 +41,7 @@ public record GrowthDefinition(
         OptionalInt minLight,
         boolean requiresWater,
         GrowthEnvironment growthEnvironment,
-        @Nullable FluidRequirement fluid,
-        List<BuddingFamily.BlockConversion> conversions) {
+        @Nullable FluidRequirement fluid) {
 
     /**
      * 最常用的构造：四个阶段 + 概率，其余取默认（不限光照、不要求水源、不限维度、不消耗流体）。
@@ -52,7 +49,7 @@ public record GrowthDefinition(
      */
     public static GrowthDefinition of(Block smallBud, Block mediumBud, Block largeBud, Block cluster, int chance) {
         return new GrowthDefinition(smallBud, mediumBud, largeBud, cluster, chance,
-                OptionalInt.empty(), OptionalInt.empty(), false, GrowthEnvironment.ANY, null, List.of());
+                OptionalInt.empty(), OptionalInt.empty(), false, GrowthEnvironment.ANY, null);
     }
 
     /**
@@ -95,7 +92,7 @@ public record GrowthDefinition(
     public static GrowthDefinition of(String smallBud, String mediumBud, String largeBud, String cluster,
                                       int chance, int maxLight, int minLight, boolean requiresWater) {
         return new GrowthDefinition(block(smallBud), block(mediumBud), block(largeBud), block(cluster),
-                chance, lightBound(maxLight), lightBound(minLight), requiresWater, GrowthEnvironment.ANY, null, List.of());
+                chance, lightBound(maxLight), lightBound(minLight), requiresWater, GrowthEnvironment.ANY, null);
     }
 
     // ==================== 生长环境（维度 + 群系） ====================
@@ -187,37 +184,12 @@ public record GrowthDefinition(
     /** 同上，直接给一个已经构造好的 {@link FluidRequirement}；传 {@code null} = 取消流体需求 */
     public GrowthDefinition fluidRequirement(@Nullable FluidRequirement requirement) {
         return new GrowthDefinition(smallBud, mediumBud, largeBud, cluster, chance,
-                maxLight, minLight, requiresWater, growthEnvironment, requirement, conversions);
+                maxLight, minLight, requiresWater, growthEnvironment, requirement);
     }
 
     private GrowthDefinition withEnvironment(GrowthEnvironment environment) {
         return new GrowthDefinition(smallBud, mediumBud, largeBud, cluster, chance,
-                maxLight, minLight, requiresWater, environment, fluid, conversions);
-    }
-
-    // ==================== 随机刻副作用（侵染 / 转化） ====================
-
-    /**
-     * 随机刻副作用：母岩每随机刻按 {@link BuddingFamily.BlockConversion#chance()} 掷一次，
-     * 通过后在半径 {@code radius} 内随机取一格，命中哪条替换规则就写哪个方块。
-     * <p>
-     * 自带家族在家族表里声明（{@code BuddingFamilies} 的 {@code Growth.conversions}），
-     * 脚本用 {@code CustomBuddingOptions#transform} 追加；两者运行时跑的是同一段
-     * （见 {@link BuddingConversions}）。
-     */
-    public GrowthDefinition conversions(List<BuddingFamily.BlockConversion> conversions) {
-        return new GrowthDefinition(smallBud, mediumBud, largeBud, cluster, chance,
-                maxLight, minLight, requiresWater, growthEnvironment, fluid, List.copyOf(conversions));
-    }
-
-    /** 追加转化规则（{@code modify} 用：脚本写的是加特性，不该把方块原有的规则顶掉） */
-    public GrowthDefinition withConversions(List<BuddingFamily.BlockConversion> extra) {
-        if (extra.isEmpty()) {
-            return this;
-        }
-        List<BuddingFamily.BlockConversion> merged = new java.util.ArrayList<>(conversions);
-        merged.addAll(extra);
-        return conversions(merged);
+                maxLight, minLight, requiresWater, environment, fluid);
     }
 
     /** 这个位置是否在自己的地盘上（维度与群系都命中；没写环境要求时恒为 true） */

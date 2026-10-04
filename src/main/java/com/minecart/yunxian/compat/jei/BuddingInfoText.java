@@ -2,15 +2,14 @@ package com.minecart.yunxian.compat.jei;
 
 import java.util.List;
 
-import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 
 /**
- * 信息页文案的公共拼装件。
+ * JEI 两个页面（母岩信息、侵染）文案的公共拼装件，{@link #LANG} 键前缀也在这里。
  * <p>
- * 句子本身一律走语言文件（{@link #LANG} 前缀下的键），这里只负责把动态部分——方块名、群系名——
- * 拼成能当 {@code Component.translatable} 实参的片段，以及「一长串名字折成前几个 + 等 N 个」这件反复要做的事。
+ * 句子本身一律走语言文件，这里只负责把动态部分——方块名、群系名——拼成能当
+ * {@code Component.translatable} 实参的片段，以及「一长串名字折成前几个 + 等 N 个」这件反复要做的事。
  */
 final class BuddingInfoText {
 
@@ -24,14 +23,6 @@ final class BuddingInfoText {
     private static final String SEPARATOR = " / ";
 
     private BuddingInfoText() {
-    }
-
-    /**
-     * 并列句子之间的分隔符（如"石头→铁矿（1/20）"与"粗铁块→母岩（1/25000）"之间）。
-     * 中文用「；」、英文用「; 」，所以放语言文件里；构建这一页时取一次。
-     */
-    static String sentenceSeparator() {
-        return I18n.get(LANG + "list.separator");
     }
 
     /** 用 {@link #SEPARATOR} 连接若干片段；空列表得到空组件 */

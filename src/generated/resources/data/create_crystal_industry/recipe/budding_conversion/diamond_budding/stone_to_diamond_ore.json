@@ -1,0 +1,16 @@
+{
+  "type": "create_crystal_industry:budding_conversion",
+  "budding": "create_crystal_industry:diamond_budding",
+  "chance": 20,
+  "radius": 1,
+  "replacements": [
+    {
+      "input": "minecraft:stone",
+      "output": "minecraft:diamond_ore"
+    },
+    {
+      "input": "minecraft:deepslate",
+      "output": "minecraft:deepslate_diamond_ore"
+    }
+  ]
+}

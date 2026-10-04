@@ -72,15 +72,15 @@ public class GenericBuddingBlock extends BuddingAmethystBlock implements EntityB
     private final BuddingGrowthEngine.GrowthGate energyGate = this::payGrowthCost;
 
     /**
-     * 转化规则表缓存：首次随机刻（注册表已冻结）后解析一次，之后只跟着定义走。
+     * 转化规则表缓存：首次随机刻解析一次（那时配方管理器已经就绪），之后只跟着配方表走。
      * <p>
-     * 跟着定义而不是只在首次解析，是为了让脚本 {@code CustomBudding.modify} 追加的转化也生效
-     * （定义是按 {@link BuddingOverrides#revision()} 重建的，这里比对的就是那两个对象）。
+     * 配方会随数据包重载换一批（脚本用 {@code .transform} 加的也走配方），所以缓存记着当时那份
+     * {@link BuddingConversions#recipeRevision()}，对不上就重建。
      */
     @Nullable
     private volatile List<BuddingConversions.Prepared> preparedConversions;
-    @Nullable
-    private volatile GrowthDefinition preparedFor;
+    /** 缓存对应的 {@link BuddingConversions#recipeRevision()} */
+    private volatile int preparedRevision = -1;
 
     // 生长定义缓存：脚本改过覆盖（版本号变了）才重建。
     // 两个字段都 volatile、且**先写定义再写版本号**：护目镜与 JEI 在客户端线程读、随机刻在服务端线程读，
@@ -204,19 +204,22 @@ public class GenericBuddingBlock extends BuddingAmethystBlock implements EntityB
         GrowthDefinition definition = growthDefinition();
         BuddingGrowthEngine.tryGrow(level, pos, random, definition, energyGate);
         // 随机刻副作用的随机数消耗顺序与历史实现一致：先生长那一轮，再逐条转化规则
-        BuddingConversions.run(level, pos, random, prepared(definition), energyGate,
-                BuddingConversions.infectionAllowed(family.id()));
+        BuddingConversions.run(level, pos, random, prepared(level), energyGate,
+                BuddingConversions.allowed(this));
     }
 
-    /** 解析（并缓存）本母岩的转化规则表；定义变了（脚本改过）就重解析 */
-    private List<BuddingConversions.Prepared> prepared(GrowthDefinition definition) {
+    /** 取（并缓存）本母岩的侵染规则表：配方随数据包重载换过一批就重建 */
+    private List<BuddingConversions.Prepared> prepared(ServerLevel level) {
+        int revision = BuddingConversions.recipeRevision();
         List<BuddingConversions.Prepared> cached = preparedConversions;
-        if (cached != null && preparedFor == definition) {
+        if (cached != null && preparedRevision == revision) {
             return cached;
         }
-        List<BuddingConversions.Prepared> prepared = BuddingConversions.prepare(family.id(), this, definition.conversions());
+        List<BuddingConversions.Prepared> prepared = BuddingConversions.prepare(level, this);
         preparedConversions = prepared;
-        preparedFor = definition;
+        // 先写表再写版本号（两个都是 volatile）：反了会让别的线程读到"新版本号 + 旧表"，
+        // 那份旧表因为版本号相等再也不会被重建
+        preparedRevision = revision;
         return prepared;
     }
 
@@ -250,11 +253,11 @@ public class GenericBuddingBlock extends BuddingAmethystBlock implements EntityB
         // 光照下限留空：家族表的 LightRequirement 只有"无要求 / 必须低于某个亮度"两种，没有下限
         // 流体需求来自家族表（远古残骸的熔岩罐就是这么声明的）：方块实体、付费钩子、护目镜与
         // 比较器都读定义里的这一项，于是脚本的 modify 能统一地加、改、取消它。
-        // 转化规则同样从家族表带进来（运行时读的是定义里的这一栏），于是脚本能往任何一块母岩上追加
+        // 转化（侵染）规则不在这里：它们已经统一成配方，引擎按配方表取用，见 BuddingConversions
         GrowthDefinition built = new GrowthDefinition(smallBud, mediumBud, largeBud, cluster,
                 family.growth().speed().chance(),
                 familyMaxLight(), OptionalInt.empty(), family.growth().rule() == GrowthRule.SUBMERGED,
-                family.growth().growthEnvironment(), family.growth().fluid(), family.growth().conversions());
+                family.growth().growthEnvironment(), family.growth().fluid());
         GrowthDefinition resolved = BuddingOverrides.apply(this, built);
         cachedDefinition = resolved;
         cachedRevision = revision;

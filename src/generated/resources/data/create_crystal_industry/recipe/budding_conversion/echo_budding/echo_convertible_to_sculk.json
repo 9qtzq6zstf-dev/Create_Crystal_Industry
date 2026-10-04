@@ -1,0 +1,12 @@
+{
+  "type": "create_crystal_industry:budding_conversion",
+  "budding": "create_crystal_industry:echo_budding",
+  "chance": 4,
+  "radius": 2,
+  "replacements": [
+    {
+      "input": "#create_crystal_industry:echo_convertible",
+      "output": "minecraft:sculk"
+    }
+  ]
+}

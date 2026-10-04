@@ -134,47 +134,50 @@ public final class ModConfig {
             endSection(BUILDER);
         }
 
-        // ===== 母岩侵染（再生传播） =====
+        // ===== 母岩侵染 =====
         static {
             section(BUILDER, "infection",
-                    "Budding blocks infecting neighbouring blocks into new budding blocks.");
+                    "Budding blocks infecting neighbouring blocks.");
         }
 
         /**
-         * 母岩会不会把紧邻的方块"传染"成新的母岩（粗铁块 → 粗铁母岩、平滑石英 → 石英母岩、
-         * 远古残骸 → 远古残骸母岩……）。关掉之后，母岩不再自己变多——矿石转化
-         * （石头 → 矿石）与回响母岩的幽匿蔓延不受影响。
+         * 母岩会不会侵染紧邻的方块。这是一切的<b>总开关</b>：石头长成矿石、粗铁块变成新的母岩、
+         * 回响母岩把周围变成幽匿，都算侵染，都归它管——关掉之后母岩什么都不再转化
+         * （也就不会自己变多）。
+         * <p>
+         * 想要"只留一部分母岩继续转化"，用 {@link #INFECTING_BUDDING} 写名单，别关这个开关。
          */
         public static final ModConfigSpec.BooleanValue BUDDING_INFECTION = BUILDER
                 .comment(
-                        "Whether budding blocks can infect neighbouring blocks into new budding blocks",
-                        "(raw iron block -> Budding Raw Iron, smooth quartz -> Budding Quartz, ...).",
-                        "Turning this off stops budding blocks from multiplying themselves. Ore conversion",
-                        "(stone -> ore) and the Echo block's sculk spread are not affected.")
+                        "Whether budding blocks infect neighbouring blocks. This covers ALL of it:",
+                        "stone growing into ore, a raw metal block turning into a new budding block,",
+                        "the Echo block spreading sculk. Turning it off stops budding blocks from",
+                        "converting anything at all (so they no longer multiply themselves either).",
+                        "To keep only some budding blocks converting, list them in infectingBudding")
                 .translation(LANG_PREFIX + "buddingInfection")
                 .define("buddingInfection", true);
 
         /**
-         * 允许侵染的母岩名单：写<b>母岩家族 id</b>（{@code raw_iron}、{@code quartz}，即
+         * 会侵染周围方块的母岩名单：写<b>母岩家族 id</b>（{@code raw_iron}、{@code quartz}，即
          * {@code worldgen.generate_<id>} 那个 id）或<b>方块 id</b>（{@code kubejs:my_crystal_budding}，
          * 脚本注册的母岩只能用这一种写法）。
          * <p>
-         * 写空 = 自带侵染规则的母岩全都允许（出厂设置）；写了名单 = <b>只有</b>名单里的允许，
-         * 其余母岩不再侵染。{@link #BUDDING_INFECTION} 关掉时这份名单不起作用。
+         * 写空 = 全部允许；写了名单 = <b>只有</b>名单里的允许，其余母岩什么都不再转化
+         * （连石头 → 矿石也停）。{@link #BUDDING_INFECTION} 关掉时这份名单不起作用。
          */
         public static final ModConfigSpec.ConfigValue<List<? extends String>> INFECTING_BUDDING = BUILDER
                 .comment(
-                        "Which budding blocks may infect neighbours into new budding blocks: family ids",
-                        "(raw_iron, quartz) or block ids (kubejs:my_crystal_budding).",
-                        "Empty = every budding block with an infection rule keeps it (the default);",
-                        "a non-empty list = ONLY those may infect.",
+                        "Which budding blocks infect their neighbours: family ids (raw_iron, quartz)",
+                        "or block ids (kubejs:my_crystal_budding).",
+                        "Empty = all of them may (the default); a non-empty list = ONLY those may,",
+                        "the rest stop converting anything.",
                         "Does nothing while buddingInfection is false.")
                 .translation(LANG_PREFIX + "infectingBudding")
                 // 宽松校验：只挡非字符串。拼错的 id 不会静默——凡是不在名单里的母岩都不再侵染，
                 // 效果是"名单写错 = 谁都不侵染"，服主一眼就能看出自己写错了
                 .defineListAllowEmpty("infectingBudding", List.of(), () -> "", element -> element instanceof String);
 
-        /** 母岩能不能侵染（总开关）；读配置见 {@code BuddingConversions#infectionAllowed} */
+        /** 母岩能不能侵染（总开关）；读配置见 {@code BuddingConversions#allowed} */
         public static boolean buddingInfectionEnabled() {
             return BUDDING_INFECTION.get();
         }

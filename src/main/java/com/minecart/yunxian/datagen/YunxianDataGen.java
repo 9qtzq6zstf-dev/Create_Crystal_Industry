@@ -15,7 +15,8 @@ import net.neoforged.neoforge.data.event.GatherDataEvent;
 /**
  * 数据生成入口（{@code ./gradlew runData}）。
  * <p>
- * 只生成可机械推导的部分：blockstate、方块模型、物品模型、母岩与芽的掉落表、标签。
+ * 只生成可机械推导的部分：blockstate、方块模型、物品模型、母岩与芽的掉落表、标签，
+ * 以及母岩的侵染配方（家族表里声明、这里翻成 JSON）。
  * 世界生成 JSON、语言文件、材质与 .mcmeta、晶簇与福鲁伊克斯的掉落表仍为手写。
  * <p>
  * 在 {@code Yunxian} 的构造器里挂到 mod 事件总线上（本模组这版 NeoForge 没有可用的
@@ -42,6 +43,9 @@ public final class YunxianDataGen {
         }
 
         if (event.includeServer()) {
+            // 母岩的侵染配方：家族表里声明一条，这里吐一份 JSON（见 ModRecipeProvider）
+            generator.addProvider(true, new ModRecipeProvider(output, event.getLookupProvider()));
+
             generator.addProvider(true, new LootTableProvider(output, Set.of(),
                     List.of(new LootTableProvider.SubProviderEntry(ModBlockLoot::new, LootContextParamSets.BLOCK)),
                     event.getLookupProvider()));

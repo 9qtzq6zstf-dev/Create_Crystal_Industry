@@ -54,11 +54,11 @@ public class ScriptedBuddingBlock extends BuddingAmethystBlock implements Entity
     /** 本方块的 id 字符串（{@code kubejs:foo_budding}）：配置里的侵染名单按它匹配，见 BuddingConversions */
     private final String ownerId;
 
-    // 转化规则表缓存：与生长定义一样按对象比对（脚本 modify 追加的转化也在定义里）
+    // 转化规则表缓存：脚本用 .transform(...) 加的规则也会进配方表，所以跟着配方版本号失效
     @Nullable
     private volatile List<BuddingConversions.Prepared> preparedConversions;
-    @Nullable
-    private volatile GrowthDefinition preparedFor;
+    /** 缓存对应的 {@link BuddingConversions#recipeRevision()} */
+    private volatile int preparedRevision = -1;
 
     public ScriptedBuddingBlock(ResourceLocation id, Supplier<GrowthDefinition> definition, Properties properties) {
         super(properties);
@@ -113,19 +113,20 @@ public class ScriptedBuddingBlock extends BuddingAmethystBlock implements Entity
         BuddingGrowthEngine.tryGrow(level, pos, random, growth, gate);
         // 随机刻副作用（脚本用 .transform(输入, 产物) 写的转化/侵染）：与自带家族同一个执行器，
         // 顺序也一样——先生长那一轮，再逐条转化规则
-        BuddingConversions.run(level, pos, random, prepared(growth), gate,
-                BuddingConversions.infectionAllowed(ownerId));
+        BuddingConversions.run(level, pos, random, prepared(level), gate,
+                BuddingConversions.allowed(this));
     }
 
-    /** 解析（并缓存）本母岩的转化规则表；定义变了（脚本改过）就重解析 */
-    private List<BuddingConversions.Prepared> prepared(GrowthDefinition growth) {
+    /** 取（并缓存）本母岩的侵染规则表：配方随数据包重载换过一批就重建 */
+    private List<BuddingConversions.Prepared> prepared(ServerLevel level) {
+        int revision = BuddingConversions.recipeRevision();
         List<BuddingConversions.Prepared> cached = preparedConversions;
-        if (cached != null && preparedFor == growth) {
+        if (cached != null && preparedRevision == revision) {
             return cached;
         }
-        List<BuddingConversions.Prepared> prepared = BuddingConversions.prepare(ownerId, this, growth.conversions());
+        List<BuddingConversions.Prepared> prepared = BuddingConversions.prepare(level, this);
         preparedConversions = prepared;
-        preparedFor = growth;
+        preparedRevision = revision;
         return prepared;
     }
 

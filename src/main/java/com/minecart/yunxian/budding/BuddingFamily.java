@@ -85,8 +85,6 @@ public record BuddingFamily(
              * {@code GenericBuddingBlock#payGrowthCost}）。
              */
             EnergyRequirement energy,
-            /** 随机刻副作用：转化/传播规则，按顺序各消耗一次随机数 */
-            List<BlockConversion> conversions,
             /** 芽与晶簇的方块类型 */
             ClusterKind clusterKind,
             /** 母岩自身输出的红石强度，0 = 不输出（红石母岩为 15） */
@@ -318,8 +316,12 @@ public record BuddingFamily(
     }
 
     /**
-     * 一条随机刻副作用规则：每随机刻有 1/chance 概率触发一次尝试，
+     * 家族表<b>声明</b>的一条侵染规则：每随机刻有 1/chance 概率触发一次尝试，
      * 在母岩周围半径 radius 的立方体内随机取一格，命中第一条替换规则即写入。
+     * <p>
+     * 声明写在这里（每个家族工厂一处），由 {@code ModRecipeProvider} 翻成
+     * {@code budding_conversion} 配方 JSON；<b>运行时读的是配方，不是这两个 record</b>
+     * ——所以改一条转化既可以改家族表再跑数据生成，也可以直接在整合包里覆盖那份 JSON。
      */
     public record BlockConversion(int chance, int radius, List<Replacement> replacements, boolean energyGated) {
 
@@ -334,8 +336,9 @@ public record BuddingFamily(
     }
 
     /**
-     * 一条替换规则：匹配输入方块（方块本身或标签）→ 写入输出方块。
-     * {@code output} 为 null 表示写入本母岩自身（粗矿块/平滑石英 → 母岩的再生传播）。
+     * 声明里的一条替换：匹配输入方块（方块本身或标签）→ 写入输出方块。
+     * {@code output} 为 null 表示写入本母岩自身（粗矿块/平滑石英 → 母岩的再生传播）；
+     * 生成配方时它会落成 {@code output} 字段缺席，由引擎在运行时展开。写法见 {@link BlockConversion}。
      */
     public record Replacement(@Nullable Supplier<Block> input, @Nullable TagKey<Block> inputTag,
                               @Nullable Supplier<Block> output) {

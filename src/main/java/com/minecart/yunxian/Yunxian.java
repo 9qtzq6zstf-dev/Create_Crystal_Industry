@@ -10,10 +10,12 @@ import com.minecart.yunxian.attachment.EchoAttachments;
 import com.minecart.yunxian.behaviour.SmartDrillMovementBehaviour;
 import com.minecart.yunxian.battery.CrystalBatteryInteractions;
 import com.minecart.yunxian.blockentity.CleanerDropAbsorption;
+import com.minecart.yunxian.budding.BuddingConversions;
 import com.minecart.yunxian.budding.BuddingFamilies;
 import com.minecart.yunxian.budding.BuddingGrowthEngine;
 import com.minecart.yunxian.budding.BuddingOverrides;
 import com.minecart.yunxian.client.ModRenderers;
+import com.minecart.yunxian.compat.YunxianJeiPlugin;
 import com.minecart.yunxian.datagen.YunxianDataGen;
 import com.minecart.yunxian.registry.*;
 import com.minecart.yunxian.util.NightVisionWearHelper;
@@ -22,11 +24,14 @@ import com.simibubi.create.api.stress.BlockStressValues;
 import com.simibubi.create.content.equipment.goggles.GogglesItem;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
+import net.neoforged.fml.ModList;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
+import net.neoforged.fml.event.config.ModConfigEvent;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.OnDatapackSyncEvent;
 
 @Mod(Yunxian.MODID)
 public class Yunxian {
@@ -59,6 +64,10 @@ public class Yunxian {
         NeoForge.EVENT_BUS.addListener(YunxianAdvancements::onBlockBroken);
         // 风场内生成的掉落物直接进吸尘器库存，不生成实体（见 CleanerDropAbsorption 的类注释）
         NeoForge.EVENT_BUS.addListener(CleanerDropAbsorption::onEntityJoinLevel);
+        // 配方（重新）加载完了：母岩按配方缓存的侵染规则表要重建。这个事件由服务器在数据包加载
+        // 结束后发出（含开机与 /reload），晚于 RecipeManager 自己 apply，所以读到的一定是新配方
+        NeoForge.EVENT_BUS.addListener(OnDatapackSyncEvent.class,
+                event -> BuddingConversions.onRecipesReloaded());
         // 「感电」：生物待在弧光石系列方块或电流浆附近就获得（见 ElectrifiedAura 的类注释）
         NeoForge.EVENT_BUS.addListener(ElectrifiedAura::onEntityTick);
         // 泡在电流浆里持续挨雷劈（见 SlurryShock 的类注释）
@@ -72,12 +81,24 @@ public class Yunxian {
         // 所以走 UseItemOnBlockEvent 这个对任何物品都生效的钩子，见该类注释
         NeoForge.EVENT_BUS.addListener(CrystalBatteryInteractions::onUseItemOnBlock);
         modEventBus.addListener(Yunxian::commonSetup);
+        ModRecipes.register(modEventBus);
         // ModRenderers 整个类都是客户端专用的：它的类级字段是 ModelResourceLocation / PartialModel，
         // 引用的 EchoSpyglassHeadLayer 还继承客户端的 RenderLayer。专用服务端一旦加载到这个类就会
         // NoClassDefFoundError: net/minecraft/client/renderer/entity/layers/RenderLayer。
         // 拦截必须放在这里——放进 ModRenderers.register 内部判断是没用的，那时类已经被加载了。
         if (FMLEnvironment.dist.isClient()) {
             ModRenderers.register(modEventBus);
+        }
+        // 配置一改，JEI 的两页立刻跟着变（母岩侵染那几条是运行时就生效的，页面不该等到退出世界重进）。
+        // YunxianJeiPlugin 引用 mezz.jei 的类：没装 JEI 的客户端加载到它就是 NoClassDefFoundError，
+        // 所以"装没装 JEI"必须在这一层判掉——与上面 ModRenderers 同一个道理，放进处理函数里是没用的。
+        if (FMLEnvironment.dist.isClient() && ModList.get().isLoaded("jei")) {
+            modEventBus.addListener(ModConfigEvent.Reloading.class, event -> {
+                // 别的模组的配置重载也走这个事件，别跟着白忙
+                if (event.getConfig().getSpec() == com.minecart.yunxian.config.ModConfig.Common.SPEC) {
+                    YunxianJeiPlugin.refreshRecipes();
+                }
+            });
         }
         ModFeatures.register(modEventBus);
         ModArmInteractionPointTypes.register(modEventBus);

@@ -5,7 +5,6 @@ import java.util.List;
 import com.minecart.yunxian.Yunxian;
 import com.minecart.yunxian.compat.jei.BuddingInfo.Row;
 import com.minecart.yunxian.compat.jei.BuddingInfo.Style;
-import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 
@@ -24,27 +23,34 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.block.BlockRenderDispatcher;
 import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FormattedCharSequence;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.neoforged.neoforge.client.model.data.ModelData;
 
 /**
- * JEI 的「母岩信息」页：左边 3D 渲染母岩与其晶簇，右边逐行写生长条件 / 相邻转化 / 生长速度 / 生成条件
- * （相邻转化那一节只有会转化周围方块的母岩才有）。
+ * JEI 的「母岩信息」页：左边 3D 渲染母岩与其晶簇，右边逐行写生长条件 / 生长速度 / 生成条件
+ * （「母岩会转化周围方块」另开一页，见 {@link BuddingConversionCategory}）。
  * <p>
- * 三条刻意的取舍：
+ * 四条刻意的取舍：
  * <ul>
  *   <li><b>左侧是自己渲染的方块模型</b>（{@code BlockRenderDispatcher}），不是 JEI 的物品槽——
  *       芽与晶簇的物品模型是平面贴图，只有渲染方块状态才看得出它们的立体形状；
  *       晶簇还按它在世界里的样子<b>长在母岩顶面上</b>（而不是并排摆两块）。为了让玩家仍能
- *       对着母岩按 R/U 翻到这一页，同样的物品以"不可见材料"登记进了 JEI（见 {@link #setRecipe}）。</li>
+ *       对着母岩按 R/U 翻到这一页，同样的物品以"不可见材料"登记进了 JEI（见 {@link #setRecipe}）。
+ *       晶簇另有一处讲究：不走物品着色器，见 {@link #renderCluster}。</li>
+ *   <li><b>方块底下不垫阴影</b>：Create 自己那些 JEI 页会垫一块 {@code JEI_SHADOW} 灰椭圆，
+ *       本页不画——方块直接悬在浅灰底板上更干净。</li>
  *   <li><b>底板交给 JEI</b>：JEI 会先给每个配方铺一块自己的九宫格底板
  *       （{@code jei:single_recipe_background}，浅灰）再调 {@link #draw}，所以本页只画内容——
  *       页面看起来才和别的配方一致，资源包换掉那块底板时本页也跟着变。</li>
@@ -75,39 +81,32 @@ public class BuddingInfoCategory extends AbstractRecipeCategory<BuddingInfo> {
      * 取 36 时整组约 51 × 88 像素，正好落在左侧 62 像素宽的栏里（别调大到超过它）。
      */
     private static final float RENDER_SCALE = 36.0F;
-    /** 整组渲染的外接框，用于悬停判定（就是上面算出的 51 × 88，取整） */
+    /**
+     * 整组渲染的外接框，用于悬停判定（就是上面算出的 51 × 88，取整）。
+     * 组成：一格高在屏幕上的投影 {@code cos30°×缩放 ≈ 31}，加上"本格前角比中心再低多少"
+     * {@code sin30°×√2÷2×缩放 ≈ 13}，两格即 {@code 2×31 + 2×13 ≈ 88}。
+     */
     private static final int RENDER_BOX_W = 52;
     private static final int RENDER_BOX_H = 88;
     private static final int RENDER_X = RENDER_CENTER_X - RENDER_BOX_W / 2;
     private static final int RENDER_Y = RENDER_CENTER_Y - RENDER_BOX_H / 2;
-    /**
-     * 一格高在屏幕上的投影（{@code cos30°×缩放}）与"本格前角比中心再低多少"（{@code sin30°×√2÷2×缩放}）；
-     * 两者正是上面那个外接框的组成：{@code RENDER_BOX_H = 2×SIDE + 2×FRONT}。
-     * 阴影要贴到方块最底下那个角上，就得用这两个数把方块底面算出来。
-     */
-    private static final float SIDE_PIXELS = RENDER_SCALE * 0.866F;
-    private static final float FRONT_PIXELS = RENDER_SCALE * 0.354F;
 
     /**
      * Create 的 JEI 贴图：{@code AllGuiTextures} 里所有 {@code jei/widgets} 开头的条目都落在这个文件上
      * （它把枚举构造器的字符串拼成 {@code create:textures/gui/<路径>.png}）。
-     * 本页只用它两张图：底下的阴影与产物的箭头，坐标都是照 {@code AllGuiTextures} 的构造器实参取的。
+     * 本页只用它一张图：产物的箭头，坐标照 {@code AllGuiTextures} 的构造器实参取。
      */
     private static final ResourceLocation CREATE_JEI_WIDGETS =
             ResourceLocation.fromNamespaceAndPath("create", "textures/gui/jei/widgets.png");
-    /** 阴影：{@code AllGuiTextures.JEI_SHADOW} —— u=0、v=56，52×11 的灰椭圆 */
-    private static final int SHADOW_U = 0;
-    private static final int SHADOW_V = 56;
-    private static final int SHADOW_WIDTH = 52;
-    private static final int SHADOW_HEIGHT = 11;
 
     /**
      * 晶簇产物栏位（16×16 物品格的左上角）：摆在渲染出来的晶簇的<b>上方偏左</b>，
-     * 栏位右侧画一支 Create 同款的箭头指着它（见 {@link #drawProductArrow}）。JEI 会在格子外面补一圈边框。
+     * 栏位右侧画一支 Create 同款的箭头指着它（见 {@link #drawProductArrow}）。
+     * 格子是光板的——本页没给槽设背景，JEI 不会自己补边框（侵染页设了标准背景，那边才有框）。
      */
     private static final int PRODUCT_SLOT_X = 5;
     private static final int PRODUCT_SLOT_Y = 30;
-    /** 物品格边长，用来算栏位边框与中心 */
+    /** 物品格边长，用来算箭头位置与栏位中心 */
     private static final int SLOT_SIZE = 16;
 
     /** Create 的 JEI 下箭头：{@code AllGuiTextures.JEI_DOWN_ARROW} —— u=0、v=21，18×14，原样贴、不旋转 */
@@ -130,19 +129,13 @@ public class BuddingInfoCategory extends AbstractRecipeCategory<BuddingInfo> {
     /**
      * 每次绘制最多写几行（含小节标题与折行后的续行）。版面高度就按它定的：
      * {@code (HEIGHT - 4 - TEXT_TOP) / LINE_HEIGHT} 约 16 行，还要再减去各小节之间的空隙，
-     * 所以文案得留一点余量——最长的一条是粗锌母岩（生长条件 + 相邻转化 + Create 的 config_filter
-     * 说明）。文案再长就该精简 {@link BuddingInfoCollector} 里的行，而不是把版面撑得更大。
+     * 所以文案得留一点余量——最长的一条是粗锌母岩（生长条件那一节里的 Create 配置过滤说明，
+     * 另加生长速度与生成条件两节）。文案再长就该精简 {@link BuddingInfoCollector} 里的行，
+     * 而不是把版面撑得更大。
      */
     private static final int MAX_LINES = 16;
 
-    /**
-     * 晶簇渲染的提亮系数：晶簇是 {@code cross} 模型，模型里 {@code shade=false} 表示它不参与方向性明暗，
-     * 页面上的明暗完全由贴图决定——深色晶体（回响、福鲁伊克斯）在浅灰底上就显得发闷。
-     * 只影响这一页的观感，不动方块在世界里的任何属性。
-     */
-    private static final float CLUSTER_BRIGHTNESS = 1.3F;
-
-    /** 方块渲染的 z：与物品渲染同级，保证盖在自绘背景之上、又在 JEI 的浮层之下 */
+    /** 方块渲染的 z：与物品渲染同级，保证盖在 JEI 的底板之上、又在 JEI 的浮层之下 */
     private static final float Z_LEVEL = 150.0F;
 
     // ==================== 配色 ====================
@@ -198,25 +191,8 @@ public class BuddingInfoCategory extends AbstractRecipeCategory<BuddingInfo> {
         if (!recipe.product().isEmpty()) {
             drawProductArrow(guiGraphics);
         }
-        // 阴影像地面一样垫在方块下面，所以要先画：方块的正面会压住它的上缘
-        drawShadow(guiGraphics, pivotY(recipe));
         drawBlocks(guiGraphics, recipe, pivotY(recipe));
         drawLines(guiGraphics, recipe.rows());
-    }
-
-    /**
-     * 在母岩底下垫一块 Create 的 JEI 阴影——就是 {@code AllGuiTextures.JEI_SHADOW} 用的那张贴图里的那一块
-     * （{@code assets/create/textures/gui/jei/widgets.png}，u=0、v=56，52×11 的实心灰椭圆），
-     * 用的是同一个 {@code blit} 调用，所以本页与 Create 自己的 JEI 页面观感一致。
-     * <p>
-     * 贴图只引用、不复制进本模组（Create 是本模组的必需前置，路径一定在）。
-     */
-    private static void drawShadow(GuiGraphics guiGraphics, float pivotY) {
-        int x = RENDER_CENTER_X - SHADOW_WIDTH / 2;
-        // 阴影贴着方块最底下的那个角：它在屏幕上的高度 = 重心高度 + 半格投影 + 前角下探
-        int bottom = Math.round(RENDER_CENTER_Y + SIDE_PIXELS * pivotY + FRONT_PIXELS);
-        guiGraphics.blit(CREATE_JEI_WIDGETS, x, bottom - SHADOW_HEIGHT + 1,
-                SHADOW_U, SHADOW_V, SHADOW_WIDTH, SHADOW_HEIGHT);
     }
 
     /** 整组（母岩 + 顶上的晶簇）的重心在块空间里的高度：有晶簇时两格高，重心落在第二格的中心 */
@@ -275,37 +251,52 @@ public class BuddingInfoCategory extends AbstractRecipeCategory<BuddingInfo> {
         PoseStack pose = guiGraphics.pose();
 
         compositePose(guiGraphics, pivotY);
-        // 光照给满亮，免得页面上出现一块黑方块
+        // 光照给满亮，免得页面上出现一块黑方块。
+        // 末两个参数：ModelData.EMPTY 与"不给渲染类型"（null = 让 NeoForge 换成物品那一套，
+        // 也就是母岩要的实体着色器观感）——不写 null 就得用那个已过时的 5 参重载。
         dispatcher.renderSingleBlock(recipe.budding(), pose, buffer,
-                LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
+                LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, ModelData.EMPTY, null);
         pose.popPose();
-        // 先把母岩画出去：下面给晶簇加的提亮是"flush 时"才生效的颜色调制，
-        // 顶点写进批次与批次画出去是两件事，同一次 flush 会把两笔一起画亮。
-        guiGraphics.flush();
 
         if (cluster == null) {
             return;
         }
 
-        // 晶簇的 cross 模型不参与方向性明暗（模型里 shade=false），深色晶体（回响、福鲁伊克斯）
-        // 在浅灰底上会显得发闷，所以给它一个略大于 1 的颜色调制。
-        // 注意 getShaderColor 返回的是内部数组本身，必须在改动前先把四个分量抄出来。
-        float[] current = RenderSystem.getShaderColor();
-        float r = current[0];
-        float g = current[1];
-        float b = current[2];
-        float a = current[3];
-        RenderSystem.setShaderColor(CLUSTER_BRIGHTNESS, CLUSTER_BRIGHTNESS, CLUSTER_BRIGHTNESS, a);
-
         compositePose(guiGraphics, pivotY);
         // 原版晶簇模型是"从本格底面往上"的 cross，所以放进正上方那一格就是长在顶面上的样子
         pose.translate(0.0F, 1.0F, 0.0F);
-        dispatcher.renderSingleBlock(attachUp(cluster), pose, buffer,
-                LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
+        renderCluster(dispatcher, buffer, pose, attachUp(cluster));
         pose.popPose();
-        guiGraphics.flush();
+    }
 
-        RenderSystem.setShaderColor(r, g, b, a);
+    /**
+     * 画晶簇——和母岩不同，这里<b>不</b>走 {@link BlockRenderDispatcher#renderSingleBlock}。
+     * <p>
+     * 那个方法会把模型声明的渲染类型换成 NeoForge 给物品用的那一套
+     * （{@code RenderTypeHelper.getEntityRenderType} → {@code Sheets.cutoutBlockSheet()}，也就是
+     * {@code RenderType.entityCutout}），而实体着色器会拿顶点法线算 {@code minecraft_mix_light}
+     * 的方向性明暗：十字模型的晶簇只有四个水平法线，在等轴测视角下两个面分别被压到 0.57 与 0.71，
+     * 深色晶体（回响、福鲁伊克斯）看上去就发闷，两个面还一明一暗。模型里的 {@code shade=false}
+     * 只管得到方块拼装那一步，管不到着色器——这就是左栏「晶簇偏暗」的根源。
+     * <p>
+     * 所以这里照 {@code renderSingleBlock} 的循环自己走一遍（含方块色 tint），只把渲染类型留在
+     * 模型自己声明的那一套：{@code rendertype_cutout} 不做方向性明暗，晶簇按贴图原色平铺出来。
+     * <p>
+     * 母岩不走这条路：它是满方块，物品那一套（顶面最亮、两个侧面依次压暗）正是它作为物品的样子，
+     * 换成世界那一套反而会看不出立体。
+     */
+    private static void renderCluster(BlockRenderDispatcher dispatcher, MultiBufferSource.BufferSource buffer,
+                                      PoseStack pose, BlockState state) {
+        BakedModel model = dispatcher.getBlockModel(state);
+        int tint = Minecraft.getInstance().getBlockColors().getColor(state, null, null, 0);
+        float r = (tint >> 16 & 0xFF) / 255.0F;
+        float g = (tint >> 8 & 0xFF) / 255.0F;
+        float b = (tint & 0xFF) / 255.0F;
+
+        for (RenderType type : model.getRenderTypes(state, RandomSource.create(42), ModelData.EMPTY)) {
+            dispatcher.getModelRenderer().renderModel(pose.last(), buffer.getBuffer(type), state, model,
+                    r, g, b, LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, ModelData.EMPTY, type);
+        }
     }
 
     /**

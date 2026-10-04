@@ -1,6 +1,8 @@
 package com.minecart.yunxian.budding;
 
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -118,7 +120,7 @@ public final class BuddingFamilies {
 
     /** 绝大多数母岩共用的生长特点：无光照/能量要求，无转化，不输出信号，所有维度同速，正常速度 */
     private static final Growth PLAIN_GROWTH = new Growth(GrowthRule.STANDARD,
-            LightRequirement.ANY, EnergyRequirement.FREE, List.of(), ClusterKind.STANDARD, 0,
+            LightRequirement.ANY, EnergyRequirement.FREE, ClusterKind.STANDARD, 0,
             GrowthEnvironment.ANY, GrowthSpeed.NORMAL, null);
 
     /** 下界特产母岩（石英、荧石）的生长环境：只在下界满速，别的地方每次判定还剩一半的概率生长 */
@@ -126,12 +128,37 @@ public final class BuddingFamilies {
 
     /** 下界特产母岩（石英、荧石）的生长特点：和 {@link #PLAIN_GROWTH} 一样从简，但只在下界满速 */
     private static final Growth NETHER_GROWTH = new Growth(GrowthRule.STANDARD,
-            LightRequirement.ANY, EnergyRequirement.FREE, List.of(), ClusterKind.STANDARD, 0,
+            LightRequirement.ANY, EnergyRequirement.FREE, ClusterKind.STANDARD, 0,
             NETHER_ONLY, GrowthSpeed.NORMAL, null);
 
     /** 绝大多数母岩共用的外观：沿用原版亮度/音效，使用共享展示 BE */
     private static final Appearance PLAIN_APPEARANCE = new Appearance(INHERIT_BUD_LIGHT, null, null,
             BlockEntityKind.SHARED_GROWTH, 0, null, null, List.of(), false);
+
+    // ==================== 声明收集（数据生成用） ====================
+
+    /**
+     * 家族表声明过的侵染规则：母岩方块 id → 规则表（按声明顺序）。
+     * <p>
+     * <b>只是数据生成的输入</b>——运行时不读它，运行时读的是由它生成出来的
+     * {@code budding_conversion} 配方（见 {@code ModRecipeProvider} 与 {@code BuddingRecipes}）。
+     * 声明仍写在各自的家族工厂里（一个家族一处），由 {@link #register} 顺手收进来。
+     * <p>
+     * 必须声明在 {@link #ALL} <b>之前</b>：家族是静态初始化时就注册的，字段顺序反了这里还是 null。
+     */
+    private static final Map<String, List<BlockConversion>> DECLARED_CONVERSIONS = new LinkedHashMap<>();
+
+    /** 家族表声明过的侵染规则（母岩方块 id → 规则表）：只给数据生成读 */
+    public static Map<String, List<BlockConversion>> declaredConversions() {
+        return Collections.unmodifiableMap(DECLARED_CONVERSIONS);
+    }
+
+    /** 收一笔家族声明的侵染规则（各家族工厂在声明处调一次）；数据生成按它吐配方，运行时不读这份表 */
+    private static void declareConversions(String buddingId, List<BlockConversion> conversions) {
+        if (!conversions.isEmpty()) {
+            DECLARED_CONVERSIONS.put(buddingId, conversions);
+        }
+    }
 
     // ==================== 中央定义表 ====================
 
@@ -222,9 +249,10 @@ public final class BuddingFamilies {
                         Replacement.of(() -> Blocks.STONE, stoneOre),
                         Replacement.of(() -> Blocks.DEEPSLATE, deepslateOre)),
                 BlockConversion.of(SPREAD_CHANCE, SPREAD_RADIUS, Replacement.toSelf(veinBlock)));
+        declareConversions(id + "_budding", conversions);
 
         Growth growth = new Growth(GrowthRule.STANDARD, LightRequirement.ANY,
-                EnergyRequirement.FREE, conversions, ClusterKind.STANDARD, 0, GrowthEnvironment.ANY, speed, null);
+                EnergyRequirement.FREE, ClusterKind.STANDARD, 0, GrowthEnvironment.ANY, speed, null);
         // 矿石族的 placed_feature 一律是 <id>_budding_vein，生物群系统一来自 ore_budding_veins
         // （见 data/create_crystal_industry 下的 worldgen/placed_feature 与 neoforge/biome_modifier）
         return register(new BuddingFamily(id, BuddingModel.CUBE_ALL, tier, true,
@@ -237,10 +265,11 @@ public final class BuddingFamilies {
         List<BlockConversion> conversions = List.of(
                 BlockConversion.of(ECHO_CONVERSION_CHANCE, ECHO_CONVERSION_RADIUS,
                         Replacement.of(ModTags.ECHO_CONVERTIBLE, () -> Blocks.SCULK)));
+        declareConversions("echo_budding", conversions);
 
         Growth growth = new Growth(GrowthRule.STANDARD,
                 LightRequirement.below(ECHO_GROWTH_LIGHT_THRESHOLD), EnergyRequirement.FREE,
-                conversions, ClusterKind.STANDARD, 0, GrowthEnvironment.ANY, GrowthSpeed.NORMAL, null);
+                ClusterKind.STANDARD, 0, GrowthEnvironment.ANY, GrowthSpeed.NORMAL, null);
         // 芽/簇不自发光：一旦发光就会顶掉自己的生长位
         Appearance appearance = new Appearance(
                 List.of(DARK_LIGHT, DARK_LIGHT, DARK_LIGHT), DARK_LIGHT, null,
@@ -256,10 +285,11 @@ public final class BuddingFamilies {
                 BlockConversion.of(ORE_CONVERSION_CHANCE, 1,
                         Replacement.of(() -> Blocks.NETHERRACK, () -> Blocks.NETHER_QUARTZ_ORE)),
                 BlockConversion.of(SPREAD_CHANCE, SPREAD_RADIUS, Replacement.toSelf(() -> Blocks.SMOOTH_QUARTZ)));
+        declareConversions("quartz_budding", conversions);
 
         // 石英是下界特产：只有在下界才满速，搬到别的维度每次判定通过后再掷 1/2 失败
         Growth growth = new Growth(GrowthRule.STANDARD, LightRequirement.ANY,
-                EnergyRequirement.FREE, conversions, ClusterKind.STANDARD, 0, NETHER_ONLY, GrowthSpeed.NORMAL, null);
+                EnergyRequirement.FREE, ClusterKind.STANDARD, 0, NETHER_ONLY, GrowthSpeed.NORMAL, null);
         return register(new BuddingFamily("quartz", BuddingModel.CUBE_COLUMN, ToolTier.STONE, true,
                 WorldGen.of("quartz_budding_vein", "quartz_budding_vein"), false,
                 () -> Blocks.SMOOTH_QUARTZ, growth, PLAIN_APPEARANCE));
@@ -273,20 +303,21 @@ public final class BuddingFamilies {
      * 每次成功生长扣 250 mB，罐里不够就当这次生长没发生。熔岩用管道（NeoForge 流体能力）或
      * 手持熔岩桶右键通入，空桶可以舀出来，容器里的熔岩不掉落。
      * <p>
-     * 相邻转化同理<b>只有</b>「远古残骸 → 本母岩」这一条再生传播，<b>没有</b>「石头 → 矿石」那一档
+     * 侵染同理<b>只有</b>「远古残骸 → 本母岩」这一条再生传播，<b>没有</b>「石头 → 矿石」那一档
      * ——它不会把任何方块变成远古残骸，只是自己会从远古残骸里长出来；这条传播也标了
      * {@code gated()}，一样要付 250 mB。因此想复制一块母岩，得拿远古残骸贴着它、罐里还得有熔岩。
      */
     private static RegisteredFamily ancientDebris() {
         List<BlockConversion> conversions = List.of(
                 BlockConversion.of(SPREAD_CHANCE, SPREAD_RADIUS, Replacement.toSelf(() -> Blocks.ANCIENT_DEBRIS)).gated());
+        declareConversions("ancient_debris_budding", conversions);
 
         // 慢档（1/20）：它的晶簇掉下界合金碎片，按稀缺资源处理，所以比其余母岩慢一档。
         // 再往下的极慢档（1/50）现在没有出厂成员，留给脚本与附属模组；
         // 想让下界合金量产就把这里改掉，或用脚本
         // CustomBudding.modify('create_crystal_industry:ancient_debris_budding', ...) 单独改
         Growth growth = new Growth(GrowthRule.STANDARD, LightRequirement.ANY,
-                EnergyRequirement.FREE, conversions, ClusterKind.STANDARD, 0, NETHER_ONLY, GrowthSpeed.SLOW,
+                EnergyRequirement.FREE, ClusterKind.STANDARD, 0, NETHER_ONLY, GrowthSpeed.SLOW,
                 LAVA_TANK);
         // 方块实体按"定义里有没有流体需求"选（见 GenericBuddingBlock#newBlockEntity），
         // 所以这里用不上专用的 BE 类型，共享展示 BE 只在没罐时才会被建出来
@@ -303,13 +334,13 @@ public final class BuddingFamilies {
      * 弧光石母岩：吃 FE 的母岩——方块自己是个 1 M FE 的能量容器（见
      * {@code ArclightBuddingBlockEntity}），每次成功生长扣 10 000 FE，电量不够就当这次生长没发生。
      * <p>
-     * 它没有相邻转化（不会把任何方块变成弧光石），也<b>不自然生成</b>：获取方式还没定，
+     * 它没有侵染（不会把任何方块变成弧光石），也<b>不自然生成</b>：获取方式还没定，
      * 定下来之前在 JEI 里只显示「暂无自然生成与合成配方」。晶簇掉 1 个弧光石，
      * 弧光石再拿去工作盆冲压成电流浆（配方见 data/create_crystal_industry/recipe）。
      */
     private static RegisteredFamily arclight() {
         Growth growth = new Growth(GrowthRule.STANDARD, LightRequirement.ANY,
-                EnergyRequirement.FE, List.of(), ClusterKind.STANDARD, 0, GrowthEnvironment.ANY, GrowthSpeed.NORMAL, null);
+                EnergyRequirement.FE, ClusterKind.STANDARD, 0, GrowthEnvironment.ANY, GrowthSpeed.NORMAL, null);
         // 只在晶簇之后追加两件：弧光石（母岩的产物，不是一个方块家族）与失活母岩
         // （藏在 ModBlocks 里的待激活形态，靠雷劈变成上面这块母岩，见 LightningActivation）
         Appearance appearance = new Appearance(INHERIT_BUD_LIGHT, null, null,
@@ -326,10 +357,11 @@ public final class BuddingFamilies {
                         Replacement.of(() -> Blocks.STONE, () -> Blocks.REDSTONE_ORE),
                         Replacement.of(() -> Blocks.DEEPSLATE, () -> Blocks.DEEPSLATE_REDSTONE_ORE)),
                 BlockConversion.of(SPREAD_CHANCE, SPREAD_RADIUS, Replacement.toSelf(() -> Blocks.REDSTONE_BLOCK)));
+        declareConversions("redstone_budding", conversions);
 
         // 快档：红石是基础材料，且它的晶簇只掉 1 个红石，产量高一点才好用
         Growth growth = new Growth(GrowthRule.STANDARD, LightRequirement.ANY,
-                EnergyRequirement.FREE, conversions, ClusterKind.REDSTONE, REDSTONE_BUDDING_SIGNAL,
+                EnergyRequirement.FREE, ClusterKind.REDSTONE, REDSTONE_BUDDING_SIGNAL,
                 GrowthEnvironment.ANY, GrowthSpeed.FAST, null);
         return register(new BuddingFamily("redstone", BuddingModel.CUBE_ALL, ToolTier.IRON, true,
                 WorldGen.of("redstone_budding_vein", "ore_budding_veins"), false,
@@ -349,7 +381,7 @@ public final class BuddingFamilies {
     /** 可燃冰母岩：只有目标格含水才生长；冰音效 + 蓝冰摩擦 */
     private static RegisteredFamily flammableIce() {
         Growth growth = new Growth(GrowthRule.SUBMERGED, LightRequirement.ANY,
-                EnergyRequirement.FREE, List.of(), ClusterKind.STANDARD, 0, GrowthEnvironment.ANY, GrowthSpeed.NORMAL, null);
+                EnergyRequirement.FREE, ClusterKind.STANDARD, 0, GrowthEnvironment.ANY, GrowthSpeed.NORMAL, null);
         Appearance appearance = new Appearance(INHERIT_BUD_LIGHT, null, SoundType.GLASS,
                 BlockEntityKind.ICE_DISPLAY, 0, SoundType.GLASS, ICE_FRICTION,
                 List.of(() -> ModBlocks.FLAMMABLE_ICE_BLOCK.get(), () -> ModItems.FLAMMABLE_ICE.get()), false);
@@ -363,9 +395,10 @@ public final class BuddingFamilies {
         List<BlockConversion> conversions = List.of(
                 BlockConversion.of(SPREAD_CHANCE, SPREAD_RADIUS,
                         Replacement.toSelf(() -> externalBlock("ae2:fluix_block"))).gated());
+        declareConversions("fluix_budding", conversions);
 
         Growth growth = new Growth(GrowthRule.STANDARD, LightRequirement.ANY,
-                EnergyRequirement.AE2_GRID, conversions, ClusterKind.STANDARD, 0, GrowthEnvironment.ANY, GrowthSpeed.NORMAL, null);
+                EnergyRequirement.AE2_GRID, ClusterKind.STANDARD, 0, GrowthEnvironment.ANY, GrowthSpeed.NORMAL, null);
         Appearance appearance = new Appearance(INHERIT_BUD_LIGHT, null, null,
                 BlockEntityKind.AE2_GRID, 0, null, null, List.of(), false);
         return register(new BuddingFamily("fluix", BuddingModel.CUBE_ALL, ToolTier.STONE, false, null, true,

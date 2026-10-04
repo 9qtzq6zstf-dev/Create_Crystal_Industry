@@ -78,15 +78,13 @@ public final class BuddingOverrides {
              * 与 {@code fluid == null} 不是一回事：那个是"没提这一项"，这个是"把原有的收费关掉"——
              * 远古残骸母岩那种家族自带的熔岩付费就是靠它关掉的（见 {@code GenericBuddingBlock#payGrowthEnergy}）。
              */
-            boolean clearFluid,
-            /** 脚本追加的转化规则（{@code CustomBuddingOptions#transform}）；空表 = 没写 */
-            List<BuddingFamily.BlockConversion> extraConversions) {
+            boolean clearFluid) {
 
         /** 这一项是不是空覆盖（一个字段都没点名）——空覆盖不必进表 */
         public boolean isEmpty() {
             return chance == null && maxLight == null && minLight == null && requiresWater == null
                     && dimensions == null && biomeEntries == null && outsideGrowthChance == null
-                    && fluid == null && !clearFluid && extraConversions.isEmpty();
+                    && fluid == null && !clearFluid;
         }
 
         /**
@@ -114,8 +112,7 @@ public final class BuddingOverrides {
                     pick(later.biomeEntries, biomeEntries),
                     pick(later.outsideGrowthChance, outsideGrowthChance),
                     mergedFluid,
-                    mergedClear,
-                    concat(extraConversions, later.extraConversions));
+                    mergedClear);
         }
 
         /**
@@ -151,10 +148,7 @@ public final class BuddingOverrides {
             return new GrowthDefinition(base.smallBud(), base.mediumBud(), base.largeBud(), base.cluster(),
                     newChance, newMax, newMin,
                     requiresWater != null ? requiresWater : base.requiresWater(),
-                    newEnvironment, newFluid, base.conversions())
-                    // 脚本写的转发规则是**追加**在方块原有规则之后的：modify 的定位是"给它加特性"，
-                    // 不该把家族表里的矿石转化顶掉（要去掉自带的再生，用配置里的感染开关/名单）
-                    .withConversions(extraConversions);
+                    newEnvironment, newFluid);
         }
 
         /**
@@ -184,17 +178,6 @@ public final class BuddingOverrides {
                 return new GrowthEnvironment(newDimensions, base.biomeConditions(), outside);
             }
             return GrowthEnvironment.of(outside, newDimensions, biomeEntries.toArray(String[]::new));
-        }
-
-        /** 转化规则是累加的：两次 modify 各写一条，两条都要在 */
-        private static List<BuddingFamily.BlockConversion> concat(List<BuddingFamily.BlockConversion> first,
-                                                                  List<BuddingFamily.BlockConversion> second) {
-            if (second.isEmpty()) {
-                return first;
-            }
-            List<BuddingFamily.BlockConversion> merged = new java.util.ArrayList<>(first);
-            merged.addAll(second);
-            return List.copyOf(merged);
         }
 
         private static <T> T pick(@Nullable T later, T earlier) {

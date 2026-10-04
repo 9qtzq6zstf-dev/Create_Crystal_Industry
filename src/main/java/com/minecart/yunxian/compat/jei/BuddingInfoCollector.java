@@ -4,9 +4,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
-import java.util.function.Supplier;
 
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -16,11 +14,9 @@ import com.minecart.yunxian.block.budding.ScriptedBuddingBlock;
 import com.minecart.yunxian.budding.BuddingFamilies;
 import com.minecart.yunxian.budding.BuddingFamilies.RegisteredFamily;
 import com.minecart.yunxian.budding.BuddingFamily;
-import com.minecart.yunxian.budding.BuddingFamily.BlockConversion;
 import com.minecart.yunxian.budding.BuddingFamily.EnergyRequirement;
 import com.minecart.yunxian.budding.BuddingFamily.Growth;
 import com.minecart.yunxian.budding.BuddingFamily.GrowthSpeed;
-import com.minecart.yunxian.budding.BuddingFamily.Replacement;
 import com.minecart.yunxian.budding.BuddingRegistration;
 import com.minecart.yunxian.budding.FluidRequirement;
 import com.minecart.yunxian.budding.GrowthDefinition;
@@ -30,11 +26,8 @@ import com.minecart.yunxian.compat.jei.BuddingInfo.Row;
 import com.minecart.yunxian.registry.ModTags;
 import com.mojang.logging.LogUtils;
 
-import net.minecraft.core.Holder;
-import net.minecraft.core.HolderSet;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -54,8 +47,8 @@ import net.minecraft.world.level.block.state.BlockState;
  *       以及别的模组登记进 {@code #c:budding_blocks} 的，按 id 排序追加。</li>
  * </ol>
  * <p>
- * 三类方块的参数来源各不一样，但走的是同一张模板（生长条件 / 相邻转化 / 生长速度 / 生成条件，
- * 其中相邻转化那一节只有会转化周围方块的母岩才有）：
+ * 三类方块的参数来源各不一样，但走的是同一张模板（生长条件 / 生长速度 / 生成条件；
+ * 「母岩会侵染周围方块」是另一页，数据来自配方，见 {@code BuddingConversionCategory}）：
  * 前两类带着自己的定义（{@code BuddingFamily} 或 {@code GrowthDefinition}），
  * 第三类读不出规则就如实写"未知"，绝不猜。
  */
@@ -74,6 +67,22 @@ public final class BuddingInfoCollector {
     /** 全部要展示的母岩（构建期调用一次，之后由 JEI 缓存） */
     public static List<BuddingInfo> collect() {
         List<BuddingInfo> infos = new ArrayList<>();
+        for (Block block : allBuddingBlocks()) {
+            infos.add(describe(block));
+        }
+        return List.copyOf(infos);
+    }
+
+    /**
+     * 要展示的母岩方块，按信息页的顺序：自带家族（{@code BuddingFamilies.ALL}，也就是创造栏的顺序）
+     * → 原版紫水晶母岩 → 其余一切母岩（KubeJS 脚本注册的、附属模组用 {@link GenericBuddingBlock} 建的、
+     * 别的模组登记进 {@code #c:budding_blocks} 的），最后这一批按 id 排序。
+     * <p>
+     * 侵染页与信息页共用这一份顺序：「场上有哪些母岩」只该有一个答案，两个页面才不会一个多一块、
+     * 一个少一块。注册表扫描本身很便宜，两页各扫一次比缓存一份有失效风险更划算。
+     */
+    private static List<Block> allBuddingBlocks() {
+        List<Block> blocks = new ArrayList<>();
         Set<Block> seen = new HashSet<>();
 
         for (RegisteredFamily family : BuddingFamilies.ALL) {
@@ -82,11 +91,11 @@ public final class BuddingInfoCollector {
             }
             Block block = family.budding().get();
             seen.add(block);
-            infos.add(describe(block));
+            blocks.add(block);
         }
 
         if (seen.add(Blocks.BUDDING_AMETHYST)) {
-            infos.add(vanilla());
+            blocks.add(Blocks.BUDDING_AMETHYST);
         }
 
         // 别的方块：先扫全注册表（instanceof 与标签两个来源都要，别只认标签），再按 id 排序
@@ -97,11 +106,9 @@ public final class BuddingInfoCollector {
             }
         }
         others.sort(Comparator.comparing(block -> BuiltInRegistries.BLOCK.getKey(block).toString()));
-        for (Block block : others) {
-            infos.add(describe(block));
-        }
+        blocks.addAll(others);
 
-        return List.copyOf(infos);
+        return List.copyOf(blocks);
     }
 
     /**
@@ -223,15 +230,16 @@ public final class BuddingInfoCollector {
         return new BuddingInfo(block.defaultBlockState(), null, ItemStack.EMPTY, lookupItems(block, List.of()), rows);
     }
 
-    // ==================== 生长条件 / 相邻转化 ====================
+    // ==================== 生长条件 ====================
 
     /**
-     * 页面前两个小节：生长条件与相邻转化。
+     * 页面的第一小节：生长条件。
      * <p>
-     * 条件那一节由 {@link #definitionConditions} 与调用方给的家族独有行（{@link #familyConditions}，
-     * 脚本/外部定义的母岩没有）拼成；两条路共用同一套判定与文案。转化挪进自己的小节是因为
-     * 它讲的是母岩<b>会做什么</b>，而「生长条件」读起来是母岩<b>要什么</b>，混在一起会让人以为
-     * 转化也是一条前置要求；没有转化规则的母岩整节不出现。
+     * 由 {@link #definitionConditions} 与调用方给的家族独有行（{@link #familyConditions}，
+     * 脚本/外部定义的母岩没有）拼成；两条路共用同一套判定与文案。
+     * <p>
+     * 「母岩会转化周围方块」不在这里——它讲的是母岩<b>会做什么</b>，而生长条件读起来是母岩<b>要什么</b>，
+     * 混在一起会让人以为转化也是一条前置要求；那部分已经单开一页（{@link #collectConversions()}）。
      */
     private static void addGrowthSections(List<Row> rows, GrowthDefinition definition,
                                           List<Row> extraConditions) {
@@ -242,12 +250,6 @@ public final class BuddingInfoCollector {
         }
         rows.add(Row.header(section("growth")));
         rows.addAll(conditions);
-
-        List<Row> conversions = conversionRows(definition);
-        if (!conversions.isEmpty()) {
-            rows.add(Row.header(section("conversion")));
-            rows.addAll(conversions);
-        }
     }
 
     /**
@@ -303,25 +305,6 @@ public final class BuddingInfoCollector {
     }
 
     /**
-     * 「相邻转化」小节的行：读定义里的转化规则，家族表声明的（矿石转化、再生传播）与脚本
-     * 用 {@code .transform(...)} 追加的都在这里，两边共用同一段渲染。没有规则时返回空表。
-     * <p>
-     * 每一条规则各自成句（{@code 石头 → 铁矿石、深板岩 → 深层铁矿石}），各条之间再连起来。
-     */
-    private static List<Row> conversionRows(GrowthDefinition definition) {
-        List<BlockConversion> conversions = definition.conversions();
-        if (conversions.isEmpty()) {
-            return List.of();
-        }
-
-        List<Component> parts = new ArrayList<>(conversions.size());
-        for (BlockConversion conversion : conversions) {
-            parts.add(describeConversion(conversion));
-        }
-        return List.of(Row.line(BuddingInfoText.join(parts, BuddingInfoText.sentenceSeparator())));
-    }
-
-    /**
      * 「只在这些地方生长得最快」那两条：生长维度一行、生长群系一行，写了几个就并列几个。
      * 名字与护目镜浮窗共用 {@link EnvironmentDisplay}；地盘外还剩多少概率生长<b>不写进页面</b>
      * （只说「会受抑制」）。
@@ -342,48 +325,6 @@ public final class BuddingInfoCollector {
                     EnvironmentDisplay.excludedBiomes(environment))));
         }
         return rows;
-    }
-
-    /** 「石头 → 铁矿石 / 深板岩 → 深层铁矿石」；同一母岩的多条规则各自成句，由调用方连接 */
-    private static Component describeConversion(BlockConversion conversion) {
-        List<Component> pairs = new ArrayList<>(conversion.replacements().size());
-        for (Replacement replacement : conversion.replacements()) {
-            pairs.add(describeReplacement(replacement));
-        }
-        return BuddingInfoText.join(pairs);
-    }
-
-    /** 一条替换规则：输入 → 输出；输出为 null 表示"写成母岩自身"（母岩的再生传播） */
-    private static Component describeReplacement(Replacement replacement) {
-        Component input = replacement.inputTag() != null
-                ? describeTag(replacement.inputTag())
-                : blockName(replacement.input());
-        Component output = replacement.output() == null
-                ? Component.translatable(LANG + "growth.conversion.self")
-                : blockName(replacement.output());
-        return Component.translatable(LANG + "growth.conversion.pair", input, output);
-    }
-
-    /** 标签尽量展开成具体方块（前几个 + 等 N 种），展开不了就显示标签名 */
-    private static Component describeTag(TagKey<Block> tag) {
-        Optional<HolderSet.Named<Block>> members = BuiltInRegistries.BLOCK.getTag(tag);
-        if (members.isEmpty()) {
-            return Component.literal("#" + tag.location());
-        }
-
-        List<Component> names = new ArrayList<>();
-        for (Holder<Block> holder : members.get()) {
-            names.add(holder.value().getName());
-        }
-        return BuddingInfoText.summarize(names);
-    }
-
-    private static Component blockName(@Nullable Supplier<Block> supplier) {
-        Block block = supplier == null ? null : supplier.get();
-        // 方块解析不出来（另一个模组没装、id 写错）：如实说"未知方块"，而不是显示成空气
-        return block == null || block == Blocks.AIR
-                ? Component.translatable(LANG + "unknown.block")
-                : block.getName();
     }
 
     // ==================== 生长速度 ====================

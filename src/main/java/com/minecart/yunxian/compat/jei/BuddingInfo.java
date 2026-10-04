@@ -39,7 +39,7 @@ public record BuddingInfo(BlockState budding,
     /** 一行文字：样式 + 内容。颜色与缩进由 {@link BuddingInfoCategory} 按样式统一决定 */
     public record Row(Style style, Component text) {
 
-        /** 小节标题（生长条件 / 相邻转化 / 生长速度 / 生成条件） */
+        /** 小节标题（生长条件 / 生长速度 / 生成条件） */
         public static Row header(Component text) {
             return new Row(Style.HEADER, text);
         }

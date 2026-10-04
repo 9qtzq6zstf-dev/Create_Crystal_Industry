@@ -1,0 +1,18 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "ae2"
+    }
+  ],
+  "type": "create_crystal_industry:budding_conversion",
+  "budding": "create_crystal_industry:fluix_budding",
+  "chance": 25000,
+  "gated": true,
+  "radius": 1,
+  "replacements": [
+    {
+      "input": "ae2:fluix_block"
+    }
+  ]
+}

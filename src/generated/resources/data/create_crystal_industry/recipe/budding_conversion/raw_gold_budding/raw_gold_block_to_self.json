@@ -1,0 +1,11 @@
+{
+  "type": "create_crystal_industry:budding_conversion",
+  "budding": "create_crystal_industry:raw_gold_budding",
+  "chance": 25000,
+  "radius": 1,
+  "replacements": [
+    {
+      "input": "minecraft:raw_gold_block"
+    }
+  ]
+}
