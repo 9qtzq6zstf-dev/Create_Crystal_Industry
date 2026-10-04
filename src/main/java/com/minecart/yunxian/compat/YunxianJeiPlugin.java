@@ -30,6 +30,7 @@ import mezz.jei.api.runtime.IJeiRuntime;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.core.Holder;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.Item;
@@ -199,6 +200,15 @@ public class YunxianJeiPlugin implements IModPlugin {
         List<BuddingConversion> conversions = new ArrayList<>();
         for (RecipeHolder<BuddingConversionRecipe> holder : holders) {
             BuddingConversionRecipe recipe = holder.value();
+            // budding 写了别的方块（黑曜石之类）时这条配方不会触发——转化引擎只由本模组那两种母岩
+            // 在自己的随机刻里调用。配方本身照样能解码与载入，所以这里跳过并在日志里说清原因，
+            // 免得页面上出现一页游戏里做不到的转化
+            if (!BuddingConversions.drivesConversions(recipe.budding())) {
+                LOGGER.warn("[JEI] 配方 {} 的 budding 是 {}——本模组只为自带与脚本注册的母岩跑转化引擎"
+                                + "（附属模组自己实现随机刻的方块若也调用了 BuddingConversions.run 则例外），这一条不显示",
+                        holder.id(), BuiltInRegistries.BLOCK.getKey(recipe.budding()));
+                continue;
+            }
             ItemStack budding = itemOf(recipe.budding());
             if (budding.isEmpty()) {
                 continue;

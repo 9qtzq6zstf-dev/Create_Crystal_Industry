@@ -7,6 +7,7 @@ import java.util.function.Predicate;
 
 import com.minecart.yunxian.advancement.YunxianAdvancements;
 import com.minecart.yunxian.block.budding.GenericBuddingBlock;
+import com.minecart.yunxian.block.budding.ScriptedBuddingBlock;
 import com.minecart.yunxian.config.ModConfig;
 import com.minecart.yunxian.recipe.BuddingConversionRecipe;
 import com.minecart.yunxian.registry.ModRecipes;
@@ -187,6 +188,15 @@ public final class BuddingConversions {
         }
         List<? extends String> list = ModConfig.Common.infectingBudding();
         return list.isEmpty() || list.contains(ownerId);
+    }
+
+    /**
+     * 这块方块会不会跑本模组的转化引擎——只有这两种方块类会在自己的 {@code randomTick} 里调
+     * {@link #run}。判断"一条 budding_conversion 配方到底能不能生效"就靠它：配方里 {@code budding}
+     * 写了别的方块（黑曜石之类）照样能解码与载入，但没人会触发它。
+     */
+    public static boolean drivesConversions(Block block) {
+        return block instanceof GenericBuddingBlock || block instanceof ScriptedBuddingBlock;
     }
 
     /**

@@ -131,7 +131,7 @@ Stone → ore, a raw metal block → a new budding block, Echo → sculk... **th
 
 | Field | Required | Meaning |
 | --- | --- | --- |
-| `budding` | yes | Which budding block does it |
+| `budding` | yes | Which budding block does it. It **must be a budding block this mod drives** (a built-in family, or one registered by a script through `CustomBudding`) — name anything else (Obsidian, say) and the recipe still loads but never fires, and JEI will not show it |
 | `chance` | yes | Chance base n: a 1-in-n roll each random tick (≥ 1) |
 | `radius` | yes | Pick radius r: on a hit, one block is taken at random from the (2r+1)³ cube around the budding block, minus its own cell (0–8) |
 | `gated` | no | The hit must also pass an energy check (defaults to `false`) — Ancient Debris' lava and Fluix's AE |
