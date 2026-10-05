@@ -10,6 +10,7 @@ import com.minecart.yunxian.client.tooltip.GenericTooltipModifier;
 import com.minecart.yunxian.client.echo.CameraSync;
 import com.minecart.yunxian.client.echo.EchoHighlightRenderer;
 import com.minecart.yunxian.client.echo.EchoSpyglassFrameRenderer;
+import com.minecart.yunxian.client.echo.EchoSpyglassModel;
 import com.minecart.yunxian.client.echo.EchoSpyglassHeadLayer;
 import com.minecart.yunxian.client.echo.EchoSpyglassScopeOverlay;
 import com.minecart.yunxian.client.echo.EchoSpyglassUseRenderer;
@@ -17,6 +18,7 @@ import com.minecart.yunxian.client.mechanical.MechanicalAcceleratorRenderer;
 import com.minecart.yunxian.client.mechanical.MechanicalCleanerRenderer;
 import com.minecart.yunxian.client.mechanical.ResonanceTableRenderer;
 import com.minecart.yunxian.client.mechanical.SmartDrillRenderer;
+import com.minecart.yunxian.client.sundae.FlammableSundaeFrameRenderer;
 import net.minecraft.client.resources.language.I18n;
 
 import com.minecart.yunxian.integration.curios.CuriosClientIntegration;
@@ -49,6 +51,9 @@ public class ModRenderers {
     private static final ModelResourceLocation NIGHT_VISION_GOGGLES_ITEM =
             new ModelResourceLocation(
                     ResourceLocation.fromNamespaceAndPath(Yunxian.MODID, "night_vision_goggles"), "inventory");
+    private static final ModelResourceLocation ECHO_SPYGLASS_ITEM =
+            new ModelResourceLocation(
+                    ResourceLocation.fromNamespaceAndPath(Yunxian.MODID, "echo_spyglass"), "inventory");
 
     /**
      * 只允许由客户端调用（入口见 {@link Yunxian} 里那个 {@code FMLEnvironment.dist.isClient()} 判断）——
@@ -65,6 +70,8 @@ public class ModRenderers {
         EchoSpyglassUseRenderer.register();
         modEventBus.addListener(ModRenderers::onRegisterRenderers);
         EchoSpyglassFrameRenderer.register();
+        // 可燃冰圣代挂进展示框时改用平面贴图（置物台/传送带同用 FIXED 视角，只能在渲染路径上分）
+        FlammableSundaeFrameRenderer.register();
         ResonanceFilterHolderTracker.register();
         ResonanceNetworkOutlineRenderer.register();
     }
@@ -82,6 +89,7 @@ public class ModRenderers {
         event.register(NIGHT_VISION_GOGGLES_3D);
         event.register(NIGHT_VISION_GOGGLES_3D_ON);
         event.register(EchoSpyglassFrameRenderer.FLAT_MODEL);
+        event.register(FlammableSundaeFrameRenderer.FLAT_MODEL);
     }
 
     private static void registerPartial(ModelEvent.RegisterAdditional event, PartialModel partial) {
@@ -98,6 +106,12 @@ public class ModRenderers {
         if (itemModel != null && goggles3d != null && goggles3dOn != null) {
             event.getModels().put(NIGHT_VISION_GOGGLES_ITEM,
                     new NightVisionGogglesModel(itemModel, goggles3d, goggles3dOn));
+        }
+
+        // 回响望远镜：只补一个「这是平面物品」的标志，机械动力才会在置物台/传送带上把它放平
+        BakedModel spyglass = event.getModels().get(ECHO_SPYGLASS_ITEM);
+        if (spyglass != null) {
+            event.getModels().put(ECHO_SPYGLASS_ITEM, new EchoSpyglassModel(spyglass));
         }
     }
 

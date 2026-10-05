@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:block/cube_all",
   "textures": {
-    "all": "create_crystal_industry:block/arclight/arclight_budding"
+    "all": "create_crystal_industry:block/budding/arclight/arclight_budding"
   }
 }

@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:block/cube_all",
   "textures": {
-    "all": "create_crystal_industry:block/echo/echo_budding"
+    "all": "create_crystal_industry:block/budding/echo/echo_budding"
   }
 }

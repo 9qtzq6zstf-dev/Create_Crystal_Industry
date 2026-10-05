@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "create_crystal_industry:block/glowstone/glowstone_cluster"
+    "layer0": "create_crystal_industry:block/budding/glowstone/glowstone_cluster"
   }
 }

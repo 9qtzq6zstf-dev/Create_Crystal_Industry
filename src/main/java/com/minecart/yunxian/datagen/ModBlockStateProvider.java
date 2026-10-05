@@ -28,8 +28,22 @@ import net.neoforged.neoforge.common.data.ExistingFileHelper;
  * 模型形态与贴图全部来自 {@link BuddingFamily}：柱状家族（玫瑰石英、石英）用
  * {@code cube_column} + 侧面/顶面贴图，其余用 {@code cube_all}；芽与晶簇一律用
  * {@code cross} + cutout。
+ * <p>
+ * 母岩家族的贴图统一收在 {@code textures/block/budding/<家族>/}（见 {@link #TEXTURE_DIR}），
+ * 模型仍旧落在 {@code models/block/<家族>/}——两者路径不同，改贴图位置时别把模型路径一起动了。
+ * <p>
+ * <b>贴图必须留在 {@code textures/block/} 之下，不能另起 {@code textures/<别的名字>/}</b>：
+ * 方块与物品共用的 {@code minecraft:blocks} 图集，贴图清单只来自
+ * {@code assets/minecraft/atlases/blocks.json} 里列出的源（原版就两个目录源：
+ * {@code block/} 与 {@code item/}，目录源是递归的），模型里引用的贴图<b>不会</b>被自动补进图集。
+ * 一旦挪出这两个目录，图集里就没有对应 sprite，所有引用它的模型都会渲染成紫黑块
+ * （{@code SpriteLoader#loadAndStitch} → {@code SpriteSourceList#load} 就是全部来源，
+ * {@code ModelBakery} 里没有任何 stitch 步骤）。
  */
 public class ModBlockStateProvider extends BlockStateProvider {
+
+    /** 母岩家族贴图根目录，不含末尾斜杠；{@code textures/} 之后的相对路径 */
+    private static final String TEXTURE_DIR = "block/budding/";
 
     public ModBlockStateProvider(PackOutput output, ExistingFileHelper existingFileHelper) {
         super(output, Yunxian.MODID, existingFileHelper);
@@ -68,9 +82,9 @@ public class ModBlockStateProvider extends BlockStateProvider {
 
         ModelFile model = column
                 ? models().cubeColumn(modelPath,
-                        modLoc("block/" + id + "/" + name + "_side"),
-                        modLoc("block/" + id + "/" + name + "_top"))
-                : models().cubeAll(modelPath, modLoc("block/" + id + "/" + name));
+                        modLoc(TEXTURE_DIR + id + "/" + name + "_side"),
+                        modLoc(TEXTURE_DIR + id + "/" + name + "_top"))
+                : models().cubeAll(modelPath, modLoc(TEXTURE_DIR + id + "/" + name));
 
         Block block = family.budding().get();
         if (spec.growth().fluid() == null) {
@@ -82,9 +96,9 @@ public class ModBlockStateProvider extends BlockStateProvider {
         String unpoweredPath = modelPath + "_unpowered";
         ModelFile unpowered = column
                 ? models().cubeColumn(unpoweredPath,
-                        modLoc("block/" + id + "/" + name + "_side_unpowered"),
-                        modLoc("block/" + id + "/" + name + "_top_unpowered"))
-                : models().cubeAll(unpoweredPath, modLoc("block/" + id + "/" + name + "_unpowered"));
+                        modLoc(TEXTURE_DIR + id + "/" + name + "_side_unpowered"),
+                        modLoc(TEXTURE_DIR + id + "/" + name + "_top_unpowered"))
+                : models().cubeAll(unpoweredPath, modLoc(TEXTURE_DIR + id + "/" + name + "_unpowered"));
 
         // 必须显式写两条带属性的变体：simpleBlock 那套写出来的空键 "" 会匹配所有状态，
         // 把 fueled=false 一并吞掉，而且 VariantBlockStateBuilder 只在漏状态时才拦，不会报错
@@ -99,7 +113,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
     private void stageBlock(RegisteredFamily family, Stage stage) {
         String id = family.spec().id();
         String name = family.spec().stageId(stage.key);
-        String texture = "block/" + id + "/" + name;
+        String texture = TEXTURE_DIR + id + "/" + name;
 
         BlockModelBuilder model = models()
                 .cross("block/" + id + "/" + name, modLoc(texture))

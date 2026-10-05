@@ -2,6 +2,6 @@
   "parent": "minecraft:block/cross",
   "render_type": "minecraft:cutout",
   "textures": {
-    "cross": "create_crystal_industry:block/redstone/redstone_cluster"
+    "cross": "create_crystal_industry:block/budding/redstone/redstone_cluster"
   }
 }

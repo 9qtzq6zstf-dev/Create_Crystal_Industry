@@ -1,7 +1,7 @@
 {
   "parent": "minecraft:block/cube_column",
   "textures": {
-    "end": "create_crystal_industry:block/rose_quartz/rose_quartz_budding_top",
-    "side": "create_crystal_industry:block/rose_quartz/rose_quartz_budding_side"
+    "end": "create_crystal_industry:block/budding/rose_quartz/rose_quartz_budding_top",
+    "side": "create_crystal_industry:block/budding/rose_quartz/rose_quartz_budding_side"
   }
 }

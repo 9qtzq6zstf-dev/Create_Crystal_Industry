@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "create_crystal_industry:block/diamond/diamond_medium_bud"
+    "layer0": "create_crystal_industry:block/budding/diamond/diamond_medium_bud"
   }
 }

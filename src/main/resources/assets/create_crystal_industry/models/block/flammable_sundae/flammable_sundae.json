@@ -1,5 +1,6 @@
 {
 	"parent": "create_crystal_industry:block/flammable_sundae/block",
+	"credit": "薄壳模型,两个用途:(1) 给用户的 Blockbench 模型补 render_type=cutout,不动原文件;(2) 定物品在机械动力各台面上的尺寸(见 display.fixed)。display.fixed 的 scale 原本照抄原版 block/block 的 0.5(不过是一整套 display 变换的一半),这里取 1.0,好让这只小碗在桌布/置物台/传送带上看起来和一个方块摆在那儿差不多大。translation 分两部分:[0,4,0] 是缩放补偿 —— ItemRenderer 里那句 translate(-0.5,-0.5,-0.5) 会被 scale 一起放大,模型是绕中心长大的,不补就往下扎 (scale-0.5)*8 像素,对各台面都精确(台面的其它变换都随各自系数线性缩放);多出来的 0.5 格是让杯底离开台面的离缝 —— 算过:补到 4 时杯底落在方块空间 0.061,而 Create 桌布模型的顶面在 1px=0.0625,两者差 0.02px 就是共面打架(把 scale 从 0.5 提到 1 会让这个面从 1.9px 宽变成 3.8px 宽,于是看得出来)。再加 0.5 格 ≈ 世界坐标 0.35px 的缝,够断开共面又不显悬空。平移有 ±5 格上限,要更多只能改用不带限的 transform(根变换)。其余几个视角都是摆设:手持/物品栏/掉落物走 base(平面),展示框由 FlammableSundaeFrameRenderer 单独换成平面,都用不到这里。",
 	"render_type": "minecraft:cutout",
 	"display": {
 		"gui": {
@@ -14,8 +15,8 @@
 		},
 		"fixed": {
 			"rotation": [0, 0, 0],
-			"translation": [0, 0, 0],
-			"scale": [0.5, 0.5, 0.5]
+			"translation": [0, 4.5, 0],
+			"scale": [1, 1, 1]
 		},
 		"thirdperson_righthand": {
 			"rotation": [75, 45, 0],

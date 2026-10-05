@@ -12,6 +12,8 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.data.PackOutput;
 import net.minecraft.data.tags.IntrinsicHolderTagsProvider.IntrinsicTagAppender;
 import net.minecraft.data.tags.TagsProvider.TagLookup;
+import net.minecraft.tags.BlockTags;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.neoforged.neoforge.common.data.ExistingFileHelper;
@@ -63,6 +65,8 @@ public class ModItemTagsProvider extends net.minecraft.data.tags.ItemTagsProvide
             copy(tier.tag(), tier.itemTag());
         }
         copy(ModTags.BATTERY_CRYSTAL, ModTags.BATTERY_CRYSTAL_ITEM);
+        // 可燃冰墙的 minecraft:walls：方块侧在 ModBlockTagsProvider 里生成，这里原样复制
+        copy(BlockTags.WALLS, ItemTags.WALLS);
     }
 
     private static void add(IntrinsicTagAppender<Item> tag, DeferredBlock<Block> block, boolean optional) {

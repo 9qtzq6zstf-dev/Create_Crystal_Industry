@@ -1,0 +1,16 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "building",
+    "pattern": [
+        "###"
+    ],
+    "key": {
+        "#": {
+            "item": "create_crystal_industry:flammable_ice_block"
+        }
+    },
+    "result": {
+        "id": "create_crystal_industry:flammable_ice_slab",
+        "count": 6
+    }
+}

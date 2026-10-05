@@ -1,4 +1,4 @@
-// 1.21.1	2026-10-02T12:02:01.8522016	Tags for minecraft:block mod id create_crystal_industry
+// 1.21.1	2026-10-05T21:10:04.6515631	Tags for minecraft:block mod id create_crystal_industry
 6e3abb4e200de58ca91e4c78225d9b59b2add5dc data/create_crystal_industry/tags/block/battery_crystal.json
 35133e95f1c8fdd7a1c21afcc231fc0bffefb9a8 data/create_crystal_industry/tags/block/battery_crystal/extreme_capacity.json
 df944c9fec7233542a5e463a28e4a0233c3c5599 data/create_crystal_industry/tags/block/battery_crystal/high_capacity.json
@@ -7,7 +7,8 @@ e375981ddd70e65f5e3e139ec752e310ff0a8b27 data/create_crystal_industry/tags/block
 eef0cbd31e3a38c762ac262cc46f1c7d3838d7d3 data/c/tags/block/budding_blocks.json
 903f75b6802b53781541d172fb657900529df4d2 data/c/tags/block/buds.json
 61b6102becf6e29cc776cd2a71858d89bf8e414d data/c/tags/block/clusters.json
-e9565d0a64a1a1240bc2e217eb583f18db643ebb data/minecraft/tags/block/mineable/pickaxe.json
+e3753bd3be263a26fae30ffdf9a3162a33507805 data/minecraft/tags/block/mineable/pickaxe.json
 c43cfd57c65f75465b6dea6fffac23366f8d55f7 data/minecraft/tags/block/needs_diamond_tool.json
 ab1e4ecadaa6b555abfe4e0595e609645e42f055 data/minecraft/tags/block/needs_iron_tool.json
 6f5d699b8f6b68cdeff7bf5b2134836b17a9aa45 data/minecraft/tags/block/needs_stone_tool.json
+ed93192d37516ff33cd51ef8f834b1ae0c5b781d data/minecraft/tags/block/walls.json

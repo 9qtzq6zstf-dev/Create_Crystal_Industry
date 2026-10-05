@@ -2,6 +2,13 @@
     "replace": false,
     "values": [
         "create_crystal_industry:flammable_ice_block",
+        "create_crystal_industry:flammable_ice_bricks",
+        "create_crystal_industry:flammable_ice_slab",
+        "create_crystal_industry:flammable_ice_stairs",
+        "create_crystal_industry:flammable_ice_wall",
+        "create_crystal_industry:flammable_ice_brick_slab",
+        "create_crystal_industry:flammable_ice_brick_stairs",
+        "create_crystal_industry:flammable_ice_brick_wall",
         "create_crystal_industry:flammable_ice_budding"
     ]
 }

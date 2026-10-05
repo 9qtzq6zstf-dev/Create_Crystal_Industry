@@ -77,9 +77,15 @@ public class FlammableSundaeBlock extends Block {
     };
 
     /**
-     * 包围盒，取自 {@code block.json} 的实际范围：x/z 4.25~11.75，顶到最上面那颗冰球的 9.25。
+     * 包围盒：长宽取自 {@code block.json} 的实际范围（x/z 4.25~11.75），<b>高度只到 5</b>——
+     * 那正是杯口的高度（模型里杯沿那一片就落在 y=5），杯里堆的冰球与熔岩点缀不占碰撞。
+     * <p>
+     * 顺带提醒：轮廓与选取框跟着一起变矮（原版这两样和碰撞共用 {@code getShape}），
+     * 所以要点这杯圣代得瞄杯身那一圈，对着上面的冰球右键会穿过去点到它背后的方块。
+     * 要让可点范围保持原来那么高，就把 {@link #SHAPE} 留给 {@code getShape}，
+     * 另外覆写 {@code getCollisionShape} 返回这个矮盒子。
      */
-    private static final VoxelShape SHAPE = Block.box(4.25, 0.0, 4.25, 11.75, 9.25, 11.75);
+    private static final VoxelShape SHAPE = Block.box(4.25, 0.0, 4.25, 11.75, 5.0, 11.75);
 
     public FlammableSundaeBlock(Properties properties) {
         super(properties);

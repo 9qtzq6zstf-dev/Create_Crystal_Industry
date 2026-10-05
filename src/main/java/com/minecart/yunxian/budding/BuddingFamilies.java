@@ -384,7 +384,13 @@ public final class BuddingFamilies {
                 EnergyRequirement.FREE, ClusterKind.STANDARD, 0, GrowthEnvironment.ANY, GrowthSpeed.NORMAL, null);
         Appearance appearance = new Appearance(INHERIT_BUD_LIGHT, null, SoundType.GLASS,
                 BlockEntityKind.ICE_DISPLAY, 0, SoundType.GLASS, ICE_FRICTION,
-                List.of(() -> ModBlocks.FLAMMABLE_ICE_BLOCK.get(), () -> ModItems.FLAMMABLE_ICE.get(),
+                List.of(() -> ModBlocks.FLAMMABLE_ICE_BLOCK.get(), () -> ModBlocks.FLAMMABLE_ICE_BRICKS.get(),
+                        () -> ModBlocks.FLAMMABLE_ICE_SLAB.get(), () -> ModBlocks.FLAMMABLE_ICE_STAIRS.get(),
+                        () -> ModBlocks.FLAMMABLE_ICE_WALL.get(),
+                        () -> ModBlocks.FLAMMABLE_ICE_BRICK_SLAB.get(),
+                        () -> ModBlocks.FLAMMABLE_ICE_BRICK_STAIRS.get(),
+                        () -> ModBlocks.FLAMMABLE_ICE_BRICK_WALL.get(),
+                        () -> ModItems.FLAMMABLE_ICE.get(),
                         () -> ModBlocks.FLAMMABLE_SUNDAE.get()), false);
         return register(new BuddingFamily("flammable_ice", BuddingModel.CUBE_ALL, ToolTier.NONE, true,
                 WorldGen.of("flammable_ice", "add_flammable_ice"), false,

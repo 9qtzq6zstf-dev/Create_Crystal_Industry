@@ -9,6 +9,7 @@ import java.util.Set;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 
+import com.minecart.yunxian.block.budding.FluidTankBudding;
 import com.minecart.yunxian.block.budding.GenericBuddingBlock;
 import com.minecart.yunxian.block.budding.ScriptedBuddingBlock;
 import com.minecart.yunxian.budding.BuddingFamilies;
@@ -227,7 +228,7 @@ public final class BuddingInfoCollector {
     private static BuddingInfo foreign(Block block) {
         List<Row> rows = new ArrayList<>(1);
         rows.add(Row.note(Component.translatable(LANG + "unknown.foreign")));
-        return new BuddingInfo(block.defaultBlockState(), null, ItemStack.EMPTY, lookupItems(block, List.of()), rows);
+        return new BuddingInfo(displayState(block), null, ItemStack.EMPTY, lookupItems(block, List.of()), rows);
     }
 
     // ==================== 生长条件 ====================
@@ -358,8 +359,23 @@ public final class BuddingInfoCollector {
 
     private static BuddingInfo info(Block budding, List<Block> stages, List<Row> rows) {
         Block cluster = stages.isEmpty() ? null : stages.get(stages.size() - 1);
-        return new BuddingInfo(budding.defaultBlockState(), stateOf(cluster),
+        return new BuddingInfo(displayState(budding), stateOf(cluster),
                 ClusterProductReader.productOf(cluster), lookupItems(budding, stages), List.copyOf(rows));
+    }
+
+    /**
+     * 展示用的方块状态：在默认状态之外补上"罐里有燃料"那一档。
+     * <p>
+     * 烧流体的母岩（远古残骸的 {@code FueledBuddingBlock}）把点亮外观挂在 {@code fueled=true} 上
+     * （带动画的贴图），而默认状态是 {@code fueled=false} 的"燃料不足"静态贴图——照默认状态渲染，
+     * 页面上那块母岩会显得没在干活。罐里实际有多少是运行时状态（在方块实体里），页面统一按"在干活"
+     * 那一档显示，与物品模型保持一致（物品模型本来就指向 fueled 那一档）。
+     */
+    private static BlockState displayState(Block block) {
+        BlockState state = block.defaultBlockState();
+        return state.hasProperty(FluidTankBudding.FUELED)
+                ? state.setValue(FluidTankBudding.FUELED, true)
+                : state;
     }
 
     @Nullable

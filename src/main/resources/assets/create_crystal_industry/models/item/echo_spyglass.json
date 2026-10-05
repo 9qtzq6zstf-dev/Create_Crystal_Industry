@@ -7,6 +7,15 @@
     "perspectives": {
         "gui": {
             "parent": "create_crystal_industry:item/echo_spyglass_flat"
+        },
+        "fixed": {
+            "parent": "create_crystal_industry:item/echo_spyglass_flat",
+            "display": {
+                "fixed": {
+                    "rotation": [0, 180, 0],
+                    "scale": [1, 1, 1]
+                }
+            }
         }
     },
     "overrides": [

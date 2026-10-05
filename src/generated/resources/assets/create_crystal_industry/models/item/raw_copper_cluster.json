@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "create_crystal_industry:block/raw_copper/raw_copper_cluster"
+    "layer0": "create_crystal_industry:block/budding/raw_copper/raw_copper_cluster"
   }
 }

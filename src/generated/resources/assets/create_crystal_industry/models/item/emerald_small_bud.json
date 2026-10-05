@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "create_crystal_industry:block/emerald/emerald_small_bud"
+    "layer0": "create_crystal_industry:block/budding/emerald/emerald_small_bud"
   }
 }

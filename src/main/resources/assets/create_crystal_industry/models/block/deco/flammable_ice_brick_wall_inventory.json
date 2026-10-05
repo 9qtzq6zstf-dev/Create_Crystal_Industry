@@ -1,0 +1,6 @@
+{
+    "parent": "minecraft:block/wall_inventory",
+    "textures": {
+        "wall": "create_crystal_industry:block/deco/flammable_ice_bricks"
+    }
+}

@@ -2,6 +2,6 @@
   "parent": "minecraft:block/cross",
   "render_type": "minecraft:cutout",
   "textures": {
-    "cross": "create_crystal_industry:block/raw_copper/raw_copper_medium_bud"
+    "cross": "create_crystal_industry:block/budding/raw_copper/raw_copper_medium_bud"
   }
 }

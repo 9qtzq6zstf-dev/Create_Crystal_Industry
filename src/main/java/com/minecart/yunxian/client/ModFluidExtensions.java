@@ -17,8 +17,9 @@ import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsE
  * 不引用它——一旦反向引用，专用服务端就会在类校验时去加载客户端的
  * {@code IClientFluidTypeExtensions} 而崩掉（同一套规矩见 {@code ModRenderers}）。
  * <p>
- * 贴图放在<b>弧光石母岩那一族的文件夹里</b>（{@code block/arclight/current_slurry/}）：
- * 电流浆没有自己的方块家族，它是弧光石这条链的产物，图标与贴图跟着母亲岩走更好找。
+ * 贴图放在 {@code block/arclight/current_slurry/}：电流浆没有自己的方块家族，它是弧光石
+ * 这条链的产物，图标与贴图跟着弧光石走更好找（弧光石母岩自己的贴图在
+ * {@code block/budding/arclight/}）。
  * <p>
  * 这里<b>不写</b> {@code getTintColor()}：默认是纯白，也就是贴图什么颜色就渲染成什么颜色。
  * 想改成「一张灰度贴图 + 代码染色」，把 {@code getTintColor()} 重写成想要的 ARGB 即可。
