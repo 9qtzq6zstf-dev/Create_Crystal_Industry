@@ -1,6 +1,8 @@
 {
   "values": [
     "create_crystal_industry:flammable_ice_wall",
-    "create_crystal_industry:flammable_ice_brick_wall"
+    "create_crystal_industry:flammable_ice_brick_wall",
+    "create_crystal_industry:cut_flammable_ice_wall",
+    "create_crystal_industry:small_flammable_ice_brick_wall"
   ]
 }

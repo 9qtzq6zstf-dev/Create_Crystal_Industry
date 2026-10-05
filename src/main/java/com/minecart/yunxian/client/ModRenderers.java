@@ -5,6 +5,7 @@ import com.minecart.yunxian.registry.ModBlocks;
 import com.minecart.yunxian.registry.ModItems;
 import com.minecart.yunxian.Yunxian;
 import com.minecart.yunxian.client.battery.CrystalBatteryModel;
+import com.minecart.yunxian.client.deco.FlammableIceLayeredModel;
 import com.minecart.yunxian.client.deco.FlammableIcePillarModel;
 import com.minecart.yunxian.client.nightvision.model.NightVisionGogglesModel;
 import com.minecart.yunxian.client.tooltip.GenericTooltipModifier;
@@ -150,6 +151,8 @@ public class ModRenderers {
             CrystalBatteryModel.register();
             // 可燃冰柱：连接材质（柱身 4x4 图集、端面 8x8 图集），仿 Create 的装饰柱那一档
             FlammableIcePillarModel.register();
+            // 层叠可燃冰块：连接材质（侧面 2x2 图集、端面与柱子共用）
+            FlammableIceLayeredModel.register();
             // ===== 物品提示（机械动力风格，统一走 GenericTooltipModifier）=====
             // 夜视仪护目镜：简介含当前按键名，动态求值
             GenericTooltipModifier.register(ModItems.NIGHT_VISION_GOGGLES.get(),

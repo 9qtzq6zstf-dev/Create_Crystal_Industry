@@ -55,6 +55,11 @@ public class ModBlockTagsProvider extends BlockTagsProvider {
                 ModBlocks.FLAMMABLE_ICE_BRICK_SLAB.get(),
                 ModBlocks.FLAMMABLE_ICE_BRICK_STAIRS.get(), ModBlocks.FLAMMABLE_ICE_BRICK_WALL.get(),
                 ModBlocks.FLAMMABLE_ICE_PILLAR.get(),
+                ModBlocks.CUT_FLAMMABLE_ICE.get(), ModBlocks.CUT_FLAMMABLE_ICE_SLAB.get(),
+                ModBlocks.CUT_FLAMMABLE_ICE_STAIRS.get(), ModBlocks.CUT_FLAMMABLE_ICE_WALL.get(),
+                ModBlocks.LAYERED_FLAMMABLE_ICE.get(),
+                ModBlocks.SMALL_FLAMMABLE_ICE_BRICKS.get(), ModBlocks.SMALL_FLAMMABLE_ICE_BRICK_SLAB.get(),
+                ModBlocks.SMALL_FLAMMABLE_ICE_BRICK_STAIRS.get(), ModBlocks.SMALL_FLAMMABLE_ICE_BRICK_WALL.get(),
                 ModBlocks.ACCELERATOR.get(),
                 ModBlocks.SMART_DRILL.get(), ModBlocks.MECHANICAL_ACCELERATOR.get(),
                 ModBlocks.MECHANICAL_CLEANER.get(), ModBlocks.CRYSTAL_BATTERY.get(),
@@ -63,7 +68,8 @@ public class ModBlockTagsProvider extends BlockTagsProvider {
         // 它是给数据包/别的模组认「这是一堵墙」用的约定标签；物品侧由
         // ModItemTagsProvider 用 copy 复制过去（标签不能跨方块/物品互相引用）。
         // 生成的文件会与原版同名标签**合并**（replace 默认为 false），不是覆盖
-        tag(BlockTags.WALLS).add(ModBlocks.FLAMMABLE_ICE_WALL.get(), ModBlocks.FLAMMABLE_ICE_BRICK_WALL.get());
+        tag(BlockTags.WALLS).add(ModBlocks.FLAMMABLE_ICE_WALL.get(), ModBlocks.FLAMMABLE_ICE_BRICK_WALL.get(),
+                ModBlocks.CUT_FLAMMABLE_ICE_WALL.get(), ModBlocks.SMALL_FLAMMABLE_ICE_BRICK_WALL.get());
         // 挖掘等级：只有指定了等级的家族才登记（荧石与可燃冰不设等级）
         IntrinsicTagAppender<Block> needsStone = tag(BlockTags.NEEDS_STONE_TOOL);
         // 水晶电池底子取的是铜块属性（requiresCorrectToolForDrops），

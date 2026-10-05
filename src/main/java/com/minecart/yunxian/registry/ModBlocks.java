@@ -12,6 +12,7 @@ import com.minecart.yunxian.item.CrystalBatteryItem;
 import com.minecart.yunxian.item.FlammableSundaeItem;
 import com.minecart.yunxian.item.ResonanceTableItem;
 import com.simibubi.create.content.decoration.palettes.ConnectedPillarBlock;
+import com.simibubi.create.content.decoration.palettes.LayeredBlock;
 
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
@@ -100,6 +101,48 @@ public final class ModBlocks {
      */
     public static final DeferredBlock<ConnectedPillarBlock> FLAMMABLE_ICE_PILLAR = registerBlock("flammable_ice_pillar",
             () -> new ConnectedPillarBlock(flammableIceDecoProperties()));
+
+    // 再往下的三套照抄 Create 的石材调色板：切制（CUT）、层叠（LAYERED）、小砖块（SMALL_BRICKS）。
+    // 命名也跟 Create 一致（cut_deepslate / layered_deepslate / small_deepslate_bricks 那种形式），
+    // 只有台阶/楼梯/墙沿用本模组既有的 <名字>_brick_<部件> 写法。
+    // 贴图目前是占位——从 Create 的深板岩那三套复制来的（见 textures/block/deco 下的同名文件）。
+
+    /** 切制可燃冰块：整块，切石得来，是切制台阶/楼梯/墙的材料 */
+    public static final DeferredBlock<Block> CUT_FLAMMABLE_ICE = registerBlock("cut_flammable_ice",
+            () -> new Block(flammableIceDecoProperties()));
+
+    public static final DeferredBlock<SlabBlock> CUT_FLAMMABLE_ICE_SLAB = registerBlock("cut_flammable_ice_slab",
+            () -> new SlabBlock(flammableIceDecoProperties()));
+
+    /** 基状态要求同 {@link #FLAMMABLE_ICE_STAIRS}：被引用的方块必须在本行之前声明 */
+    public static final DeferredBlock<StairBlock> CUT_FLAMMABLE_ICE_STAIRS = registerBlock("cut_flammable_ice_stairs",
+            () -> new StairBlock(CUT_FLAMMABLE_ICE.get().defaultBlockState(), flammableIceDecoProperties()));
+
+    public static final DeferredBlock<WallBlock> CUT_FLAMMABLE_ICE_WALL = registerBlock("cut_flammable_ice_wall",
+            () -> new WallBlock(flammableIceDecoProperties().forceSolidOn()));
+
+    /**
+     * 层叠可燃冰块：Create 的 {@link LayeredBlock}——一个有轴向的整块，拼在一起时侧面切成
+     * {@code _connected} 贴图（客户端那半见 {@code client/deco/FlammableIceLayeredModel}）。
+     * <p>
+     * 它没有台阶/楼梯/墙：Create 那边 LAYERED 这一档就不出这三样。
+     */
+    public static final DeferredBlock<LayeredBlock> LAYERED_FLAMMABLE_ICE = registerBlock("layered_flammable_ice",
+            () -> new LayeredBlock(flammableIceDecoProperties()));
+
+    /** 可燃冰小砖块：比 {@link #FLAMMABLE_ICE_BRICKS} 更细的砖纹 */
+    public static final DeferredBlock<Block> SMALL_FLAMMABLE_ICE_BRICKS = registerBlock("small_flammable_ice_bricks",
+            () -> new Block(flammableIceDecoProperties()));
+
+    public static final DeferredBlock<SlabBlock> SMALL_FLAMMABLE_ICE_BRICK_SLAB = registerBlock("small_flammable_ice_brick_slab",
+            () -> new SlabBlock(flammableIceDecoProperties()));
+
+    /** 基状态要求同 {@link #FLAMMABLE_ICE_STAIRS} */
+    public static final DeferredBlock<StairBlock> SMALL_FLAMMABLE_ICE_BRICK_STAIRS = registerBlock("small_flammable_ice_brick_stairs",
+            () -> new StairBlock(SMALL_FLAMMABLE_ICE_BRICKS.get().defaultBlockState(), flammableIceDecoProperties()));
+
+    public static final DeferredBlock<WallBlock> SMALL_FLAMMABLE_ICE_BRICK_WALL = registerBlock("small_flammable_ice_brick_wall",
+            () -> new WallBlock(flammableIceDecoProperties().forceSolidOn()));
 
     /**
      * 可燃冰圣代：玻璃杯碗盛着的可燃冰，顶上点缀熔岩，既能喝也能当摆件。
