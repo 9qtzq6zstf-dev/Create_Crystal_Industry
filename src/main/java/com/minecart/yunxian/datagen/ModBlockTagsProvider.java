@@ -54,6 +54,7 @@ public class ModBlockTagsProvider extends BlockTagsProvider {
                 ModBlocks.FLAMMABLE_ICE_STAIRS.get(), ModBlocks.FLAMMABLE_ICE_WALL.get(),
                 ModBlocks.FLAMMABLE_ICE_BRICK_SLAB.get(),
                 ModBlocks.FLAMMABLE_ICE_BRICK_STAIRS.get(), ModBlocks.FLAMMABLE_ICE_BRICK_WALL.get(),
+                ModBlocks.FLAMMABLE_ICE_PILLAR.get(),
                 ModBlocks.ACCELERATOR.get(),
                 ModBlocks.SMART_DRILL.get(), ModBlocks.MECHANICAL_ACCELERATOR.get(),
                 ModBlocks.MECHANICAL_CLEANER.get(), ModBlocks.CRYSTAL_BATTERY.get(),

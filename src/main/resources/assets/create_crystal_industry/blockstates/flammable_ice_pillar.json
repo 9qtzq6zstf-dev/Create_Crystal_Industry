@@ -1,0 +1,16 @@
+{
+    "variants": {
+        "axis=x": {
+            "model": "create_crystal_industry:block/deco/flammable_ice_pillar_horizontal",
+            "x": 90,
+            "y": 90
+        },
+        "axis=y": {
+            "model": "create_crystal_industry:block/deco/flammable_ice_pillar"
+        },
+        "axis=z": {
+            "model": "create_crystal_industry:block/deco/flammable_ice_pillar_horizontal",
+            "x": 90
+        }
+    }
+}

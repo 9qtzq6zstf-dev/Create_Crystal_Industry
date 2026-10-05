@@ -11,6 +11,8 @@ import com.minecart.yunxian.block.SmartDrillBlock;
 import com.minecart.yunxian.item.CrystalBatteryItem;
 import com.minecart.yunxian.item.FlammableSundaeItem;
 import com.minecart.yunxian.item.ResonanceTableItem;
+import com.simibubi.create.content.decoration.palettes.ConnectedPillarBlock;
+
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
@@ -83,6 +85,21 @@ public final class ModBlocks {
 
     public static final DeferredBlock<WallBlock> FLAMMABLE_ICE_BRICK_WALL = registerBlock("flammable_ice_brick_wall",
             () -> new WallBlock(flammableIceDecoProperties().forceSolidOn()));
+
+    /**
+     * 可燃冰柱：仿 Create 的 {@code create:granite_pillar} 那一档装饰柱。
+     * <p>
+     * 用的不是原版 {@code RotatedPillarBlock}，而是 Create 的 {@link ConnectedPillarBlock}——
+     * 它在 {@code axis} 之外还带 n/s/e/w 四个连接状态，相邻的柱子拼成一片时切成
+     * {@code _connected} 贴图。那套连接材质在客户端（{@code client/deco/FlammableIcePillarModel}），
+     * 方块这半只负责维护状态。
+     * <p>
+     * 属性沿用其它装饰方块那一份（蓝冰底子 + 冰音效 + 蓝冰摩擦），不带
+     * {@code requiresCorrectToolForDrops}；{@code mineable/pickaxe} 标签见
+     * {@code ModBlockTagsProvider}。
+     */
+    public static final DeferredBlock<ConnectedPillarBlock> FLAMMABLE_ICE_PILLAR = registerBlock("flammable_ice_pillar",
+            () -> new ConnectedPillarBlock(flammableIceDecoProperties()));
 
     /**
      * 可燃冰圣代：玻璃杯碗盛着的可燃冰，顶上点缀熔岩，既能喝也能当摆件。

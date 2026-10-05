@@ -390,6 +390,7 @@ public final class BuddingFamilies {
                         () -> ModBlocks.FLAMMABLE_ICE_BRICK_SLAB.get(),
                         () -> ModBlocks.FLAMMABLE_ICE_BRICK_STAIRS.get(),
                         () -> ModBlocks.FLAMMABLE_ICE_BRICK_WALL.get(),
+                        () -> ModBlocks.FLAMMABLE_ICE_PILLAR.get(),
                         () -> ModItems.FLAMMABLE_ICE.get(),
                         () -> ModBlocks.FLAMMABLE_SUNDAE.get()), false);
         return register(new BuddingFamily("flammable_ice", BuddingModel.CUBE_ALL, ToolTier.NONE, true,
