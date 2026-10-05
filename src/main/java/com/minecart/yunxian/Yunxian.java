@@ -7,7 +7,7 @@ import com.minecart.yunxian.fluid.FluidInteractions;
 import com.minecart.yunxian.effect.FrozenEffect;
 import com.minecart.yunxian.effect.ShockWard;
 import com.minecart.yunxian.effect.SlurryShock;
-import com.minecart.yunxian.effect.SoulBreath;
+import com.minecart.yunxian.effect.FlameBreath;
 import com.minecart.yunxian.attachment.EchoAttachments;
 import com.minecart.yunxian.behaviour.SmartDrillMovementBehaviour;
 import com.minecart.yunxian.battery.CrystalBatteryInteractions;
@@ -83,9 +83,9 @@ public class Yunxian {
         // 「冰封」免掉自己造成的冻伤：满冻外观（冰心、发抖）与冻伤在原版共用同一个阈值，
         // 想要前者就只能拦下后者，真正踩进细雪受伤不受影响（见 FrozenEffect 的类注释）
         NeoForge.EVENT_BUS.addListener(FrozenEffect::onIncomingDamage);
-        // 带「可燃气体」时潜行空手右键喷灵魂火：客户端负责把原版不外发的输入译成心跳包（见 SoulBreathClient），
-        // 这里按心跳推进火束的每一 tick（见 SoulBreath 的类注释）
-        NeoForge.EVENT_BUS.addListener(SoulBreath::onPlayerTick);
+        // 带「可燃气体」时按住潜行就喷火：潜行状态本来就同步到服务端，所以判定整条都在服务端，
+        // 不需要客户端配合（见 FlameBreath 的类注释）
+        NeoForge.EVENT_BUS.addListener(FlameBreath::onPlayerTick);
         // 潜行右键换晶体：只能挂在物品层（原版潜行时会跳过方块的 useItemOn），且手持的是任意晶体方块，
         // 所以走 UseItemOnBlockEvent 这个对任何物品都生效的钩子，见该类注释
         NeoForge.EVENT_BUS.addListener(CrystalBatteryInteractions::onUseItemOnBlock);

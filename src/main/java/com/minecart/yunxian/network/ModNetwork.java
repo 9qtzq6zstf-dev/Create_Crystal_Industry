@@ -31,6 +31,5 @@ public final class ModNetwork {
                 NightVisionTogglePayload::handle
         );
         registrar.playToServer(CameraModePayload.TYPE, CameraModePayload.STREAM_CODEC, CameraModePayload::handle);
-        registrar.playToServer(SoulBreathPayload.TYPE, SoulBreathPayload.STREAM_CODEC, SoulBreathPayload::handle);
     }
 }

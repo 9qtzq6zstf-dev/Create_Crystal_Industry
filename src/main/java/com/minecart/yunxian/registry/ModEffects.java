@@ -39,7 +39,7 @@ public final class ModEffects {
             MOB_EFFECTS.register("frozen", FrozenEffect::new);
 
     /**
-     * 「可燃气体」：喝下可燃冰圣代后还能喷灵魂火的那一分钟。
+     * 「可燃气体」：喝下可燃冰圣代后还能喷火的那一分钟。
      * <p>
      * 与「冰封」刻意的分开的：冰封是 10 秒的代价，喷火是 60 秒的正题，
      * 各自调时长（见 {@link FlammableGasEffect}）。
