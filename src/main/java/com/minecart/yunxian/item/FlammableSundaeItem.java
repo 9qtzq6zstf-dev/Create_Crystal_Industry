@@ -30,9 +30,13 @@ import com.minecart.yunxian.registry.ModEffects;
  * 原版 {@code Player#eat} 已经包办了「喝空的那一份变成瓶子 / 没喝空的往背包塞一个瓶子、
  * 塞不下就丢地上」以及创造模式不消耗，见 {@code Player#eat}。
  * <p>
- * {@code alwaysEdible} 是刻意的：它是件玩具，吃饱了也得能喝下去。代价是喝完会「冰封」
- * （{@link ModEffects#FROZEN}），满冻外观与冻伤共用同一个阈值，那笔冻伤由那边拦掉；
- * 顶上那撮熔岩则换来一份抗火。
+ * {@code alwaysEdible} 是刻意的：它是件玩具，吃饱了也得能喝下去。喝下去拿到三样东西：
+ * <ul>
+ *   <li>「冰封」（{@link ModEffects#FROZEN}，10 秒）：满冻外观与冻伤共用同一个阈值，
+ *       那笔冻伤由那边拦掉；</li>
+ *   <li>「可燃气体」（{@link ModEffects#FLAMMABLE_GAS}，60 秒）：能喷灵魂火的许可证；</li>
+ *   <li>抗火（20 秒）：顶上那撮熔岩点缀下肚的代价。</li>
+ * </ul>
  */
 public class FlammableSundaeItem extends BlockItem {
 
@@ -51,6 +55,15 @@ public class FlammableSundaeItem extends BlockItem {
      */
     private static final int FIRE_RESISTANCE_TICKS = 400;
 
+    /**
+     * 「可燃气体」的持续时间：60 秒。
+     * <p>
+     * 比冰封那 10 秒长得多，是刻意的：冰封是这一口下去的代价，能喷灵魂火才是这件玩具的正题。
+     * 两个时长从此各走各的（见 {@link ModEffects#FLAMMABLE_GAS}）——冻完的 50 秒里，
+     * 玩家照样潜行空手右键就能喷火（见 {@link com.minecart.yunxian.effect.SoulBreath}）。
+     */
+    private static final int FLAMMABLE_GAS_TICKS = 1200;
+
     public FlammableSundaeItem(Block block, Properties properties) {
         super(block, properties
                 .stacksTo(16)
@@ -63,6 +76,7 @@ public class FlammableSundaeItem extends BlockItem {
                         .usingConvertsTo(Items.GLASS_BOTTLE)
                         .effect(() -> new MobEffectInstance(ModEffects.FROZEN, FROST_DURATION_TICKS), 1.0F)
                         .effect(() -> new MobEffectInstance(MobEffects.FIRE_RESISTANCE, FIRE_RESISTANCE_TICKS), 1.0F)
+                        .effect(() -> new MobEffectInstance(ModEffects.FLAMMABLE_GAS, FLAMMABLE_GAS_TICKS), 1.0F)
                         .build()));
     }
 
