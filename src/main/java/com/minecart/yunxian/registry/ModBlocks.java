@@ -3,11 +3,13 @@ package com.minecart.yunxian.registry;
 import com.minecart.yunxian.*;
 import com.minecart.yunxian.block.AcceleratorBlock;
 import com.minecart.yunxian.block.CrystalBatteryBlock;
+import com.minecart.yunxian.block.FlammableSundaeBlock;
 import com.minecart.yunxian.block.MechanicalAcceleratorBlock;
 import com.minecart.yunxian.block.MechanicalCleanerBlock;
 import com.minecart.yunxian.block.ResonanceTableBlock;
 import com.minecart.yunxian.block.SmartDrillBlock;
 import com.minecart.yunxian.item.CrystalBatteryItem;
+import com.minecart.yunxian.item.FlammableSundaeItem;
 import com.minecart.yunxian.item.ResonanceTableItem;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
@@ -43,6 +45,21 @@ public final class ModBlocks {
             () -> new Block(BlockBehaviour.Properties.ofFullCopy(Blocks.BLUE_ICE)
                     .sound(SoundType.GLASS)
                     .friction(0.989F)));
+
+    /**
+     * 可燃冰圣代：玻璃杯碗盛着的可燃冰，顶上点缀熔岩，既能喝也能当摆件。
+     * <p>
+     * 属性抄玻璃（音效、硬度、无遮挡、不导电），因为它的外形就是一只玻璃杯碗；
+     * 形状由方块自己收窄、点着的亮度走 {@code lightLevel}（和原版蜡烛同一个写法），
+     * 其余行为见 {@link FlammableSundaeBlock}：右键收回、冻住周围的水、像蜡烛一样能点着。
+     * <p>
+     * 物品走 {@link FlammableSundaeItem}：潜行才肯放、能喝、喝完给空瓶与抗火。
+     */
+    public static final DeferredBlock<Block> FLAMMABLE_SUNDAE = registerBlock("flammable_sundae",
+            () -> new FlammableSundaeBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.GLASS)
+                    .lightLevel(state -> state.getValue(FlammableSundaeBlock.LIT)
+                            ? FlammableSundaeBlock.LIT_LIGHT : 0)),
+            FlammableSundaeItem::new);
 
     /**
      * 失活弧光石母岩：弧光石母岩的「未激活」形态。是个纯装饰 & 待激活的方块，自己没有方块实体——

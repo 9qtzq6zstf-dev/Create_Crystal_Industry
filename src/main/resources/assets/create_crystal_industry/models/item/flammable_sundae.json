@@ -1,0 +1,15 @@
+{
+    "loader": "neoforge:separate_transforms",
+    "gui_light": "front",
+    "textures": {
+        "particle": "create_crystal_industry:block/flammable_sundae/item"
+    },
+    "base": {
+        "parent": "create_crystal_industry:item/flammable_sundae_flat"
+    },
+    "perspectives": {
+        "fixed": {
+            "parent": "create_crystal_industry:block/flammable_sundae/flammable_sundae"
+        }
+    }
+}

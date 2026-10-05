@@ -2,6 +2,7 @@ package com.minecart.yunxian.registry;
 
 import com.minecart.yunxian.Yunxian;
 import com.minecart.yunxian.effect.ElectrifiedEffect;
+import com.minecart.yunxian.effect.FrozenEffect;
 
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.effect.MobEffect;
@@ -10,7 +11,7 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
 /**
- * 本模组的状态效果，目前只有一个「感电」（{@code electrified}）。
+ * 本模组的状态效果：「感电」（{@code electrified}）与「冰封」（{@code frozen}）。
  * <p>
  * 名字来自默认规则：{@code MobEffect#getDescriptionId()} 是
  * {@code effect.<命名空间>.<注册名>}，所以语言文件里的键是
@@ -28,6 +29,13 @@ public final class ModEffects {
 
     public static final DeferredHolder<MobEffect, ElectrifiedEffect> ELECTRIFIED =
             MOB_EFFECTS.register("electrified", ElectrifiedEffect::new);
+
+    /**
+     * 「冰封」：喝下可燃冰圣代后像扎进细雪里一样冻起来。表现全部借原版的冻结值，
+     * 自己只负责往上顶（见 {@link FrozenEffect}），连带的那份冻伤也在那边拦掉。
+     */
+    public static final DeferredHolder<MobEffect, FrozenEffect> FROZEN =
+            MOB_EFFECTS.register("frozen", FrozenEffect::new);
 
     private ModEffects() {
     }

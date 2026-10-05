@@ -147,6 +147,9 @@ public class ModRenderers {
             // 可燃冰：单行静态简介
             GenericTooltipModifier.register(ModItems.FLAMMABLE_ICE.get(),
                     "item.create_crystal_industry.flammable_ice.tooltip.summary");
+            // 可燃冰圣代：单行静态简介（方块物品，名字取方块那套，简介仍是 item. 前缀）
+            GenericTooltipModifier.register(ModBlocks.FLAMMABLE_SUNDAE.get().asItem(),
+                    "item.create_crystal_industry.flammable_sundae.tooltip.summary");
             // ★ 软依赖门控：客户端 + Curios 已加载才注册首饰栏渲染器
             if (ModList.get().isLoaded("curios")) {
                 CuriosClientIntegration.registerRenderers();

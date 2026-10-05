@@ -1,0 +1,6 @@
+{
+    "variants": {
+        "lit=false": { "model": "create_crystal_industry:block/flammable_sundae/flammable_sundae" },
+        "lit=true": { "model": "create_crystal_industry:block/flammable_sundae/flammable_sundae" }
+    }
+}

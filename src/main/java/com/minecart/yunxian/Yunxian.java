@@ -4,6 +4,7 @@ import com.minecart.yunxian.advancement.YunxianAdvancements;
 import com.minecart.yunxian.effect.ElectrifiedAura;
 import com.minecart.yunxian.effect.ElectrifiedZap;
 import com.minecart.yunxian.fluid.FluidInteractions;
+import com.minecart.yunxian.effect.FrozenEffect;
 import com.minecart.yunxian.effect.ShockWard;
 import com.minecart.yunxian.effect.SlurryShock;
 import com.minecart.yunxian.attachment.EchoAttachments;
@@ -77,6 +78,9 @@ public class Yunxian {
         // 全套 shock_immune 盔甲免疫闪电伤害：电流浆的电击与真实落雷共用 lightning_bolt 伤害类型，
         // 所以一个拦截点就够（见 ShockWard 的类注释）
         NeoForge.EVENT_BUS.addListener(ShockWard::onIncomingDamage);
+        // 「冰封」免掉自己造成的冻伤：满冻外观（冰心、发抖）与冻伤在原版共用同一个阈值，
+        // 想要前者就只能拦下后者，真正踩进细雪受伤不受影响（见 FrozenEffect 的类注释）
+        NeoForge.EVENT_BUS.addListener(FrozenEffect::onIncomingDamage);
         // 潜行右键换晶体：只能挂在物品层（原版潜行时会跳过方块的 useItemOn），且手持的是任意晶体方块，
         // 所以走 UseItemOnBlockEvent 这个对任何物品都生效的钩子，见该类注释
         NeoForge.EVENT_BUS.addListener(CrystalBatteryInteractions::onUseItemOnBlock);

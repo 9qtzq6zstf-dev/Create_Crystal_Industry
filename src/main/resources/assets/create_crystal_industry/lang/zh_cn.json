@@ -72,6 +72,7 @@
     "item.create_crystal_industry.current_slurry_bucket": "电流浆桶",
     "fluid_type.create_crystal_industry.current_slurry": "电流浆",
     "effect.create_crystal_industry.electrified": "感电",
+    "effect.create_crystal_industry.frozen": "冰封",
     "death.attack.electricShock": "%1$s死于电刑",
     "death.attack.electricShock.player": "%1$s被%2$s造成的闪电劈死了",
     "item.create_crystal_industry.echo_spyglass": "回响望远镜",
@@ -100,6 +101,7 @@
     "block.create_crystal_industry.flammable_ice_large_bud": "大型可燃冰芽",
     "block.create_crystal_industry.flammable_ice_cluster": "可燃冰晶簇",
     "block.create_crystal_industry.flammable_ice_block": "可燃冰块",
+    "block.create_crystal_industry.flammable_sundae": "可燃冰圣代",
     "item.create_crystal_industry.flammable_ice": "可燃冰",
     "block.create_crystal_industry.mechanical_accelerator": "动力催生器",
     "block.create_crystal_industry.mechanical_cleaner": "动力吸尘器",
@@ -259,6 +261,7 @@
     "item.create_crystal_industry.echo_spyglass.tooltip.note": "'合法矿透'",
     
     "item.create_crystal_industry.flammable_ice.tooltip.summary": "优秀的燃料, 也是烈焰人喜爱的零嘴",
+    "item.create_crystal_industry.flammable_sundae.tooltip.summary": "用_可燃冰_调出来的消暑圣代。吃饱了照样来一杯，彻底凉快下来！",
     
     "create_crystal_industry.configuration.worldgen": "世界生成",
     "create_crystal_industry.configuration.worldgen.tooltip": "哪些母岩自然生成，以及可燃冰结构、荧石母岩的额外设置。",
