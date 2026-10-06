@@ -2,9 +2,14 @@ package com.minecart.yunxian.effect;
 
 import com.minecart.yunxian.particle.FlameFlowParticleData;
 import com.minecart.yunxian.registry.ModEffects;
+import com.simibubi.create.content.kinetics.belt.behaviour.TransportedItemStackHandlerBehaviour;
 import com.simibubi.create.content.kinetics.fan.processing.AllFanProcessingTypes;
 import com.simibubi.create.content.kinetics.fan.processing.FanProcessing;
+import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
 
+import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
+import it.unimi.dsi.fastutil.longs.LongSet;
+import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -31,7 +36,8 @@ import net.neoforged.neoforge.event.tick.PlayerTickEvent;
  * 代价是「可燃气体」那一分钟里想单纯蹲一下也会喷火。
  * <p>
  * <b>这道火复刻 Create 鼓风机的<u>高炉</u>气流</b>（不是缠魂）：被喷到的掉落物走
- * {@link FanProcessing#applyProcessing}（原版熔炼配方，沙 → 玻璃这类），被喷到的生物跑
+ * {@link FanProcessing#applyProcessing}（原版熔炼配方，沙 → 玻璃这类），
+ * <b>传送带与置物台上托着的物品也一样</b>（见 {@link #applyToTransportedItems}），被喷到的生物跑
  * {@link AllFanProcessingTypes.BlastingType#affectEntity}——那里面已经自带了
  * 「{@code !fireImmune()} 就 {@code igniteForSeconds(10)} + {@code hurt(fanLava, 4)}」，
  * 所以本类<b>不再自己补伤害</b>，否则就是同一口气里烧两遍。
@@ -109,6 +115,14 @@ public final class FlameBreath {
     private static final int SOUND_INTERVAL = 20;
 
     /**
+     * 沿火束轴心隔多远查一格方块（格），用来找传送带 / 置物台。
+     * <p>
+     * 取半格而不是整格：斜着往下喷时整格的取样会从两格方块之间穿过去、漏掉底下的传送带。
+     * 代价只是每 tick 多几次方块查询（{@value #RANGE} 格最多 25 个取样点）。
+     */
+    private static final double BEAM_SAMPLE_STEP = 0.5;
+
+    /**
      * 橙色气流：α 0.5 + {@code mixColors(0xFF4400, 0xFF8855, …)}。
      * <p>
      * 照抄 Create {@code BlastingType#morphAirFlow}——高炉那档气流就是半透明的橙红，颜色每颗随机取一档，
@@ -156,7 +170,9 @@ public final class FlameBreath {
         Vec3 end = hit.getType() == HitResult.Type.MISS ? to : hit.getLocation();
 
         Vec3 mouth = mouthOf(player, look);
-        applyToEntities(level, player, mouth, look, from.distanceTo(end));
+        double reach = from.distanceTo(end);
+        applyToEntities(level, player, mouth, look, reach);
+        applyToTransportedItems(level, from, look, reach);
         spawnParticles(level, mouth, look);
     }
 
@@ -177,8 +193,9 @@ public final class FlameBreath {
      * 先用罩得住整个圆锥的盒子粗筛（{@code getEntities} 传了施法者，他已被排除），
      * 再逐个做锥内判定——盒子是个立方体，光靠粗筛会把角上离火束老远的实体也捞进来。
      * <p>
-     * 两路都是 Create 高炉那一套：掉落物走熔炼加工，其它实体交给 {@code affectEntity}（它自带伤害与点燃，
-     * 见类注释），本类不再自己补刀。
+     * 两路都是 Create 高炉那一套：掉落物走熔炼加工（<b>托在传送带 / 置物台上的那些不在这里</b>，
+     * 它们由 {@link #applyToTransportedItems} 另外处理），其它实体交给 {@code affectEntity}
+     * （它自带伤害与点燃，见类注释），本类不再自己补刀。
      */
     private static void applyToEntities(ServerLevel level, ServerPlayer caster, Vec3 mouth, Vec3 look, double reach) {
         // 锥底半径 = 射程 × tan(半角)，再留一格余量给粗筛本身的粗糙
@@ -200,6 +217,43 @@ public final class FlameBreath {
                 continue;
             }
             AllFanProcessingTypes.BLASTING.affectEntity(entity, level);
+        }
+    }
+
+    /**
+     * 让火束扫过的<b>传送带 / 置物台</b>上的物品也照常加工，效果与它们待在真的鼓风机气流里一模一样。
+     * <p>
+     * 这两样东西都用 Create 的 {@link TransportedItemStackHandlerBehaviour} 托着物品
+     * （原版那边由 {@code AirCurrent#tickAffectedHandlers} 驱动），所以这里的做法就是「找到这个行为、
+     * 把同一套 {@link FanProcessing#applyProcessing} 喂给它」——连加工计时、批量系数都走 Create 自己的
+     * 配置（{@code fanProcessingTime}），不需要另立一套。
+     * <p>
+     * <b>找法照抄 Create 的 {@code findAffectedHandlers}</b>：沿轴心一格一格地查，而不是扫整个锥体。
+     * 真气流本来就是一根一格的柱子，沿轴查既是它的原样，也省得每 tick 去翻几十格方块。
+     * 区别只在取样密度——它一格一查，这里半格一查（斜着喷时不会漏掉底下的传送带）。
+     * <p>
+     * <b>还要看轴心那一格的<u>正下方</u></b>：传送带与置物台常贴着气流下沿（Create 那边对水平方向
+     * 也是这么补一格），漏了这格就会出现「明火燎着带子、东西却纹丝不动」。
+     */
+    private static void applyToTransportedItems(ServerLevel level, Vec3 from, Vec3 look, double reach) {
+        // 半格一取样时同一格会被重复命中，用一个 long 集合去重，
+        // 否则一 tick 里同一个物品的加工计时会掉两格
+        LongSet visited = new LongOpenHashSet();
+        double length = Math.min(RANGE, reach);
+        for (double traveled = 0.0; traveled <= length; traveled += BEAM_SAMPLE_STEP) {
+            BlockPos center = BlockPos.containing(from.add(look.scale(traveled)));
+            for (int down = 0; down <= 1; down++) {
+                BlockPos pos = down == 0 ? center : center.below();
+                if (!visited.add(pos.asLong())) {
+                    continue;
+                }
+                TransportedItemStackHandlerBehaviour behaviour =
+                        BlockEntityBehaviour.get(level, pos, TransportedItemStackHandlerBehaviour.TYPE);
+                if (behaviour != null) {
+                    behaviour.handleProcessingOnAllItems(transported ->
+                            FanProcessing.applyProcessing(transported, level, AllFanProcessingTypes.BLASTING));
+                }
+            }
         }
     }
 
