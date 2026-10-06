@@ -1,10 +1,13 @@
 package com.minecart.yunxian.registry;
 
+import java.util.function.Supplier;
+
 import com.minecart.yunxian.Yunxian;
 import com.minecart.yunxian.fluid.CurrentSlurryFluid;
 import com.minecart.yunxian.fluid.NoBlockFluid;
 
 import net.minecraft.core.registries.Registries;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.fluids.BaseFlowingFluid;
@@ -89,20 +92,34 @@ public final class ModFluids {
                     .viscosity(1500)));
 
     /**
+     * 可燃冰沙「该变成的方块」。管道与软管滑轮把它倒进世界里时，放下的就是它。
+     * <p>
+     * 传 {@code Supplier} 而不是 {@code .get()} 出来的实例：{@code minecraft:block} 的注册晚于
+     * {@code minecraft:fluid}（同下面 {@code CURRENT_SLURRY_PROPERTIES} 里 {@code .block(...)} 的理由），
+     * 这里只是把取值推迟到运行时。类名走简单名即可——{@link ModBlocks} 与本类同一个包。
+     */
+    private static final Supplier<BlockState> FLAMMABLE_ICE_SLURRY_WORLD_BLOCK =
+            () -> ModBlocks.FLAMMABLE_ICE_SLURRY.get().defaultBlockState();
+
+    /**
      * 源（静止）可燃冰沙：配方、储罐、管道、注液器与桶引用的都是它。
      * <p>
-     * 三份都用 {@link NoBlockFluid} 而不是 {@code BaseFlowingFluid}：这个流体<b>在世界里不存在</b>
-     * （没有方块形态、倒不出来），倒出来的是可燃冰沙<b>方块</b>——那条路由桶自己走，见
-     * {@code FlammableIceSlurryBucketItem}。
+     * 三份都用 {@link NoBlockFluid} 而不是 {@code BaseFlowingFluid}：这个流体<b>没有流体方块</b>
+     * （没有 {@code LiquidBlock}、{@code getAmount()} 恒为 0、世界里淌不出来），
+     * 但 {@code createLegacyBlock()} 会回答「它该变成可燃冰沙方块」——Create 的管道与软管滑轮
+     * 正是拿这个答案判断能不能往世界里倒（见 {@link NoBlockFluid} 的类注释）。
+     * 桶那条路则完全另起炉灶，见 {@code FlammableIceSlurryBucketItem}。
      */
     public static final DeferredHolder<Fluid, NoBlockFluid> FLAMMABLE_ICE_SLURRY =
             FLUIDS.register("flammable_ice_slurry",
-                    () -> NoBlockFluid.createSource(ModFluids.FLAMMABLE_ICE_SLURRY_PROPERTIES));
+                    () -> NoBlockFluid.createSource(ModFluids.FLAMMABLE_ICE_SLURRY_PROPERTIES,
+                            ModFluids.FLAMMABLE_ICE_SLURRY_WORLD_BLOCK));
 
     /** 流动变体：存在只为了让储罐/管道的模型有第二张图可挑，世界里同样淌不出来 */
     public static final DeferredHolder<Fluid, NoBlockFluid> FLOWING_FLAMMABLE_ICE_SLURRY =
             FLUIDS.register("flowing_flammable_ice_slurry",
-                    () -> NoBlockFluid.createFlowing(ModFluids.FLAMMABLE_ICE_SLURRY_PROPERTIES));
+                    () -> NoBlockFluid.createFlowing(ModFluids.FLAMMABLE_ICE_SLURRY_PROPERTIES,
+                            ModFluids.FLAMMABLE_ICE_SLURRY_WORLD_BLOCK));
 
     /**
      * 流体参数。**刻意不设 {@code .block(...)}**——那正是「没有流体方块」这个要求本身；

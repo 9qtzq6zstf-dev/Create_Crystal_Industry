@@ -29,6 +29,8 @@ section at the top.
   cooled state too.
 - The Flammable Ice Slurry fluid works as fuel as well: piped into a Blaze Burner with Straw, it
   reaches superheated.
+- The Flammable Ice Slurry can now be dumped into the world: an open pipe end or a Hose Pulley
+  places one Flammable Ice Slurry block per bucket.
 
 ### Changed
 
