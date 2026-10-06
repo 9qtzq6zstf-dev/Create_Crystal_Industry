@@ -4,6 +4,7 @@ import com.minecart.yunxian.Yunxian;
 import com.minecart.yunxian.effect.ElectrifiedEffect;
 import com.minecart.yunxian.effect.FlameBreathEffect;
 import com.minecart.yunxian.effect.FrozenEffect;
+import com.minecart.yunxian.effect.ScorchingColdEffect;
 
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.effect.MobEffect;
@@ -12,7 +13,8 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
 /**
- * 本模组的状态效果：「感电」（{@code electrified}）、「冰封」（{@code frozen}）与「火焰吐息」（{@code flame_breath}）。
+ * 本模组的状态效果：「感电」（{@code electrified}）、「冰封」（{@code frozen}）、
+ * 「灼寒」（{@code scorching_cold}）与「火焰吐息」（{@code flame_breath}）。
  * <p>
  * 名字来自默认规则：{@code MobEffect#getDescriptionId()} 是
  * {@code effect.<命名空间>.<注册名>}，所以语言文件里的键是
@@ -32,11 +34,24 @@ public final class ModEffects {
             MOB_EFFECTS.register("electrified", ElectrifiedEffect::new);
 
     /**
-     * 「冰封」：喝下可燃冰圣代后像扎进细雪里一样冻起来。表现全部借原版的冻结值，
+     * 「冰封」：像扎进细雪里一样冻起来。表现全部借原版的冻结值，
      * 自己只负责往上顶（见 {@link FrozenEffect}），连带的那份冻伤也在那边拦掉。
+     * <p>
+     * <b>现在没有任何东西发放它了</b>——可燃冰沙瓶与可燃冰圣代给的都是「灼寒」。
+     * 注册项留着是刻意的：存档里已经带着这个效果的生物不会变成「未知效果」，
+     * KubeJS 或整合包引用 {@code create_crystal_industry:frozen} 也不会断。
      */
     public static final DeferredHolder<MobEffect, FrozenEffect> FROZEN =
             MOB_EFFECTS.register("frozen", FrozenEffect::new);
+
+    /**
+     * 「灼寒」：冻着的同时还烧起来，可燃冰沙瓶与可燃冰圣代现在给的就是它。
+     * <p>
+     * 冻结那一半与「冰封」共用同一套机制（因此它是 {@link FrozenEffect} 的子类），
+     * 多出来的只有「着火」——见 {@link ScorchingColdEffect}。
+     */
+    public static final DeferredHolder<MobEffect, ScorchingColdEffect> SCORCHING_COLD =
+            MOB_EFFECTS.register("scorching_cold", ScorchingColdEffect::new);
 
     /**
      * 「火焰吐息」：喝下可燃冰圣代后还能喷火的那一分钟。

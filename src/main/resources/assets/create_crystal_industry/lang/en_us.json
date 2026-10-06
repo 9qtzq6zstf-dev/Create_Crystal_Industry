@@ -74,6 +74,7 @@
     "fluid_type.create_crystal_industry.flammable_ice_slurry": "Flammable Ice Slurry",
     "effect.create_crystal_industry.electrified": "Electrified",
     "effect.create_crystal_industry.frozen": "Frozen",
+    "effect.create_crystal_industry.scorching_cold": "Scorching Cold",
     "effect.create_crystal_industry.flame_breath": "Flame Breath",
     "death.attack.electricShock": "%1$s was electrocuted",
     "death.attack.electricShock.player": "%1$s was struck by lightning caused by %2$s",

@@ -10,6 +10,7 @@ import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -111,6 +112,12 @@ public final class FlameBreath {
     /** 出火口那一点上的随机抖动，避免所有粒子从一个数学点里冒出来 */
     private static final double MUZZLE_JITTER = 0.08;
 
+    /** 每 tick 额外迸几颗火星。比 {@link #PARTICLES_PER_TICK} 少得多——是"加一点"，不是再喷一道火 */
+    private static final int SPARKS_PER_TICK = 2;
+
+    /** 火星落点的抖动半径（格）：沿轴取了位置之后，再让它偏离轴心一点，免得全排在正中一条线上 */
+    private static final double SPARK_JITTER = 0.18;
+
     /** 火声的间隔（tick）。原版火焰方块的环境音差不多也是这个密度 */
     private static final int SOUND_INTERVAL = 20;
 
@@ -173,7 +180,7 @@ public final class FlameBreath {
         double reach = from.distanceTo(end);
         applyToEntities(level, player, mouth, look, reach);
         applyToTransportedItems(level, from, look, reach);
-        spawnParticles(level, mouth, look);
+        spawnParticles(level, mouth, look, reach);
     }
 
     /**
@@ -283,10 +290,11 @@ public final class FlameBreath {
      * <p>
      * 逐颗发（而不是用 {@code sendParticles} 的 {@code count} 一次发一把）：同一个 {@code count} 里的
      * 每颗粒子拿到的是<b>同一份数据</b>，会朝完全相同的方向飞，凑不出扩散；要一颗一个方向，
-     * 就只能一颗一个包。代价明账——每 tick {@value #PARTICLES_PER_TICK} 个包，只发给 32 格内的玩家，
-     * 且只在按住潜行的这段时间里发。
+     * 就只能一颗一个包。火星那几颗同样一颗一个包（它们的散布靠落点抖动，一个包里塞 {@code count > 1}
+     * 会挤在同一小块上）。代价明账——每 tick {@value #PARTICLES_PER_TICK} + {@value #SPARKS_PER_TICK} 个包，
+     * 只发给 32 格内的玩家，且只在按住潜行的这段时间里发。
      */
-    private static void spawnParticles(ServerLevel level, Vec3 mouth, Vec3 look) {
+    private static void spawnParticles(ServerLevel level, Vec3 mouth, Vec3 look, double reach) {
         RandomSource random = level.random;
 
         for (int i = 0; i < PARTICLES_PER_TICK; i++) {
@@ -295,6 +303,19 @@ public final class FlameBreath {
             level.sendParticles(FlameFlowParticleData.of(direction.scale(speed), pickColor(random)),
                     mouth.x, mouth.y, mouth.z, 1,
                     MUZZLE_JITTER, MUZZLE_JITTER, MUZZLE_JITTER, 0.0);
+        }
+
+        // 火星：沿火束随机挑几处迸出来。
+        // <b>用 LAVA 而不是 FLAME</b>：原版把粒子从服务端广播出去时，速度是"随机方向 × speed"，
+        // 给不了方向——那道火锥为此才自己注册了 flame_flow。火星不需要方向（它本来就是原地炸开的），
+        // 于是可以直接用原版粒子；而 FLAME 在速度写死成 (1,1,1) 的通道里会斜飞，见
+        // FlameBreathEffect 的类注释。LAVA 的 provider 会把速度整个丢掉，自己给一点向上初速，
+        // 炸开一小团橙红，正是"火星"该有的样子。
+        double length = Math.min(RANGE, reach);
+        for (int i = 0; i < SPARKS_PER_TICK; i++) {
+            Vec3 at = mouth.add(look.scale(random.nextDouble() * length));
+            level.sendParticles(ParticleTypes.LAVA, at.x, at.y, at.z, 1,
+                    SPARK_JITTER, SPARK_JITTER, SPARK_JITTER, 0.0);
         }
 
         if (level.getGameTime() % SOUND_INTERVAL == 0) {

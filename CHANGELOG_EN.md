@@ -31,12 +31,22 @@ section at the top.
   reaches superheated.
 - The Flammable Ice Slurry can now be dumped into the world: an open pipe end or a Hose Pulley
   places one Flammable Ice Slurry block per bucket.
+- A new status effect, Scorching Cold: frozen and burning at the same time. The screen frosts over and
+  you shiver as before, but flames cling to you, costing half a heart every 20 ticks. The Flammable
+  Ice Slurry Bottle and the Flammable Sundae grant it now instead of Frozen, and so does stepping
+  into Flammable Ice Slurry, which no longer freezes you the powder-snow way.
+- Flame Breath now keeps embers rising off you for its whole minute, and the jet it spits throws off
+  sparks of its own.
+- In creative, middle-clicking a Flammable Ice Slurry block now gives you the Slurry Bucket. The
+  block has no item form of its own, so picking it used to do nothing.
 
 ### Changed
 
 - Flammable Ice itself and the whole Flammable Ice decoration set are **no longer edible**. They
   used to be, but right-clicking a burner with one fed you instead of the burner. Only the Slurry
   Bottle and the Flammable Sundae can be consumed now.
+- The Flammable Sundae no longer grants Fire Resistance. That resistance cancelled the Scorching Cold
+  burn outright, which would have made the Magma Cream on top pointless.
 
 ## 1.0.6 · 2026-10-05 ~ 2026-10-06
 

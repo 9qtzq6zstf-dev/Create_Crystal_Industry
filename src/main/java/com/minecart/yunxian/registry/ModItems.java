@@ -37,8 +37,8 @@ public final class ModItems {
     public static final DeferredItem<FlammableIceItem> FLAMMABLE_ICE =
             ITEMS.register("flammable_ice", () -> new FlammableIceItem(new Item.Properties()));
 
-    /** 喝一口冻多久：10 秒，与可燃冰圣代给的那份一致 */
-    public static final int ICE_FROZEN_TICKS = 200;
+    /** 喝一口「灼寒」持续多久：10 秒，与可燃冰圣代给的那份一致 */
+    public static final int ICE_SCORCHING_COLD_TICKS = 200;
 
     /**
      * 弧光石：弧光石母岩的晶簇掉落物，也是冲压出电流浆的原料。
@@ -74,7 +74,8 @@ public final class ModItems {
 
     /**
      * 可燃冰沙瓶：玻璃瓶注 250 mB 可燃冰沙得来（{@code create:filling}），也能倒回去
-     * （{@code create:emptying}）。能喝，喝下去给 {@value #ICE_FROZEN_TICKS} tick 冰封并留下空瓶。
+     * （{@code create:emptying}）。能喝，喝下去给 {@value #ICE_SCORCHING_COLD_TICKS} tick 的「灼寒」
+     * （冻着，同时烧着）并留下空瓶。
      * <p>
      * 它同时也是件燃料（见燃料数据映射），{@code craftRemainder(玻璃瓶)} 就是为这个准备的：
      * Create 的烈焰人（以及照着它做的两种冷却器）在烧掉燃料时会把"剩下的容器"还给玩家，
@@ -92,7 +93,7 @@ public final class ModItems {
                                     .saturationModifier(0.1F)
                                     .alwaysEdible()
                                     .usingConvertsTo(Items.GLASS_BOTTLE)
-                                    .effect(() -> new MobEffectInstance(ModEffects.FROZEN, ICE_FROZEN_TICKS), 1.0F)
+                                    .effect(() -> new MobEffectInstance(ModEffects.SCORCHING_COLD, ICE_SCORCHING_COLD_TICKS), 1.0F)
                                     .build())));
 
     public static final DeferredItem<EchoSpyglassItem> ECHO_SPYGLASS =

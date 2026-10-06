@@ -82,7 +82,7 @@ public class Yunxian {
         // 全套 shock_immune 盔甲免疫闪电伤害：电流浆的电击与真实落雷共用 lightning_bolt 伤害类型，
         // 所以一个拦截点就够（见 ShockWard 的类注释）
         NeoForge.EVENT_BUS.addListener(ShockWard::onIncomingDamage);
-        // 「冰封」免掉自己造成的冻伤：满冻外观（冰心、发抖）与冻伤在原版共用同一个阈值，
+        // 「冰封」与「灼寒」免掉自己造成的冻伤：满冻外观（冰心、发抖）与冻伤在原版共用同一个阈值，
         // 想要前者就只能拦下后者，真正踩进细雪受伤不受影响（见 FrozenEffect 的类注释）
         NeoForge.EVENT_BUS.addListener(FrozenEffect::onIncomingDamage);
         // 带「火焰吐息」时按住潜行就喷火：潜行状态本来就同步到服务端，所以判定整条都在服务端，

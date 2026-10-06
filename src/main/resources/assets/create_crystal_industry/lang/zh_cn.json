@@ -74,6 +74,7 @@
     "fluid_type.create_crystal_industry.flammable_ice_slurry": "可燃冰沙",
     "effect.create_crystal_industry.electrified": "感电",
     "effect.create_crystal_industry.frozen": "冰封",
+    "effect.create_crystal_industry.scorching_cold": "灼寒",
     "effect.create_crystal_industry.flame_breath": "火焰吐息",
     "death.attack.electricShock": "%1$s死于电刑",
     "death.attack.electricShock.player": "%1$s被%2$s造成的闪电劈死了",
