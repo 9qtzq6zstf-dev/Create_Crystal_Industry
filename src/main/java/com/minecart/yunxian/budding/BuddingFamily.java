@@ -140,7 +140,13 @@ public record BuddingFamily(
             @Nullable SoundType buddingSound,
             /** 母岩摩擦系数，null 表示沿用原版 */
             @Nullable Float buddingFriction,
-            /** 创造模式标签里紧跟在晶簇之后追加的物品（可燃冰的装饰方块与燃料） */
+            /**
+             * 创造模式标签里紧跟在晶簇之后追加的物品（可燃冰家族是燃料与可燃冰圣代）。
+             * <p>
+             * 这里的方块<b>只</b>进本模组自己的标签页。可燃冰的整套装饰方块是个例外：
+             * 它们不走这条通道，而是统一陈列在机械动力的「建筑方块」页
+             * （清单见 {@code ModBlocks.FLAMMABLE_ICE_DECO}）。
+             */
             List<Supplier<? extends ItemLike>> tabExtras,
             /**
              * 方块周围是否冒电火花粒子（弧光石家族为 true）。

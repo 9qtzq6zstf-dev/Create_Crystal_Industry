@@ -382,26 +382,12 @@ public final class BuddingFamilies {
     private static RegisteredFamily flammableIce() {
         Growth growth = new Growth(GrowthRule.SUBMERGED, LightRequirement.ANY,
                 EnergyRequirement.FREE, ClusterKind.STANDARD, 0, GrowthEnvironment.ANY, GrowthSpeed.NORMAL, null);
+        // 创造栏追加项只剩这两件物品：整套装饰方块统一陈列在机械动力的「建筑方块」页
+        // （唯一清单见 ModBlocks.FLAMMABLE_ICE_DECO，注入见 ModCreativeTabs#addDecoToCreateTabs），
+        // 本模组自己的标签页里不再重复放一份
         Appearance appearance = new Appearance(INHERIT_BUD_LIGHT, null, SoundType.GLASS,
                 BlockEntityKind.ICE_DISPLAY, 0, SoundType.GLASS, ICE_FRICTION,
-                List.of(() -> ModBlocks.FLAMMABLE_ICE_BLOCK.get(), () -> ModBlocks.FLAMMABLE_ICE_BRICKS.get(),
-                        () -> ModBlocks.FLAMMABLE_ICE_SLAB.get(), () -> ModBlocks.FLAMMABLE_ICE_STAIRS.get(),
-                        () -> ModBlocks.FLAMMABLE_ICE_WALL.get(),
-                        () -> ModBlocks.FLAMMABLE_ICE_BRICK_SLAB.get(),
-                        () -> ModBlocks.FLAMMABLE_ICE_BRICK_STAIRS.get(),
-                        () -> ModBlocks.FLAMMABLE_ICE_BRICK_WALL.get(),
-                        () -> ModBlocks.FLAMMABLE_ICE_PILLAR.get(),
-                        () -> ModBlocks.CUT_FLAMMABLE_ICE.get(),
-                        () -> ModBlocks.CUT_FLAMMABLE_ICE_SLAB.get(),
-                        () -> ModBlocks.CUT_FLAMMABLE_ICE_STAIRS.get(),
-                        () -> ModBlocks.CUT_FLAMMABLE_ICE_WALL.get(),
-                        () -> ModBlocks.LAYERED_FLAMMABLE_ICE.get(),
-                        () -> ModBlocks.SMALL_FLAMMABLE_ICE_BRICKS.get(),
-                        () -> ModBlocks.SMALL_FLAMMABLE_ICE_BRICK_SLAB.get(),
-                        () -> ModBlocks.SMALL_FLAMMABLE_ICE_BRICK_STAIRS.get(),
-                        () -> ModBlocks.SMALL_FLAMMABLE_ICE_BRICK_WALL.get(),
-                        () -> ModItems.FLAMMABLE_ICE.get(),
-                        () -> ModBlocks.FLAMMABLE_SUNDAE.get()), false);
+                List.of(() -> ModItems.FLAMMABLE_ICE.get(), () -> ModBlocks.FLAMMABLE_SUNDAE.get()), false);
         return register(new BuddingFamily("flammable_ice", BuddingModel.CUBE_ALL, ToolTier.NONE, true,
                 WorldGen.of("flammable_ice", "add_flammable_ice"), false,
                 () -> ModBlocks.FLAMMABLE_ICE_BLOCK.get(), growth, appearance));

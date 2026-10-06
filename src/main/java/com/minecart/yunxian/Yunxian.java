@@ -59,6 +59,8 @@ public class Yunxian {
         ModCreativeTabs.register(modEventBus);
         // 脚本（KubeJS）注册的方块要进创造栏：KubeJS 的方块默认不进任何标签页，这里补上
         modEventBus.addListener(ModCreativeTabs::addScriptedEntries);
+        // 可燃冰装饰套件也追加一份进机械动力的「建筑方块」页（见 ModCreativeTabs#addDecoToCreateTabs）
+        modEventBus.addListener(ModCreativeTabs::addDecoToCreateTabs);
         // 脚本注册的芽/簇的掉落规则（精准采集掉本体、否则掉配置物品）：KubeJS 的掉落 API 表达不了，运行时接管
         NeoForge.EVENT_BUS.addListener(ScriptedBlockDrops::onBlockDrops);
         // 脚本给母岩设的开采等级：方块标签在注册期就固定了，改只能改"这一步判定"（见 ScriptedMiningLevels）

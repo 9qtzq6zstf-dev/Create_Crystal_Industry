@@ -3,6 +3,7 @@ package com.minecart.yunxian.registry;
 import com.minecart.yunxian.Yunxian;
 import com.minecart.yunxian.budding.BuddingFamilies;
 import com.minecart.yunxian.budding.BuddingFamilies.RegisteredFamily;
+import com.simibubi.create.AllCreativeModeTabs;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
@@ -11,8 +12,10 @@ import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.Block;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
+import net.neoforged.neoforge.registries.DeferredBlock;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
 import java.util.ArrayList;
@@ -71,6 +74,35 @@ public final class ModCreativeTabs {
         }
         for (var extra : family.spec().appearance().tabExtras()) {
             output.accept(extra.get());
+        }
+    }
+
+    /**
+     * 把可燃冰装饰套件也放进机械动力的「建筑方块」标签页（{@code create:palettes}）。
+     * <p>
+     * 这套方块从命名到规格都是照 Create 的石材调色板做的（切制 / 层叠 / 小砖块 / 柱），
+     * 摆在那一页跟 Create 自己的同类方块挨着更好找。<b>全套只放这里，本模组自己的标签页里不放</b>
+     * （那里留的是母岩家族与可燃冰、可燃冰圣代那两件物品）——建材集中在一页找起来才不散。
+     * <p>
+     * 清单读 {@link ModBlocks#FLAMMABLE_ICE_DECO}。{@code accept} 对重复条目会当场抛
+     * {@code IllegalArgumentException}（崩在开创造背包那一步），所以先问一遍标签页里有没有；
+     * {@code getParentEntries()} 会实时反映<em>同一个事件里</em>刚被别处（如脚本）加进去的条目，
+     * 因此这道去重对跨来源的重复也有效。
+     * <p>
+     * Create 是本模组的硬依赖，直接引用它的标签页句柄比写死字符串 id 编译期就能对上。
+     * {@code AllCreativeModeTabs} 虽带 {@code net.minecraft.client.*} 的导入，但 Create 在自己的
+     * 构造器里无条件调用它的 {@code register}，专用服务端本来就会加载这个类；真正客户端专属的那段
+     * 用 {@code CatnipServices.PLATFORM.getEnv().isClient()} 兜住了，所以在这里引用它不多担任何风险。
+     */
+    public static void addDecoToCreateTabs(BuildCreativeModeTabContentsEvent event) {
+        if (!AllCreativeModeTabs.PALETTES_CREATIVE_TAB.getKey().equals(event.getTabKey())) {
+            return;
+        }
+        for (DeferredBlock<? extends Block> block : ModBlocks.FLAMMABLE_ICE_DECO) {
+            Item item = block.get().asItem();
+            if (!alreadyInTab(event, item)) {
+                event.accept(item);
+            }
         }
     }
 

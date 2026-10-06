@@ -31,6 +31,7 @@ import net.neoforged.neoforge.registries.DeferredBlock;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.fml.ModList;
 
+import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
@@ -143,6 +144,33 @@ public final class ModBlocks {
 
     public static final DeferredBlock<WallBlock> SMALL_FLAMMABLE_ICE_BRICK_WALL = registerBlock("small_flammable_ice_brick_wall",
             () -> new WallBlock(flammableIceDecoProperties().forceSolidOn()));
+
+    /**
+     * 可燃冰装饰套件的<b>唯一清单</b>，顺序就是创造栏里的陈列顺序。
+     * <p>
+     * 唯一读它的是 {@link ModCreativeTabs#addDecoToCreateTabs}——整套装饰方块陈列在机械动力的
+     * 「建筑方块」页，本模组自己的标签页里不放，所以这里不挂在任何家族上。
+     * <b>以后再加变体只改这一处</b>：在上面按同样写法注册方块，再到这份清单里补一行。
+     * <p>
+     * 排列规矩：<b>先按材质分组，每组内部是「整块 + 台阶 + 楼梯 + 墙」</b>。组的先后照
+     * Create 调色板里那一套（{@code PaletteBlockPattern.VANILLA_RANGE}：切制 → 砖 → 小砖 → 层叠 → 柱），
+     * 我们多出来的基准块组（可燃冰块本人那一组）排在最前——它是其余几组的取材之处。
+     * <p>
+     * 只收装饰方块：母岩家族的方块由家族表自己陈列（{@code BuddingFamilies}），可燃冰与
+     * 可燃冰圣代那两件物品留在本模组自己的标签页（见该家族的 {@code Appearance#tabExtras}）。
+     */
+    public static final List<DeferredBlock<? extends Block>> FLAMMABLE_ICE_DECO = List.of(
+            // 基准块
+            FLAMMABLE_ICE_BLOCK, FLAMMABLE_ICE_SLAB, FLAMMABLE_ICE_STAIRS, FLAMMABLE_ICE_WALL,
+            // 切制
+            CUT_FLAMMABLE_ICE, CUT_FLAMMABLE_ICE_SLAB, CUT_FLAMMABLE_ICE_STAIRS, CUT_FLAMMABLE_ICE_WALL,
+            // 砖
+            FLAMMABLE_ICE_BRICKS, FLAMMABLE_ICE_BRICK_SLAB, FLAMMABLE_ICE_BRICK_STAIRS, FLAMMABLE_ICE_BRICK_WALL,
+            // 小砖块
+            SMALL_FLAMMABLE_ICE_BRICKS, SMALL_FLAMMABLE_ICE_BRICK_SLAB,
+            SMALL_FLAMMABLE_ICE_BRICK_STAIRS, SMALL_FLAMMABLE_ICE_BRICK_WALL,
+            // 层叠与柱：Create 那边这两档也不出台阶/楼梯/墙，各自只有整块一件
+            LAYERED_FLAMMABLE_ICE, FLAMMABLE_ICE_PILLAR);
 
     /**
      * 可燃冰圣代：玻璃杯碗盛着的可燃冰，顶上点缀熔岩，既能喝也能当摆件。
