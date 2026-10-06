@@ -1,7 +1,7 @@
 {
     "variants": {
         "type=bottom": { "model": "create_crystal_industry:block/deco/flammable_ice_slab" },
-        "type=double": { "model": "create_crystal_industry:block/deco/flammable_ice_block" },
+        "type=double": { "model": "create_crystal_industry:block/deco/flammable_ice_slab_double" },
         "type=top": { "model": "create_crystal_industry:block/deco/flammable_ice_slab_top" }
     }
 }

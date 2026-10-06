@@ -1,0 +1,7 @@
+{
+    "parent": "minecraft:block/cube_column",
+    "textures": {
+        "end": "create_crystal_industry:block/deco/flammable_ice_block",
+        "side": "create_crystal_industry:block/deco/flammable_ice_slab_side"
+    }
+}
