@@ -12,6 +12,28 @@ section at the top.
 
 ---
 
+## 1.0.7 · 2026-10-06
+
+### Added
+
+- Flammable Ice Slurry: a fluid with **no block form**, moved around in buckets just like powder
+  snow. Pouring it places a Flammable Ice Slurry block (you sink into it, and it freezes you), and
+  an empty bucket scoops it back up.
+- The Flammable Ice Slurry Bottle and the chain around it: a Mechanical Mixer stirs Flammable Ice
+  into slurry, a Spout fills a glass bottle with it, an Item Drain pours it back out, and a Deployer
+  holding Magma Cream presses a bottle into a Flammable Sundae. The bottle can be drunk as well,
+  granting Frozen just like the sundae.
+- Every Flammable Ice item now works as fuel, in furnaces and in the Blaze Burner; the Slurry Bottle
+  and the Flammable Sundae hand the empty glass bottle back once burnt.
+- With other mods' reskins of the Blaze Burner, the whole Flammable Ice set drives them into their
+  cooled state too.
+
+### Changed
+
+- Flammable Ice itself and the whole Flammable Ice decoration set are **no longer edible**. They
+  used to be, but right-clicking a burner with one fed you instead of the burner. Only the Slurry
+  Bottle and the Flammable Sundae can be consumed now.
+
 ## 1.0.6 · 2026-10-05 ~ 2026-10-06
 
 ### Added
