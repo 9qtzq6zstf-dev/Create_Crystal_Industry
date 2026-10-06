@@ -1,0 +1,18 @@
+{
+    "type": "create:filling",
+    "ingredients": [
+        {
+            "item": "minecraft:glass_bottle"
+        },
+        {
+            "type": "neoforge:tag",
+            "amount": 250,
+            "tag": "create_crystal_industry:flammable_ice_slurry"
+        }
+    ],
+    "results": [
+        {
+            "id": "create_crystal_industry:flammable_ice_slurry_bottle"
+        }
+    ]
+}

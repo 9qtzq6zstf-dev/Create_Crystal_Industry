@@ -6,6 +6,63 @@
         "create_crystal_industry:flammable_ice_block": {
             "burn_time": 4000
         },
+        "create_crystal_industry:flammable_ice_bricks": {
+            "burn_time": 4000
+        },
+        "create_crystal_industry:flammable_ice_pillar": {
+            "burn_time": 4000
+        },
+        "create_crystal_industry:cut_flammable_ice": {
+            "burn_time": 4000
+        },
+        "create_crystal_industry:layered_flammable_ice": {
+            "burn_time": 4000
+        },
+        "create_crystal_industry:small_flammable_ice_bricks": {
+            "burn_time": 4000
+        },
+        "create_crystal_industry:flammable_ice_stairs": {
+            "burn_time": 3000
+        },
+        "create_crystal_industry:flammable_ice_brick_stairs": {
+            "burn_time": 3000
+        },
+        "create_crystal_industry:cut_flammable_ice_stairs": {
+            "burn_time": 3000
+        },
+        "create_crystal_industry:small_flammable_ice_brick_stairs": {
+            "burn_time": 3000
+        },
+        "create_crystal_industry:flammable_ice_slab": {
+            "burn_time": 2000
+        },
+        "create_crystal_industry:flammable_ice_brick_slab": {
+            "burn_time": 2000
+        },
+        "create_crystal_industry:cut_flammable_ice_slab": {
+            "burn_time": 2000
+        },
+        "create_crystal_industry:small_flammable_ice_brick_slab": {
+            "burn_time": 2000
+        },
+        "create_crystal_industry:flammable_ice_wall": {
+            "burn_time": 2000
+        },
+        "create_crystal_industry:flammable_ice_brick_wall": {
+            "burn_time": 2000
+        },
+        "create_crystal_industry:cut_flammable_ice_wall": {
+            "burn_time": 2000
+        },
+        "create_crystal_industry:small_flammable_ice_brick_wall": {
+            "burn_time": 2000
+        },
+        "create_crystal_industry:flammable_ice_slurry_bottle": {
+            "burn_time": 400
+        },
+        "create_crystal_industry:flammable_sundae": {
+            "burn_time": 400
+        },
         "create_crystal_industry:flammable_ice_budding": {
             "burn_time": 4000
         },

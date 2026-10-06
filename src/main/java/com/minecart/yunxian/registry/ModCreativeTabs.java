@@ -56,6 +56,10 @@ public final class ModCreativeTabs {
                         output.accept(ModItems.RESONANCE_FILTER.get());
                         output.accept(ModItems.ECHO_SPYGLASS.get());
                         output.accept(ModItems.NIGHT_VISION_GOGGLES.get());
+                        // 可燃冰沙：桶与瓶。沙方块本身跟细雪一样没有物品形态，所以只陈列这两件
+                        // （它的正途是先注成瓶，再让机械手蘸岩浆膏压成圣代）
+                        output.accept(ModItems.FLAMMABLE_ICE_SLURRY_BUCKET.get());
+                        output.accept(ModItems.FLAMMABLE_ICE_SLURRY_BOTTLE.get());
                         // 电流浆桶：弧光石那条链的产物容器，同样是半成品，跟那条链一起先不上物品栏
                         // （流体、方块与桶都在注册表里，/give 能拿到；做完之后把这一行加回来即可）
 

@@ -5,6 +5,7 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModList;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
+import net.neoforged.neoforge.fluids.capability.wrappers.FluidBucketWrapper;
 
 public final class ModCapabilities {
     private ModCapabilities() {
@@ -52,6 +53,17 @@ public final class ModCapabilities {
                 ModBlockEntities.ARCLIGHT_BUDDING.get(),
                 (blockEntity, side) -> blockEntity.getEnergyCapability(side)
         );
+
+        // 可燃冰沙桶：手动补上流体能力。
+        // NeoForge 只给「恰好是 BucketItem 类」的物品自动挂（CapabilityHooks 里是精确相等），
+        // 而我们的桶必须是子类——要覆盖 emptyContents 去放方块而不是放流体。
+        // 少了这一行，桶照样能放方块、玩家不会觉得不对，但 Create 的注液器灌不进、管道也抽不出，
+        // 而且全程没有任何报错：典型的静默失效。
+        // （FluidBucketWrapper 内部用的是 instanceof，所以子类它认。）
+        event.registerItem(
+                Capabilities.FluidHandler.ITEM,
+                (stack, context) -> new FluidBucketWrapper(stack),
+                ModItems.FLAMMABLE_ICE_SLURRY_BUCKET.get());
 
         // ★ 软依赖门控：只有 Curios 已加载才触碰 Curios 类
         if (ModList.get().isLoaded("curios")) {

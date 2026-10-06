@@ -1,0 +1,6 @@
+{
+    "type": "item",
+    "id": "create_crystal_industry:flammable_ice_brick_stairs",
+    "cool_time": 3000,
+    "supercooled": true
+}

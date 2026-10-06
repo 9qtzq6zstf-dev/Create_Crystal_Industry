@@ -1,0 +1,6 @@
+{
+    "type": "item",
+    "id": "create_crystal_industry:flammable_ice",
+    "cool_time": 400,
+    "supercooled": true
+}

@@ -1,0 +1,6 @@
+{
+    "type": "item",
+    "id": "create_crystal_industry:flammable_ice_slurry_bottle",
+    "cool_time": 400,
+    "supercooled": true
+}

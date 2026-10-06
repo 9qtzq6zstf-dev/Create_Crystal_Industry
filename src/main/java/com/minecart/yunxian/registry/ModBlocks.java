@@ -3,6 +3,7 @@ package com.minecart.yunxian.registry;
 import com.minecart.yunxian.*;
 import com.minecart.yunxian.block.AcceleratorBlock;
 import com.minecart.yunxian.block.CrystalBatteryBlock;
+import com.minecart.yunxian.block.FlammableIceSlurryBlock;
 import com.minecart.yunxian.block.FlammableSundaeBlock;
 import com.minecart.yunxian.block.MechanicalAcceleratorBlock;
 import com.minecart.yunxian.block.MechanicalCleanerBlock;
@@ -234,6 +235,25 @@ public final class ModBlocks {
                     .noLootTable()
                     .liquid()
                     .sound(SoundType.EMPTY)));
+
+    /**
+     * 可燃冰沙方块：属性逐条照抄原版细雪，行为也整个继承它（踩陷、冻伤、皮革靴能走），
+     * 只有「空桶舀起来」那一处改成还我们自己的桶（见 {@link FlammableIceSlurryBlock}）。
+     * <p>
+     * <b>和细雪一样不给物品形态</b>——用 {@code BLOCKS.register} 而不是 {@code registerBlock}，
+     * 所以它进不了背包、也不上创造栏；想摆出来只能用桶倒。这和细雪块的处理是一致的。
+     * <p>
+     * 掉落表也不写：原版细雪就没有掉落表，挖掉什么都不掉（要拿只能舀）。
+     */
+    public static final DeferredBlock<FlammableIceSlurryBlock> FLAMMABLE_ICE_SLURRY =
+            BLOCKS.register("flammable_ice_slurry", () -> new FlammableIceSlurryBlock(
+                    BlockBehaviour.Properties.of()
+                            .mapColor(MapColor.SNOW)
+                            .strength(0.25F)
+                            .sound(SoundType.POWDER_SNOW)
+                            .dynamicShape()
+                            // 原版细雪这里传的是 Blocks::never，但那个方法是 private 的，抄不过来
+                            .isRedstoneConductor((state, level, pos) -> false)));
 
     //催生器
     public static final DeferredBlock<Block> ACCELERATOR = registerBlock("accelerator",

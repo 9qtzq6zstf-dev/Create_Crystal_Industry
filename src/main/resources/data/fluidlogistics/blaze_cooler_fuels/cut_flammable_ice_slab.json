@@ -1,0 +1,6 @@
+{
+    "type": "item",
+    "id": "create_crystal_industry:cut_flammable_ice_slab",
+    "cool_time": 2000,
+    "supercooled": true
+}

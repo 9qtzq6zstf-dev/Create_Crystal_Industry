@@ -1,0 +1,16 @@
+{
+    "type": "create:deploying",
+    "ingredients": [
+        {
+            "item": "create_crystal_industry:flammable_ice_slurry_bottle"
+        },
+        {
+            "item": "minecraft:magma_cream"
+        }
+    ],
+    "results": [
+        {
+            "id": "create_crystal_industry:flammable_sundae"
+        }
+    ]
+}

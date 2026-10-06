@@ -2,6 +2,7 @@ package com.minecart.yunxian.registry;
 
 import com.minecart.yunxian.Yunxian;
 import com.minecart.yunxian.fluid.CurrentSlurryFluid;
+import com.minecart.yunxian.fluid.NoBlockFluid;
 
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.material.Fluid;
@@ -78,6 +79,42 @@ public final class ModFluids {
                     .slopeFindDistance(2)
                     .levelDecreasePerBlock(2)
                     .tickRate(20);
+
+    // ==================== 可燃冰沙 ====================
+
+    /** 「可燃冰沙」的流体类型：比水稠一点，其余从简 */
+    public static final DeferredHolder<FluidType, FluidType> FLAMMABLE_ICE_SLURRY_TYPE =
+            FLUID_TYPES.register("flammable_ice_slurry", () -> new FluidType(FluidType.Properties.create()
+                    .density(1200)
+                    .viscosity(1500)));
+
+    /**
+     * 源（静止）可燃冰沙：配方、储罐、管道、注液器与桶引用的都是它。
+     * <p>
+     * 三份都用 {@link NoBlockFluid} 而不是 {@code BaseFlowingFluid}：这个流体<b>在世界里不存在</b>
+     * （没有方块形态、倒不出来），倒出来的是可燃冰沙<b>方块</b>——那条路由桶自己走，见
+     * {@code FlammableIceSlurryBucketItem}。
+     */
+    public static final DeferredHolder<Fluid, NoBlockFluid> FLAMMABLE_ICE_SLURRY =
+            FLUIDS.register("flammable_ice_slurry",
+                    () -> NoBlockFluid.createSource(ModFluids.FLAMMABLE_ICE_SLURRY_PROPERTIES));
+
+    /** 流动变体：存在只为了让储罐/管道的模型有第二张图可挑，世界里同样淌不出来 */
+    public static final DeferredHolder<Fluid, NoBlockFluid> FLOWING_FLAMMABLE_ICE_SLURRY =
+            FLUIDS.register("flowing_flammable_ice_slurry",
+                    () -> NoBlockFluid.createFlowing(ModFluids.FLAMMABLE_ICE_SLURRY_PROPERTIES));
+
+    /**
+     * 流体参数。**刻意不设 {@code .block(...)}**——那正是「没有流体方块」这个要求本身；
+     * 该字段本来就可空，{@link NoBlockFluid} 那几处 override 保证没有任何代码路径会去读它。
+     * <p>
+     * 但 {@code .bucket(...)} 必须设：{@code FluidType#getBucket} 是从这儿取的，而 Create 判断
+     * 「这个桶能不能装这种流体」正是问它（见 {@code FluidBucketWrapper}）。
+     */
+    private static final BaseFlowingFluid.Properties FLAMMABLE_ICE_SLURRY_PROPERTIES =
+            new BaseFlowingFluid.Properties(FLAMMABLE_ICE_SLURRY_TYPE, FLAMMABLE_ICE_SLURRY,
+                    FLOWING_FLAMMABLE_ICE_SLURRY)
+                    .bucket(ModItems.FLAMMABLE_ICE_SLURRY_BUCKET);
 
     private ModFluids() {
     }

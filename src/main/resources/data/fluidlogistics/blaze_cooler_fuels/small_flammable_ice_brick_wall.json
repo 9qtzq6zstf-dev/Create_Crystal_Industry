@@ -1,0 +1,6 @@
+{
+    "type": "item",
+    "id": "create_crystal_industry:small_flammable_ice_brick_wall",
+    "cool_time": 2000,
+    "supercooled": true
+}

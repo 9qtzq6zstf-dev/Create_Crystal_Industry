@@ -1,0 +1,15 @@
+{
+    "type": "create:mixing",
+    "heat_requirement": "none",
+    "ingredients": [
+        {
+            "item": "create_crystal_industry:flammable_ice"
+        }
+    ],
+    "results": [
+        {
+            "amount": 250,
+            "id": "create_crystal_industry:flammable_ice_slurry"
+        }
+    ]
+}

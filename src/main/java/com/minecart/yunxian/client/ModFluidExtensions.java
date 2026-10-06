@@ -32,6 +32,15 @@ public final class ModFluidExtensions {
     private static final ResourceLocation CURRENT_SLURRY_FLOW =
             ResourceLocation.fromNamespaceAndPath(Yunxian.MODID, "block/arclight/current_slurry/flow");
 
+    /**
+     * 可燃冰沙的流体贴图：<b>直接复用方块那一张</b>。
+     * <p>
+     * 它和方块本来就是同一种东西——世界里没有流体形态，这张图只会出现在储罐的液面与桶的图标上，
+     * 另画一张纯属多余。静态与流动两个槽位填同一个位置：这张图不动，淌起来也不会看出区别。
+     */
+    private static final ResourceLocation FLAMMABLE_ICE_SLURRY_TEXTURE =
+            ResourceLocation.fromNamespaceAndPath(Yunxian.MODID, "block/flammable_ice_slurry/block");
+
     private ModFluidExtensions() {
     }
 
@@ -48,5 +57,17 @@ public final class ModFluidExtensions {
                 return CURRENT_SLURRY_FLOW;
             }
         }, ModFluids.CURRENT_SLURRY_TYPE.get());
+
+        event.registerFluidType(new IClientFluidTypeExtensions() {
+            @Override
+            public ResourceLocation getStillTexture() {
+                return FLAMMABLE_ICE_SLURRY_TEXTURE;
+            }
+
+            @Override
+            public ResourceLocation getFlowingTexture() {
+                return FLAMMABLE_ICE_SLURRY_TEXTURE;
+            }
+        }, ModFluids.FLAMMABLE_ICE_SLURRY_TYPE.get());
     }
 }
