@@ -27,6 +27,8 @@ section at the top.
   and the Flammable Sundae hand the empty glass bottle back once burnt.
 - With other mods' reskins of the Blaze Burner, the whole Flammable Ice set drives them into their
   cooled state too.
+- The Flammable Ice Slurry fluid works as fuel as well: piped into a Blaze Burner with Straw, it
+  reaches superheated.
 
 ### Changed
 

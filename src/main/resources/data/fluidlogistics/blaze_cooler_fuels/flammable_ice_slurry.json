@@ -1,0 +1,7 @@
+{
+    "type": "fluid",
+    "id": "create_crystal_industry:flammable_ice_slurry",
+    "amount": 250,
+    "cool_time": 400,
+    "supercooled": true
+}

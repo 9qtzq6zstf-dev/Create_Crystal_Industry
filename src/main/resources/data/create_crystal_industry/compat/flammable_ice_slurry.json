@@ -1,0 +1,6 @@
+{
+    "fluid": "create_crystal_industry:flammable_ice_slurry",
+    "burnTime": 8,
+    "superHeat": true,
+    "amountConsumedPerTick": 5
+}

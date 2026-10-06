@@ -1,0 +1,6 @@
+{
+    "type": "item",
+    "id": "create_crystal_industry:flammable_ice_slurry_bucket",
+    "cool_time": 1600,
+    "supercooled": true
+}
