@@ -12,6 +12,42 @@ section at the top.
 
 ---
 
+## 1.0.6 · 2026-10-05 ~ 2026-10-06
+
+### Added
+
+- A Flammable Ice decoration set, 18 blocks in all: Flammable Ice Bricks, Slab, Stairs and Wall;
+  Brick Slab, Brick Stairs and Brick Wall; Flammable Ice Pillar; Cut Flammable Ice (with its own slab,
+  stairs and wall); Layered Flammable Ice; and Small Flammable Ice Bricks (with their own slab,
+  stairs and wall). The whole set is shelved in Create's Building Blocks tab, next to Create's own
+  palette blocks.
+  - Recipes follow Create's stone palette: the pattern blocks (cut, bricks, small bricks, layered,
+    pillar) come out of a **stonecutter**, the slab is 3 into 6, the stairs 6 into 4 and the wall
+    6 into 6, and two slabs combine back into one block.
+  - Stonecutting takes a "flammable ice stone type" tag holding everything in the set except slabs,
+    so **any shape can be cut into any other**. Slabs stay out of it: one block cuts into two of them
+    and two of them press back into a block, so letting them in would be a cheap universal
+    conversion.
+  - Layered Flammable Ice and the Flammable Ice Pillar use connected textures: neighbours merge into
+    one continuous surface.
+  - Stacking two Flammable Ice Slabs into a single block shows the two-slab side, so it no longer
+    reads as a plain Flammable Ice Block.
+- Flammable Sundae: a snack and an ornament in one. Sneak-use to place it and use to take it back;
+  drinking it leaves an empty bottle and grants Frozen and Fire Resistance; set down, it freezes the
+  water around it; and it can be lit like a candle.
+- The Flame Breath effect: after drinking a Flammable Sundae, sneak-use with an empty hand to breathe
+  a beam of fire that smelts the dropped items in its path (including ones riding belts and depots)
+  and blinds, slows and sets fire to the mobs it hits.
+
+### Changed
+
+- The Echo Spyglass lies flat on depots and belts instead of standing upright.
+
+### Fixed
+
+- On the JEI budding block page, fluid-burning budding blocks (Budding Ancient Debris) no longer
+  render as the empty-tank variant.
+
 ## 1.0.5 · 2026-10-03 ~ 2026-10-04
 
 ### Added
