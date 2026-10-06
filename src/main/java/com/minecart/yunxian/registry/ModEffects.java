@@ -2,7 +2,7 @@ package com.minecart.yunxian.registry;
 
 import com.minecart.yunxian.Yunxian;
 import com.minecart.yunxian.effect.ElectrifiedEffect;
-import com.minecart.yunxian.effect.FlammableGasEffect;
+import com.minecart.yunxian.effect.FlameBreathEffect;
 import com.minecart.yunxian.effect.FrozenEffect;
 
 import net.minecraft.core.registries.Registries;
@@ -12,7 +12,7 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
 /**
- * 本模组的状态效果：「感电」（{@code electrified}）、「冰封」（{@code frozen}）与「可燃气体」（{@code flammable_gas}）。
+ * 本模组的状态效果：「感电」（{@code electrified}）、「冰封」（{@code frozen}）与「火焰吐息」（{@code flame_breath}）。
  * <p>
  * 名字来自默认规则：{@code MobEffect#getDescriptionId()} 是
  * {@code effect.<命名空间>.<注册名>}，所以语言文件里的键是
@@ -39,13 +39,13 @@ public final class ModEffects {
             MOB_EFFECTS.register("frozen", FrozenEffect::new);
 
     /**
-     * 「可燃气体」：喝下可燃冰圣代后还能喷火的那一分钟。
+     * 「火焰吐息」：喝下可燃冰圣代后还能喷火的那一分钟。
      * <p>
      * 与「冰封」刻意的分开的：冰封是 10 秒的代价，喷火是 60 秒的正题，
-     * 各自调时长（见 {@link FlammableGasEffect}）。
+     * 各自调时长（见 {@link FlameBreathEffect}）。
      */
-    public static final DeferredHolder<MobEffect, FlammableGasEffect> FLAMMABLE_GAS =
-            MOB_EFFECTS.register("flammable_gas", FlammableGasEffect::new);
+    public static final DeferredHolder<MobEffect, FlameBreathEffect> FLAME_BREATH =
+            MOB_EFFECTS.register("flame_breath", FlameBreathEffect::new);
 
     private ModEffects() {
     }

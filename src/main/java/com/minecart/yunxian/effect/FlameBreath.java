@@ -27,13 +27,13 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 
 /**
- * 「火焰吐息」：喝过可燃冰圣代、身上还带着「可燃气体」（{@link ModEffects#FLAMMABLE_GAS}）时，
+ * 「火焰吐息」：喝过可燃冰圣代、身上还带着 {@link ModEffects#FLAME_BREATH} 这个效果时，
  * <b>按住潜行键</b>就朝正前方喷出一道火，射程 {@value #RANGE} 格。
  * <p>
  * <b>为什么是「潜行即喷」而不是右键</b>：潜行状态在服务端<b>本来就是同步过来的</b>
  * （{@code ServerboundPlayerInputPacket}），所以整件事在服务端自洽——不需要网络包、
  * 不需要客户端去拦输入、更不会像早先那样把潜行空手右键的方块交互盖掉。
- * 代价是「可燃气体」那一分钟里想单纯蹲一下也会喷火。
+ * 代价是那 60 秒里想单纯蹲一下也会喷火。
  * <p>
  * <b>这道火复刻 Create 鼓风机的<u>高炉</u>气流</b>（不是缠魂）：被喷到的掉落物走
  * {@link FanProcessing#applyProcessing}（原版熔炼配方，沙 → 玻璃这类），
@@ -152,7 +152,7 @@ public final class FlameBreath {
         if (!player.isShiftKeyDown() || player.isSpectator() || !player.isAlive()) {
             return;
         }
-        if (!player.hasEffect(ModEffects.FLAMMABLE_GAS)) {
+        if (!player.hasEffect(ModEffects.FLAME_BREATH)) {
             return;
         }
         breathe(player.serverLevel(), player);

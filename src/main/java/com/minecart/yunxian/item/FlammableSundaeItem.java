@@ -34,7 +34,7 @@ import com.minecart.yunxian.registry.ModEffects;
  * <ul>
  *   <li>「冰封」（{@link ModEffects#FROZEN}，10 秒）：满冻外观与冻伤共用同一个阈值，
  *       那笔冻伤由那边拦掉；</li>
- *   <li>「可燃气体」（{@link ModEffects#FLAMMABLE_GAS}，60 秒）：能喷火的许可证；</li>
+ *   <li>「火焰吐息」（{@link ModEffects#FLAME_BREATH}，60 秒）：能喷火的许可证；</li>
  *   <li>抗火（20 秒）：顶上那撮熔岩点缀下肚的代价。</li>
  * </ul>
  */
@@ -56,13 +56,13 @@ public class FlammableSundaeItem extends BlockItem {
     private static final int FIRE_RESISTANCE_TICKS = 400;
 
     /**
-     * 「可燃气体」的持续时间：60 秒。
+     * 「火焰吐息」的持续时间：60 秒。
      * <p>
      * 比冰封那 10 秒长得多，是刻意的：冰封是这一口下去的代价，能喷火才是这件玩具的正题。
-     * 两个时长从此各走各的（见 {@link ModEffects#FLAMMABLE_GAS}）——冻完的 50 秒里，
+     * 两个时长从此各走各的（见 {@link ModEffects#FLAME_BREATH}）——冻完的 50 秒里，
      * 玩家按住潜行键照样能喷火（见 {@link com.minecart.yunxian.effect.FlameBreath}）。
      */
-    private static final int FLAMMABLE_GAS_TICKS = 1200;
+    private static final int FLAME_BREATH_TICKS = 1200;
 
     public FlammableSundaeItem(Block block, Properties properties) {
         super(block, properties
@@ -76,7 +76,7 @@ public class FlammableSundaeItem extends BlockItem {
                         .usingConvertsTo(Items.GLASS_BOTTLE)
                         .effect(() -> new MobEffectInstance(ModEffects.FROZEN, FROST_DURATION_TICKS), 1.0F)
                         .effect(() -> new MobEffectInstance(MobEffects.FIRE_RESISTANCE, FIRE_RESISTANCE_TICKS), 1.0F)
-                        .effect(() -> new MobEffectInstance(ModEffects.FLAMMABLE_GAS, FLAMMABLE_GAS_TICKS), 1.0F)
+                        .effect(() -> new MobEffectInstance(ModEffects.FLAME_BREATH, FLAME_BREATH_TICKS), 1.0F)
                         .build()));
     }
 

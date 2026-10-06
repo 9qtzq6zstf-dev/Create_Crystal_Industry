@@ -73,7 +73,7 @@
     "fluid_type.create_crystal_industry.current_slurry": "Current Slurry",
     "effect.create_crystal_industry.electrified": "Electrified",
     "effect.create_crystal_industry.frozen": "Frozen",
-    "effect.create_crystal_industry.flammable_gas": "Flammable Gas",
+    "effect.create_crystal_industry.flame_breath": "Flame Breath",
     "death.attack.electricShock": "%1$s was electrocuted",
     "death.attack.electricShock.player": "%1$s was struck by lightning caused by %2$s",
     "item.create_crystal_industry.echo_spyglass": "Echo Spyglass",
