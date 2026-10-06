@@ -49,6 +49,22 @@ public final class ModTags {
             ResourceLocation.fromNamespaceAndPath(Yunxian.MODID, "fan_immune"));
 
     /**
+     * 可燃冰的「石材类型」标签（<b>物品</b>标签）：整套装饰方块里除台阶之外的每一件，
+     * 由数据生成从 {@link ModBlocks#FLAMMABLE_ICE_DECO} 派生（见 {@code ModItemTagsProvider}），
+     * 以后加变体不用动这里。数据包路径 {@code data/create_crystal_industry/tags/item/stone_types/flammable_ice.json}。
+     * <p>
+     * 可燃冰的切石配方一律拿它当原料，于是<b>任意一种形状都能切成任意另一种</b>。这是照 Create 的
+     * {@code create:stone_types/<石材>} 那一套做的：那边同样是「基础石 + 各图案方块及其楼梯、墙」，
+     * <b>唯独不收台阶</b>——一块石头能切出两个台阶，两个台阶又能回收成一个整块，
+     * 让台阶参与互切等于开了一个低廉的万能转换口。
+     * <p>
+     * 与 Create 的一处差别：我们的基础石台阶/墙是模组自己的方块，所以也收进来了；
+     * Create 那边基础石的台阶/墙属于原版、不归它管，才不在标签里。
+     */
+    public static final TagKey<Item> FLAMMABLE_ICE_STONE_TYPE = TagKey.create(Registries.ITEM,
+            ResourceLocation.fromNamespaceAndPath(Yunxian.MODID, "stone_types/flammable_ice"));
+
+    /**
      * 标记「全套穿上就免疫电击」的盔甲：原版锁链甲、原版下界合金甲，以及机械动力的下界合金潜水装备。
      * <p>
      * 与 {@link #FAN_IMMUNE} 的差别在<b>「任意一件」还是「四槽齐活」</b>：那个是任意一件即免疫，

@@ -6,6 +6,7 @@ import com.minecart.yunxian.Yunxian;
 import com.minecart.yunxian.battery.CrystalTier;
 import com.minecart.yunxian.budding.BuddingFamilies;
 import com.minecart.yunxian.budding.BuddingFamilies.RegisteredFamily;
+import com.minecart.yunxian.registry.ModBlocks;
 import com.minecart.yunxian.registry.ModTags;
 
 import net.minecraft.core.HolderLookup;
@@ -16,6 +17,7 @@ import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.SlabBlock;
 import net.neoforged.neoforge.common.data.ExistingFileHelper;
 import net.neoforged.neoforge.registries.DeferredBlock;
 import org.jetbrains.annotations.Nullable;
@@ -67,6 +69,15 @@ public class ModItemTagsProvider extends net.minecraft.data.tags.ItemTagsProvide
         copy(ModTags.BATTERY_CRYSTAL, ModTags.BATTERY_CRYSTAL_ITEM);
         // 可燃冰墙的 minecraft:walls：方块侧在 ModBlockTagsProvider 里生成，这里原样复制
         copy(BlockTags.WALLS, ItemTags.WALLS);
+
+        // 可燃冰的石材类型标签：整套装饰方块里除台阶外全部登记（判定规则与理由见
+        // ModTags#FLAMMABLE_ICE_STONE_TYPE）。直接遍历唯一清单派生，以后加变体不用动这里。
+        IntrinsicTagAppender<Item> stoneType = tag(ModTags.FLAMMABLE_ICE_STONE_TYPE);
+        for (DeferredBlock<? extends Block> block : ModBlocks.FLAMMABLE_ICE_DECO) {
+            if (!(block.get() instanceof SlabBlock)) {
+                stoneType.add(block.get().asItem());
+            }
+        }
     }
 
     private static void add(IntrinsicTagAppender<Item> tag, DeferredBlock<Block> block, boolean optional) {

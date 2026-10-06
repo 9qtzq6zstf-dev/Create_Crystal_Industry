@@ -1,6 +1,7 @@
 {
     "type": "minecraft:crafting_shaped",
     "category": "building",
+    "group": "flammable_ice_brick_slab",
     "pattern": [
         "###"
     ],

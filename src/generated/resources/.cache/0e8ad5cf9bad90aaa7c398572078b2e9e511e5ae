@@ -1,10 +1,11 @@
-// 1.21.1	2026-10-05T21:10:04.6421088	Tags for minecraft:item mod id create_crystal_industry
+// 1.21.1	2026-10-06T18:12:07.4917908	Tags for minecraft:item mod id create_crystal_industry
 6e3abb4e200de58ca91e4c78225d9b59b2add5dc data/create_crystal_industry/tags/item/battery_crystal.json
 35133e95f1c8fdd7a1c21afcc231fc0bffefb9a8 data/create_crystal_industry/tags/item/battery_crystal/extreme_capacity.json
 df944c9fec7233542a5e463a28e4a0233c3c5599 data/create_crystal_industry/tags/item/battery_crystal/high_capacity.json
 35133e95f1c8fdd7a1c21afcc231fc0bffefb9a8 data/create_crystal_industry/tags/item/battery_crystal/low_capacity.json
 e375981ddd70e65f5e3e139ec752e310ff0a8b27 data/create_crystal_industry/tags/item/battery_crystal/medium_capacity.json
+f9538fc13b915833276dd2da363b01376491eb95 data/create_crystal_industry/tags/item/stone_types/flammable_ice.json
 eef0cbd31e3a38c762ac262cc46f1c7d3838d7d3 data/c/tags/item/budding_blocks.json
 903f75b6802b53781541d172fb657900529df4d2 data/c/tags/item/buds.json
 61b6102becf6e29cc776cd2a71858d89bf8e414d data/c/tags/item/clusters.json
-ed93192d37516ff33cd51ef8f834b1ae0c5b781d data/minecraft/tags/item/walls.json
+4ec816fd94511f8672228e343f1b5490f8a965ef data/minecraft/tags/item/walls.json

@@ -1,6 +1,7 @@
 {
     "type": "minecraft:crafting_shaped",
     "category": "building",
+    "group": "cut_flammable_ice_stairs",
     "pattern": [
         "#  ",
         "## ",

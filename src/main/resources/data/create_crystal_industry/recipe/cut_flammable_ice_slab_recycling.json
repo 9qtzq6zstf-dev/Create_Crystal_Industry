@@ -1,0 +1,16 @@
+{
+    "type": "minecraft:crafting_shapeless",
+    "category": "building",
+    "ingredients": [
+        {
+            "item": "create_crystal_industry:cut_flammable_ice_slab"
+        },
+        {
+            "item": "create_crystal_industry:cut_flammable_ice_slab"
+        }
+    ],
+    "result": {
+        "id": "create_crystal_industry:cut_flammable_ice",
+        "count": 1
+    }
+}

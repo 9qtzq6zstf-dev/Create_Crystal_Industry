@@ -1,0 +1,18 @@
+{
+  "values": [
+    "create_crystal_industry:flammable_ice_block",
+    "create_crystal_industry:flammable_ice_stairs",
+    "create_crystal_industry:flammable_ice_wall",
+    "create_crystal_industry:cut_flammable_ice",
+    "create_crystal_industry:cut_flammable_ice_stairs",
+    "create_crystal_industry:cut_flammable_ice_wall",
+    "create_crystal_industry:flammable_ice_bricks",
+    "create_crystal_industry:flammable_ice_brick_stairs",
+    "create_crystal_industry:flammable_ice_brick_wall",
+    "create_crystal_industry:small_flammable_ice_bricks",
+    "create_crystal_industry:small_flammable_ice_brick_stairs",
+    "create_crystal_industry:small_flammable_ice_brick_wall",
+    "create_crystal_industry:layered_flammable_ice",
+    "create_crystal_industry:flammable_ice_pillar"
+  ]
+}

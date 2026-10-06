@@ -1,7 +1,7 @@
 {
     "type": "minecraft:stonecutting",
     "ingredient": {
-        "item": "create_crystal_industry:flammable_ice_block"
+        "tag": "create_crystal_industry:stone_types/flammable_ice"
     },
     "result": {
         "id": "create_crystal_industry:cut_flammable_ice",
