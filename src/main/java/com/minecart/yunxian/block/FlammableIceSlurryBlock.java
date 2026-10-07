@@ -50,12 +50,27 @@ public class FlammableIceSlurryBlock extends PowderSnowBlock {
      * 先照常走一遍 {@code super.entityInside}——陷进去的手感、雪花粒子、着火时把方块烧掉这些
      * 照样要，那是方块本身的性格，与"给什么状态效果"无关。
      * <p>
-     * <b>但立刻把 {@code isInPowderSnow} 收回来。</b>原版那一行是细雪冻人的全部入口：
-     * {@code LivingEntity#aiStep} 见它就把冻结值每 tick 往上顶，一路顶到满冻线，
-     * 屏幕霜花、冰心、发抖、每 40 tick 那点冻伤全跟着来。这个方块<b>不是细雪</b>，
-     * 标志立着就是撒谎；而且立着的话 {@code FrozenEffect#onIncomingDamage} 里那条
-     * 「真踩在细雪里就不豁免冻伤」会把「灼寒」自己那份冻伤也放行，等于白给。
-     * 收回之后冻结值只能由「灼寒」那份效果来顶，账目干净。
+     * <b>但细雪那两处「雪把火压灭」要还回去——这个方块不是雪。</b>
+     * <ul>
+     *   <li><b>{@code isInPowderSnow}</b>：原版那一行是细雪冻人的全部入口，
+     *       {@code LivingEntity#aiStep} 见它就把冻结值每 tick 往上顶，一路顶到满冻线，
+     *       屏幕霜花、冰心、发抖、每 40 tick 那点冻伤全跟着来。标志立着就是撒谎；
+     *       而且立着的话 {@code FrozenEffect#onIncomingDamage} 里那条「真踩在细雪里就不豁免冻伤」
+     *       会把「灼寒」自己那份冻伤也放行，等于白给。收回之后冻结值只能由「灼寒」那份效果来顶。
+     *       它同时还是「雪能灭火」那个判据：{@code Entity#move} 末尾里
+     *       {@code isOnFire() && isInPowderSnow} 就 {@code setRemainingFireTicks(-免疫期)}。</li>
+     *   <li><b>{@code setSharedFlagOnFire(false)}</b>：那是「雪把身上的火压灭」的外观，清的是同步给客户端
+     *       那个着火标志——人站在里面会看见自己身上的火没了。这里把它摆回去。
+     *       <b>摆回去的值不能只按 {@code remainingFireTicks} 算</b>：这个标志代表的是
+     *       「该不该渲染成在烧」，而它有两个来源——真的在烧，以及身上的「灼寒」要的那层火
+     *       （见 {@code ScorchingColdEffect}，那颗效果刻意不点真火、只立这个标志）。
+     *       只按前者还，就等于把「灼寒」刚立起来的火又抹掉，站进去照样看不见火。
+     *       <b>顺序上必须放在这一处</b>：{@code Entity#baseTick} 每 tick 先把标志按
+     *       {@code remainingFireTicks} 重算一遍，而 {@code entityInside} 跑在它之后
+     *       （{@code Entity#move} 里的 {@code tryCheckInsideBlocks}，{@code move} 又在
+     *       {@code aiStep} 里、即 {@code baseTick} 之后），也就是这个 tick 里最后一个写它的地方
+     *       ——所以只要这里算对，打包发给客户端的就是对的。</li>
+     * </ul>
      */
     @Override
     protected void entityInside(BlockState state, Level level, BlockPos pos, Entity entity) {
@@ -63,9 +78,15 @@ public class FlammableIceSlurryBlock extends PowderSnowBlock {
         if (!(entity instanceof LivingEntity living)) {
             return;
         }
+
         living.setIsInPowderSnow(false);
 
         if (!level.isClientSide) {
+            // 「还回去」要把两个来源都算上，见类注释：只按 remainingFireTicks 还，
+            // 就是把「灼寒」那层火也一起抹了
+            living.setSharedFlagOnFire(living.getRemainingFireTicks() > 0
+                    || living.hasEffect(ModEffects.SCORCHING_COLD));
+
             // 每 tick 续一次；LivingEntity#addEffect 对已有的同类效果只是把时长抬回去，
             // 不会重复播"获得效果"那一套
             living.addEffect(new MobEffectInstance(ModEffects.SCORCHING_COLD, EFFECT_TICKS));
