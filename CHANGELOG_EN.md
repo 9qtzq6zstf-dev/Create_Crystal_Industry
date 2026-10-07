@@ -12,7 +12,7 @@ section at the top.
 
 ---
 
-## 1.0.7 · 2026-10-06
+## 1.0.7 · 2026-10-06 ~ 2026-10-07
 
 ### Added
 
@@ -50,6 +50,13 @@ section at the top.
   face it points at is unaffected by redstone.
 - The Flammable Ice building blocks are shelved in this mod's own creative tab as well, not only in
   Create's Building Blocks tab.
+- A new block, the Smart Temperature Chamber: place it directly beneath a Basin, feed it Flammable
+  Ice Slurry, and that Basin **ignores its heat requirement and just runs** — whether the recipe asks
+  for heated, superheated, or a cooled state added by another mod. It carries its own 1000 mB tank
+  that pipes and buckets can fill, and the Engineer's Goggles read the level out.
+- Adjacent Smart Temperature Chambers share their fuel. A connected row is one larger tank: the
+  capacity is the sum of the parts, a full burn still takes exactly as long as a lone chamber, and a
+  single pipe into any one of them lights up the whole row.
 
 ### Changed
 
