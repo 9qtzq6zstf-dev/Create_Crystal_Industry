@@ -35,6 +35,8 @@ section at the top.
   you shiver as before, but flames cling to you, costing half a heart every 20 ticks. The Flammable
   Ice Slurry Bottle and the Flammable Sundae grant it now instead of Frozen, and so does stepping
   into Flammable Ice Slurry, which no longer freezes you the powder-snow way.
+- Items dropped into Flammable Ice Slurry catch fire and keep burning, and are gone after five
+  seconds of it, the same way fire treats them. Netherite-tier items cannot be lit at all.
 - Flame Breath now keeps embers rising off you for its whole minute, and the jet it spits throws off
   sparks of its own.
 - In creative, middle-clicking a Flammable Ice Slurry block now gives you the Slurry Bucket. The

@@ -7,7 +7,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.UseAnim;
 
 /**
- * 可燃冰沙瓶：一瓶 250 mB 的可燃冰沙，喝下去给 10 秒冰封并留下空瓶。
+ * 可燃冰沙瓶：一瓶 250 mB 的可燃冰沙，喝下去给 10 秒「灼寒」并留下空瓶。
  * <p>
  * 除了饮用姿势，它没有别的行为——食物那部分全在 {@code Item.Properties#food(...)} 里
  * （见 {@code ModItems#FLAMMABLE_ICE_SLURRY_BOTTLE}），喝空留瓶由原版
