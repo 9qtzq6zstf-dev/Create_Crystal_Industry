@@ -76,6 +76,7 @@
     "effect.create_crystal_industry.frozen": "冰封",
     "effect.create_crystal_industry.scorching_cold": "灼寒",
     "effect.create_crystal_industry.flame_breath": "火焰吐息",
+    "effect.create_crystal_industry.frost_walker": "冰霜行者",
     "death.attack.electricShock": "%1$s死于电刑",
     "death.attack.electricShock.player": "%1$s被%2$s造成的闪电劈死了",
     "item.create_crystal_industry.echo_spyglass": "回响望远镜",
@@ -235,6 +236,11 @@
     "create_crystal_industry.ponder.smart_drill_silk_touch.text_1": "母岩是一个特例：普通钻头只会将其打碎，无法采集方块本身。",
     "create_crystal_industry.ponder.smart_drill_silk_touch.text_2": "精准采集模式下，智能钻头能完整采下母岩方块本身。",
 
+    "create_crystal_industry.ponder.smart_drill_redstone.header": "受红石控制",
+    "create_crystal_industry.ponder.smart_drill_redstone.text_1": "通入红石信号会锁住智能钻头：停止旋转，也停止采集，前方的方块一动不动。",
+    "create_crystal_industry.ponder.smart_drill_redstone.text_2": "撤掉信号，钻头立刻从原来的进度接着挖。",
+    "create_crystal_industry.ponder.smart_drill_redstone.text_3": "唯独它正对的那一面是例外：摆在正前方的红石信号不会锁住它，钻头照挖不误。",
+
     "create_crystal_industry.ponder.cleaner_airflow.header": "气流与收集",
     "create_crystal_industry.ponder.cleaner_airflow.text_1": "动力吸尘器使用与鼓风机相同的气流。",
     "create_crystal_industry.ponder.cleaner_airflow.text_2": "落入气流范围或躺在它前方的物品，都会被吸入并存入自带的库存。",
@@ -245,8 +251,8 @@
     "create_crystal_industry.ponder.cleaner_container.text_3": "吹气模式下，库存中的物品会被送回前方的容器。",
 
     "create_crystal_industry.ponder.cleaner_config.header": "配置吸尘器",
-    "create_crystal_industry.ponder.cleaner_config.text_1": "吹气或吸气、过滤条件与传输数量，都通过它的界面与侧面配置槽设置。",
-    "create_crystal_industry.ponder.cleaner_config.text_2": "侧面的配置槽可以翻转气流方向，物品的流向随之改变。",
+    "create_crystal_industry.ponder.cleaner_config.text_1": "过滤条件与传输数量由侧面的配置槽设置。",
+    "create_crystal_industry.ponder.cleaner_config.text_2": "气流方向则在吸尘器的界面里切换，物品的流向随之改变。",
 
     "create_crystal_industry.ponder.resonance_table.header": "共振台",
     "create_crystal_industry.ponder.resonance_table.text_1": "共振台只能容纳一种物品。",

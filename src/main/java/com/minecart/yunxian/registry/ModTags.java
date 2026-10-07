@@ -44,6 +44,27 @@ public final class ModTags {
     public static final TagKey<Item> CLUSTERS_ITEM = TagKey.create(Registries.ITEM,
             ResourceLocation.fromNamespaceAndPath("c", "clusters"));
 
+    /**
+     * 通用桶标签 c:buckets（<b>物品</b>标签，NeoForge 通用标签的一支）。
+     * <p>
+     * 别的模组按「这是不是一只桶」筛物品时读的就是它（Create 自己的蜂蜜桶、巧克力桶也在里面）。
+     * 可燃冰沙桶虽然装的是方块、不是流体（见 {@code ModItems#FLAMMABLE_ICE_SLURRY_BUCKET}），
+     * 但它终归是「用桶舀起来、倒出去」的一件容器，语义上归这一档。
+     */
+    public static final TagKey<Item> BUCKETS = TagKey.create(Registries.ITEM,
+            ResourceLocation.fromNamespaceAndPath("c", "buckets"));
+
+    /**
+     * 机械动力的「可移动的空碰撞体」标签 {@code create:movable_empty_collider}（<b>方块</b>标签）。
+     * <p>
+     * 装的是细雪、蜘蛛网、藤蔓、绊线这类「看着空心、却该被动态结构一起带走」的方块——
+     * Create 的 {@code BlockMovementChecksImpl#isMovementNecessaryFallback} 拿它当判据：
+     * 碰撞箱为空的方块默认<b>不必</b>参与移动，进了这个标签就反过来。
+     * 可燃冰沙方块与细雪同族（无碰撞、无物品形态），自然也该进。
+     */
+    public static final TagKey<Block> MOVABLE_EMPTY_COLLIDER = TagKey.create(Registries.BLOCK,
+            ResourceLocation.fromNamespaceAndPath("create", "movable_empty_collider"));
+
     // 新增：标记"免疫鼓风机/喷头风力"的盔甲
     public static final TagKey<Item> FAN_IMMUNE = TagKey.create(Registries.ITEM,
             ResourceLocation.fromNamespaceAndPath(Yunxian.MODID, "fan_immune"));

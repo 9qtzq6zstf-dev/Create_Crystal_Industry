@@ -41,6 +41,14 @@ public final class ModItems {
     public static final int ICE_SCORCHING_COLD_TICKS = 200;
 
     /**
+     * 喝一口「冰霜行者」持续多久：同样 10 秒。
+     * <p>
+     * 刻意与灼寒同长：这一口下去，冻的是水（能踩着冰过去），烧的是人（灼寒那笔代价），
+     * 两件事一起开始、一起结束。想单独调就动这一个数，可燃冰圣代那边有各自的一份。
+     */
+    public static final int ICE_FROST_WALKER_TICKS = 200;
+
+    /**
      * 弧光石：弧光石母岩的晶簇掉落物，也是冲压出电流浆的原料。
      * 它<b>只有物品</b>，没有对应的装饰方块（与可燃冰不同）。
      */
@@ -75,7 +83,8 @@ public final class ModItems {
     /**
      * 可燃冰沙瓶：玻璃瓶注 250 mB 可燃冰沙得来（{@code create:filling}），也能倒回去
      * （{@code create:emptying}）。能喝，喝下去给 {@value #ICE_SCORCHING_COLD_TICKS} tick 的「灼寒」
-     * （冻着，同时烧着）并留下空瓶。
+     * （冻着，同时烧着）与 {@value #ICE_FROST_WALKER_TICKS} tick 的「冰霜行者」（脚下水面结冰），
+     * 并留下空瓶。
      * <p>
      * 它同时也是件燃料（见燃料数据映射），{@code craftRemainder(玻璃瓶)} 就是为这个准备的：
      * Create 的烈焰人（以及照着它做的两种冷却器）在烧掉燃料时会把"剩下的容器"还给玩家，
@@ -94,6 +103,7 @@ public final class ModItems {
                                     .alwaysEdible()
                                     .usingConvertsTo(Items.GLASS_BOTTLE)
                                     .effect(() -> new MobEffectInstance(ModEffects.SCORCHING_COLD, ICE_SCORCHING_COLD_TICKS), 1.0F)
+                                    .effect(() -> new MobEffectInstance(ModEffects.FROST_WALKER, ICE_FROST_WALKER_TICKS), 1.0F)
                                     .build())));
 
     public static final DeferredItem<EchoSpyglassItem> ECHO_SPYGLASS =

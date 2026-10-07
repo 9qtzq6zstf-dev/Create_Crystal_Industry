@@ -52,13 +52,15 @@ public class AllYunxianPonderScenes {
                 .addStoryBoard("accelerator/mechanical", CrystalScenes::mechanicalAccelerator,
                         AllYunxianPonderTags.ACCELERATORS);
 
-        // 4) 智能钻头：速度 / 切模式 / 精准采集母岩
+        // 4) 智能钻头：速度 / 切模式 / 精准采集母岩 / 受红石控制
         blocks.forComponents(ModBlocks.SMART_DRILL.get())
                 .addStoryBoard("smart_drill/smart_drill", SmartDrillScenes::smartDrillSpeed,
                         AllYunxianPonderTags.MACHINES)
                 .addStoryBoard("smart_drill/smart_drill", SmartDrillScenes::smartDrillModes,
                         AllYunxianPonderTags.MACHINES)
                 .addStoryBoard("smart_drill/smart_drill", SmartDrillScenes::smartDrillSilkTouch,
+                        AllYunxianPonderTags.MACHINES)
+                .addStoryBoard("smart_drill/smart_drill", SmartDrillScenes::smartDrillRedstone,
                         AllYunxianPonderTags.MACHINES);
 
         // 5) 动力吸尘器：气流与收集 / 前方容器 / 配置

@@ -7,6 +7,7 @@ import com.minecart.yunxian.battery.CrystalTier;
 import com.minecart.yunxian.budding.BuddingFamilies;
 import com.minecart.yunxian.budding.BuddingFamilies.RegisteredFamily;
 import com.minecart.yunxian.registry.ModBlocks;
+import com.minecart.yunxian.registry.ModItems;
 import com.minecart.yunxian.registry.ModTags;
 
 import net.minecraft.core.HolderLookup;
@@ -69,6 +70,9 @@ public class ModItemTagsProvider extends net.minecraft.data.tags.ItemTagsProvide
         copy(ModTags.BATTERY_CRYSTAL, ModTags.BATTERY_CRYSTAL_ITEM);
         // 可燃冰墙的 minecraft:walls：方块侧在 ModBlockTagsProvider 里生成，这里原样复制
         copy(BlockTags.WALLS, ItemTags.WALLS);
+
+        // 通用桶标签 c:buckets：别的模组按「这是不是桶」筛物品时读它（见 ModTags#BUCKETS）
+        tag(ModTags.BUCKETS).add(ModItems.FLAMMABLE_ICE_SLURRY_BUCKET.get());
 
         // 可燃冰的石材类型标签：整套装饰方块里除台阶外全部登记（判定规则与理由见
         // ModTags#FLAMMABLE_ICE_STONE_TYPE）。直接遍历唯一清单派生，以后加变体不用动这里。

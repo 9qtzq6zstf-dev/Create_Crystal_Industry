@@ -1,0 +1,20 @@
+{
+  "type": "create:crushing",
+  "ingredients": [
+    {
+      "item": "create_crystal_industry:lapis_cluster"
+    }
+  ],
+  "processing_time": 250,
+  "results": [
+    {
+      "count": 6,
+      "id": "minecraft:lapis_lazuli"
+    },
+    {
+      "chance": 0.5,
+      "count": 7,
+      "id": "minecraft:lapis_lazuli"
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "type": "create:crushing",
+  "ingredients": [
+    {
+      "item": "create_crystal_industry:raw_zinc_cluster"
+    }
+  ],
+  "processing_time": 250,
+  "results": [
+    {
+      "count": 3,
+      "id": "create:raw_zinc"
+    },
+    {
+      "chance": 0.5,
+      "count": 4,
+      "id": "create:raw_zinc"
+    }
+  ]
+}

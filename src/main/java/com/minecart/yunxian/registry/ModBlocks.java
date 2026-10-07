@@ -149,9 +149,10 @@ public final class ModBlocks {
     /**
      * 可燃冰装饰套件的<b>唯一清单</b>，顺序就是创造栏里的陈列顺序。
      * <p>
-     * 唯一读它的是 {@link ModCreativeTabs#addDecoToCreateTabs}——整套装饰方块陈列在机械动力的
-     * 「建筑方块」页，本模组自己的标签页里不放，所以这里不挂在任何家族上。
-     * <b>以后再加变体只改这一处</b>：在上面按同样写法注册方块，再到这份清单里补一行。
+     * 读它的是 {@link ModCreativeTabs} 的两处：{@code addDecoToCreateTabs} 把整套装饰方块送进
+     * 机械动力的「建筑方块」页，{@code YUNXIAN_TAB} 再把同一批方块在自己的页里陈列一份，
+     * 所以这里不挂在任何家族上。<b>以后再加变体只改这一处</b>：在上面按同样写法注册方块，
+     * 再到这份清单里补一行（两处陈列会自动跟着变）。
      * <p>
      * 排列规矩：<b>先按材质分组，每组内部是「整块 + 台阶 + 楼梯 + 墙」</b>。组的先后照
      * Create 调色板里那一套（{@code PaletteBlockPattern.VANILLA_RANGE}：切制 → 砖 → 小砖 → 层叠 → 柱），

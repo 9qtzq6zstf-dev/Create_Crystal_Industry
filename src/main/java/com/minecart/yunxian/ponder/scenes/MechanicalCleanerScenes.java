@@ -5,6 +5,7 @@ import com.minecart.yunxian.blockentity.MechanicalCleanerBlockEntity;
 import com.minecart.yunxian.budding.BuddingFamilies;
 import com.simibubi.create.foundation.ponder.CreateSceneBuilder;
 
+import net.createmod.catnip.math.Pointing;
 import net.createmod.ponder.api.element.ElementLink;
 import net.createmod.ponder.api.element.EntityElement;
 import net.createmod.ponder.api.scene.SceneBuilder;
@@ -144,7 +145,10 @@ public class MechanicalCleanerScenes {
 
     /*
      * ============ 3) 配置项在哪 ============
-     * 演出：滑块与侧槽各高亮一次，再翻转一次气流方向让物品流向跟着翻 —— 说明配置是即时生效的。
+     * 演出：侧槽高亮一次（过滤与数量），再给一个打开界面的手势并翻转气流方向，
+     * 让物品流向跟着翻 —— 说明配置是即时生效的。
+     * 注意方向不在侧槽上：侧槽只管过滤与数量，吹/吸由界面里那个按钮切换（见
+     * MechanicalCleanerMenu.DIRECTION_BUTTON_ID）。
      */
     public static void cleanerConfig(SceneBuilder builder, SceneBuildingUtil util) {
         CreateSceneBuilder scene = new CreateSceneBuilder(builder);
@@ -165,18 +169,21 @@ public class MechanicalCleanerScenes {
 
         scene.overlay().showText(95)
                 .attachKeyFrame()
-                .text("Blowing or sucking, filters and transfer amounts are all configured through its interface and the side slot.")
+                .text("Filters and transfer amounts are set on its side slot.")
                 .placeNearTarget()
                 .pointAt(util.vector().centerOf(cleaner));
         scene.overlay().showCenteredScrollInput(cleaner, Direction.WEST, 80);
         scene.idle(105);
 
+        // 气流方向不在侧槽上：给一个打开界面的手势，方向是在那里面切的
         scene.overlay().showText(95)
                 .attachKeyFrame()
-                .text("The side slot reverses the airstream, and the Cleaner starts moving items the other way.")
+                .text("The airflow direction is switched in its interface, and the Cleaner starts moving items the other way.")
                 .placeNearTarget()
-                .pointAt(util.vector().centerOf(2, 1, 2));
-        scene.idle(15);
+                .pointAt(util.vector().centerOf(cleaner));
+        scene.overlay().showControls(util.vector().centerOf(cleaner), Pointing.DOWN, 50)
+                .rightClick();
+        scene.idle(65);
 
         // 吸气：物品被吸走
         pullFromContainer(scene);
@@ -185,7 +192,7 @@ public class MechanicalCleanerScenes {
         // 吹气：物品被送回
         scene.world().modifyBlockEntityNBT(util.select().position(cleaner), MechanicalCleanerBlockEntity.class,
                 nbt -> nbt.putInt("Direction", MechanicalCleanerFilterBehaviour.RotationDirection.NORMAL.ordinal()));
-        scene.effects().indicateRedstone(cleaner);
+        scene.effects().indicateSuccess(cleaner);
         scene.idle(10);
         pushToContainer(scene);
         scene.idle(50);

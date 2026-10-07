@@ -60,6 +60,11 @@ public final class ModCreativeTabs {
                         // （它的正途是先注成瓶，再让机械手蘸岩浆膏压成圣代）
                         output.accept(ModItems.FLAMMABLE_ICE_SLURRY_BUCKET.get());
                         output.accept(ModItems.FLAMMABLE_ICE_SLURRY_BOTTLE.get());
+                        // 可燃冰装饰套件：同一批方块也摆在机械动力的「建筑方块」页（见
+                        // addDecoToCreateTabs），这里复制一份回来，这样在本模组自己的页里也能找齐
+                        for (DeferredBlock<? extends Block> block : ModBlocks.FLAMMABLE_ICE_DECO) {
+                            output.accept(block.get());
+                        }
                         // 电流浆桶：弧光石那条链的产物容器，同样是半成品，跟那条链一起先不上物品栏
                         // （流体、方块与桶都在注册表里，/give 能拿到；做完之后把这一行加回来即可）
 
@@ -85,8 +90,9 @@ public final class ModCreativeTabs {
      * 把可燃冰装饰套件也放进机械动力的「建筑方块」标签页（{@code create:palettes}）。
      * <p>
      * 这套方块从命名到规格都是照 Create 的石材调色板做的（切制 / 层叠 / 小砖块 / 柱），
-     * 摆在那一页跟 Create 自己的同类方块挨着更好找。<b>全套只放这里，本模组自己的标签页里不放</b>
-     * （那里留的是母岩家族与可燃冰、可燃冰圣代那两件物品）——建材集中在一页找起来才不散。
+     * 摆在那一页跟 Create 自己的同类方块挨着更好找。本模组自己的标签页里同样陈列了一套
+     * （见 {@link #YUNXIAN_TAB} 的 displayItems）——两边是同一批方块的复制，
+     * 想跟 Create 的建材放一起就去那一页，想在本模组自己的页里找齐也找得到。
      * <p>
      * 清单读 {@link ModBlocks#FLAMMABLE_ICE_DECO}。{@code accept} 对重复条目会当场抛
      * {@code IllegalArgumentException}（崩在开创造背包那一步），所以先问一遍标签页里有没有；

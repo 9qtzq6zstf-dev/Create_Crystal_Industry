@@ -73,6 +73,9 @@ public class ModBlockTagsProvider extends BlockTagsProvider {
         // 可燃冰沙方块走细雪那一档：用锹挖最快（原版 powder_snow 也在 mineable/shovel 里）。
         // 它没有物品形态、也没有掉落表，所以这个标签只影响挖掘速度，不影响掉落
         tag(BlockTags.MINEABLE_WITH_SHOVEL).add(ModBlocks.FLAMMABLE_ICE_SLURRY.get());
+        // create:movable_empty_collider —— 细雪、蜘蛛网这类「碰撞箱为空却要被动态结构带走」的方块。
+        // 可燃冰沙与细雪同族（无碰撞），不进这个标签的话，装在动态结构上会当场被丢下、只剩空气
+        tag(ModTags.MOVABLE_EMPTY_COLLIDER).add(ModBlocks.FLAMMABLE_ICE_SLURRY.get());
         // 挖掘等级：只有指定了等级的家族才登记（荧石与可燃冰不设等级）
         IntrinsicTagAppender<Block> needsStone = tag(BlockTags.NEEDS_STONE_TOOL);
         // 水晶电池底子取的是铜块属性（requiresCorrectToolForDrops），

@@ -3,6 +3,7 @@ package com.minecart.yunxian.registry;
 import com.minecart.yunxian.Yunxian;
 import com.minecart.yunxian.effect.ElectrifiedEffect;
 import com.minecart.yunxian.effect.FlameBreathEffect;
+import com.minecart.yunxian.effect.FrostWalkerEffect;
 import com.minecart.yunxian.effect.FrozenEffect;
 import com.minecart.yunxian.effect.ScorchingColdEffect;
 
@@ -14,7 +15,8 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 
 /**
  * 本模组的状态效果：「感电」（{@code electrified}）、「冰封」（{@code frozen}）、
- * 「灼寒」（{@code scorching_cold}）与「火焰吐息」（{@code flame_breath}）。
+ * 「灼寒」（{@code scorching_cold}）、「火焰吐息」（{@code flame_breath}）与
+ * 「冰霜行者」（{@code frost_walker}）。
  * <p>
  * 名字来自默认规则：{@code MobEffect#getDescriptionId()} 是
  * {@code effect.<命名空间>.<注册名>}，所以语言文件里的键是
@@ -61,6 +63,16 @@ public final class ModEffects {
      */
     public static final DeferredHolder<MobEffect, FlameBreathEffect> FLAME_BREATH =
             MOB_EFFECTS.register("flame_breath", FlameBreathEffect::new);
+
+    /**
+     * 「冰霜行者」：脚下这片水面被踩成冰，可燃冰沙瓶与可燃冰圣代都发它。
+     * <p>
+     * 与「冰封 / 灼寒」是两回事：那两颗冻的是<b>人</b>（顶实体的冻结值，见 {@link FrozenEffect}），
+     * 这颗冻的是<b>水</b>——人身上不挂霜花，只是走过的地方留下一条冰路。
+     * 复刻原版附魔那套行为的全部理由见 {@link FrostWalkerEffect}。
+     */
+    public static final DeferredHolder<MobEffect, FrostWalkerEffect> FROST_WALKER =
+            MOB_EFFECTS.register("frost_walker", FrostWalkerEffect::new);
 
     private ModEffects() {
     }

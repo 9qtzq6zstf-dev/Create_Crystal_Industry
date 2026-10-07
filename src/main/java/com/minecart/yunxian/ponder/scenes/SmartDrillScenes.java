@@ -19,7 +19,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * 智能钻头的三条分镜：速度、切换模式、精准采集母岩。三条共用同一张蓝图
+ * 智能钻头的四条分镜：速度、切换模式、精准采集母岩、受红石控制。四条共用同一张蓝图
  * {@code smart_drill/smart_drill.nbt}（5×5×5）：
  * <ul>
  *   <li>(1,1,2) 智能钻头（朝北），背面 (1,1,3) 链式传动箱</li>
@@ -27,8 +27,10 @@ import net.minecraft.world.phys.Vec3;
  *   <li>(1,0,3)/(2,0,3)/(3,0,3) 底层取力回路，随基座层 (layer 0) 显示</li>
  *   <li>演示位（空气格）(1,1,1)/(3,1,1) 由脚本放置方块</li>
  * </ul>
- * 三条分镜讲同一台机器，靠不同的演示物（石头 / 母岩）与镜头错开构图。
+ * 四条分镜讲同一台机器，靠不同的演示物（石头 / 母岩 / 红石块）与镜头错开构图。
  * 挖掘、模式切换、掉落一律脚本演绎；碎裂用 destroyBlock + 一簇 BLOCK 粒子代替裂纹动画。
+ * 红石那一条额外摆两块红石块演示「锁」与「前方例外」，红石锁本身由
+ * {@code toggleRedstonePower} 直接翻转方块自己的 {@code POWERED}（与 Create 的思索同款写法）。
  */
 public class SmartDrillScenes {
 
@@ -214,7 +216,101 @@ public class SmartDrillScenes {
         scene.idle(100);
     }
 
+    /*
+     * ============ 4) 受红石控制，但正前方例外 ============
+     * 演出：头顶摆一块红石块 → 钻头停转，前方石头纹丝不动；撤掉后立刻接着挖。
+     * 再把红石块摆到它正对的那一面 —— 那是唯一「不听红石」的方向，钻头照挖不误。
+     */
+    public static void smartDrillRedstone(SceneBuilder builder, SceneBuildingUtil util) {
+        CreateSceneBuilder scene = new CreateSceneBuilder(builder);
+        scene.title("smart_drill_redstone", "Redstone Control");
+        scene.configureBasePlate(0, 0, 5);
+        scene.world().showSection(util.select().layer(0), Direction.UP);
+        scene.idle(5);
+
+        BlockPos smart = util.grid().at(1, 1, 2);
+        BlockPos vanilla = util.grid().at(3, 1, 2);
+        BlockPos smartBack = util.grid().at(1, 1, 3);
+        BlockPos vanillaBack = util.grid().at(3, 1, 3);
+        BlockPos cog = util.grid().at(3, 1, 4);
+        BlockPos largeCog = util.grid().at(2, 2, 4);
+        BlockPos spotSmart = util.grid().at(1, 1, 1);     // 正前方：钻头采的那一格
+        BlockPos topSide = util.grid().at(1, 2, 2);       // 头顶：拿它演示「信号锁住机器」
+
+        // 头顶那一格要一并显示出来：ponder 只渲染「已被 showSection 覆盖」的格子，
+        // 没显示过的空位里 setBlock 放下的方块根本不会画出来（红石块会像没放一样）
+        scene.world().showSection(util.select().layer(1).add(util.select().position(topSide)), Direction.DOWN);
+        scene.idle(4);
+        scene.world().showSection(util.select().position(largeCog), Direction.DOWN);
+        scene.idle(10);
+        powerUp(scene, util, largeCog, cog, smartBack, vanillaBack, smart, vanilla);
+        scene.idle(10);
+
+        // 头顶落下一块红石块：钻头停转
+        scene.world().setBlock(topSide, Blocks.REDSTONE_BLOCK.defaultBlockState(), false);
+        setLocked(scene, util, smart, true);
+        scene.effects().indicateRedstone(topSide);
+        scene.idle(5);
+
+        scene.overlay().showText(80)
+                .attachKeyFrame()
+                .text("Redstone Power locks the Smart Drill: it stops spinning and stops harvesting, and the block in front of it is left untouched.")
+                .placeNearTarget()
+                .pointAt(util.vector().centerOf(smart));
+        // 文字展示期间正前方摆上石头：锁定期间它一动不动
+        scene.world().setBlock(spotSmart, Blocks.STONE.defaultBlockState(), false);
+        scene.idle(130);
+
+        // 撤掉红石块：接着挖
+        scene.world().destroyBlock(topSide);
+        setLocked(scene, util, smart, false);
+        scene.effects().indicateSuccess(smart);
+        scene.idle(5);
+        scene.overlay().showText(80)
+                .attachKeyFrame()
+                .text("Remove the signal and the drill picks up right where it left off.")
+                .placeNearTarget()
+                .pointAt(util.vector().topOf(spotSmart));
+        destroyWithDebris(scene, util, spotSmart, Blocks.STONE.defaultBlockState());
+        scene.idle(130);
+
+        // 正前方换成红石块：唯一不受影响的一面
+        scene.world().setBlock(spotSmart, Blocks.REDSTONE_BLOCK.defaultBlockState(), false);
+        scene.effects().indicateRedstone(spotSmart);
+        scene.idle(5);
+        scene.overlay().showText(95)
+                .attachKeyFrame()
+                .text("The face it points at is the one exception: redstone placed in front does not lock it, and the drill keeps working.")
+                .placeNearTarget()
+                .pointAt(util.vector().centerOf(spotSmart));
+        // 让这块红石块多停一会儿再被挖掉：它只活了一瞬的话观众根本来不及看清
+        scene.idle(110);
+        destroyWithDebris(scene, util, spotSmart, Blocks.REDSTONE_BLOCK.defaultBlockState());
+        scene.idle(60);
+    }
+
     // ---- 工具方法 ----
+
+    /**
+     * 把智能钻头切到「被红石锁住 / 解锁」。两半都要动，只做一半钻头不会停转：
+     * <ul>
+     *   <li>{@code toggleRedstonePower} 换的是方块状态 {@code POWERED}——模型因此切成
+     *       {@code block_powered} 那一款，这是观众看得见的外观变化；</li>
+     *   <li><b>但光有它不够</b>：{@code BlockEntity#getBlockState()} 返回的是方块实体里
+     *       <b>缓存</b>的那份状态，而 ponder 的 {@code SchematicLevel#setBlock} 只更新自己的方块表、
+     *       从不调用 {@code BlockEntity#setBlockState}（原版是 {@code LevelChunk} 那条路在同步它）。
+     *       于是 {@code SmartDrillBlockEntity#isRedstoneLocked()} 读到的还是放置时的
+     *       {@code powered=false}，转头照转 —— 文本说「停止旋转」而动画不停，就是这么来的。</li>
+     *   <li>这里补上服务端平时推的那份锁定标志（{@code SyncedBlocked}，见
+     *       {@code SmartDrillBlockEntity} 的 read/write），{@code getSpeed()} 才会真的汇报 0：
+     *       头部冻结、后方传动杆照转（它走 {@code getTrueSpeed()}），与游戏里锁定时一模一样。</li>
+     * </ul>
+     */
+    private static void setLocked(CreateSceneBuilder scene, SceneBuildingUtil util, BlockPos smart, boolean locked) {
+        scene.world().toggleRedstonePower(util.select().position(smart));
+        scene.world().modifyBlockEntityNBT(util.select().position(smart), SmartDrillBlockEntity.class,
+                nbt -> nbt.putBoolean("SyncedBlocked", locked));
+    }
 
     /** 大齿轮为动力输入端 16 rpm，其余按啮合与链传动取值 */
     private static void powerUp(CreateSceneBuilder scene, SceneBuildingUtil util, BlockPos largeCog, BlockPos cog,

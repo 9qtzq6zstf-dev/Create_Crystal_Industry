@@ -29,12 +29,14 @@ import com.minecart.yunxian.registry.ModEffects;
  * 原版 {@code Player#eat} 已经包办了「喝空的那一份变成瓶子 / 没喝空的往背包塞一个瓶子、
  * 塞不下就丢地上」以及创造模式不消耗，见 {@code Player#eat}。
  * <p>
- * {@code alwaysEdible} 是刻意的：它是件玩具，吃饱了也得能喝下去。喝下去拿到两样东西：
+ * {@code alwaysEdible} 是刻意的：它是件玩具，吃饱了也得能喝下去。喝下去拿到三样东西：
  * <ul>
  *   <li>「灼寒」（{@link ModEffects#SCORCHING_COLD}，10 秒）：满冻外观与冻伤共用同一个阈值，
  *       那笔冻伤由那边拦掉；同时又持续着火，所谓「冻着的冰在烧」。
  *       这就是顶上那撮熔岩点缀下肚的代价——<b>不再另给抗火了</b>，抗火会把这份灼烧
  *       整个免疫掉，那就等于白加点缀；</li>
+ *   <li>「冰霜行者」（{@link ModEffects#FROST_WALKER}，10 秒）：脚下那片水面被踩成冰，
+ *       与灼寒同长——一边冻着水、一边烧着人，十秒后一起结束；</li>
  *   <li>「火焰吐息」（{@link ModEffects#FLAME_BREATH}，60 秒）：能喷火的许可证。</li>
  * </ul>
  */
@@ -58,6 +60,14 @@ public class FlammableSundaeItem extends BlockItem {
      */
     private static final int FLAME_BREATH_TICKS = 1200;
 
+    /**
+     * 「冰霜行者」的持续时间：与「灼寒」同为 10 秒。
+     * <p>
+     * 这一口冻的是脚下那片水——喝完这十秒里，河面能踩着冰走过去；灼寒那笔代价也是十秒，
+     * 两件事一起开始、一起结束。要单独调就动这一个数（可燃冰沙瓶那边有各自的一份）。
+     */
+    private static final int FROST_WALKER_TICKS = 200;
+
     public FlammableSundaeItem(Block block, Properties properties) {
         super(block, properties
                 .stacksTo(16)
@@ -70,6 +80,7 @@ public class FlammableSundaeItem extends BlockItem {
                         .usingConvertsTo(Items.GLASS_BOTTLE)
                         .effect(() -> new MobEffectInstance(ModEffects.SCORCHING_COLD, SCORCHING_COLD_DURATION_TICKS), 1.0F)
                         .effect(() -> new MobEffectInstance(ModEffects.FLAME_BREATH, FLAME_BREATH_TICKS), 1.0F)
+                        .effect(() -> new MobEffectInstance(ModEffects.FROST_WALKER, FROST_WALKER_TICKS), 1.0F)
                         .build()));
     }
 

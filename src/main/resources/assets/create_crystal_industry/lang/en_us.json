@@ -76,6 +76,7 @@
     "effect.create_crystal_industry.frozen": "Frozen",
     "effect.create_crystal_industry.scorching_cold": "Scorching Cold",
     "effect.create_crystal_industry.flame_breath": "Flame Breath",
+    "effect.create_crystal_industry.frost_walker": "Frost Walker",
     "death.attack.electricShock": "%1$s was electrocuted",
     "death.attack.electricShock.player": "%1$s was struck by lightning caused by %2$s",
     "item.create_crystal_industry.echo_spyglass": "Echo Spyglass",
@@ -235,6 +236,11 @@
     "create_crystal_industry.ponder.smart_drill_silk_touch.text_1": "Budding Blocks are a special case: a regular drill shatters them, and the block itself cannot be collected.",
     "create_crystal_industry.ponder.smart_drill_silk_touch.text_2": "In Silk Touch Harvesting the Smart Drill collects the Budding Block itself.",
 
+    "create_crystal_industry.ponder.smart_drill_redstone.header": "Redstone Control",
+    "create_crystal_industry.ponder.smart_drill_redstone.text_1": "Redstone Power locks the Smart Drill: it stops spinning and stops harvesting, and the block in front of it is left untouched.",
+    "create_crystal_industry.ponder.smart_drill_redstone.text_2": "Remove the signal and the drill picks up right where it left off.",
+    "create_crystal_industry.ponder.smart_drill_redstone.text_3": "The face it points at is the one exception: redstone placed in front does not lock it, and the drill keeps working.",
+
     "create_crystal_industry.ponder.cleaner_airflow.header": "Airstream and Collection",
     "create_crystal_industry.ponder.cleaner_airflow.text_1": "The Mechanical Cleaner drives the same airstream as an Encased Fan.",
     "create_crystal_industry.ponder.cleaner_airflow.text_2": "Items caught in its stream, or simply lying in front of it, are sucked in and stored in its built-in inventory.",
@@ -245,8 +251,8 @@
     "create_crystal_industry.ponder.cleaner_container.text_3": "While blowing, stored items are fed back into the container in front.",
 
     "create_crystal_industry.ponder.cleaner_config.header": "Configuring the Cleaner",
-    "create_crystal_industry.ponder.cleaner_config.text_1": "Blowing or sucking, filters and transfer amounts are all configured through its interface and the side slot.",
-    "create_crystal_industry.ponder.cleaner_config.text_2": "The side slot reverses the airstream, and the Cleaner starts moving items the other way.",
+    "create_crystal_industry.ponder.cleaner_config.text_1": "Filters and transfer amounts are set on its side slot.",
+    "create_crystal_industry.ponder.cleaner_config.text_2": "The airflow direction is switched in its interface, and the Cleaner starts moving items the other way.",
 
     "create_crystal_industry.ponder.resonance_table.header": "The Resonance Table",
     "create_crystal_industry.ponder.resonance_table.text_1": "A Resonance Table can only ever hold one kind of item.",

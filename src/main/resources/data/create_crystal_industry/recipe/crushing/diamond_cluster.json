@@ -1,0 +1,16 @@
+{
+  "type": "create:crushing",
+  "ingredients": [
+    {
+      "item": "create_crystal_industry:diamond_cluster"
+    }
+  ],
+  "processing_time": 250,
+  "results": [
+    {
+      "chance": 0.5,
+      "count": 1,
+      "id": "minecraft:diamond"
+    }
+  ]
+}

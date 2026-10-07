@@ -39,6 +39,15 @@ section at the top.
   sparks of its own.
 - In creative, middle-clicking a Flammable Ice Slurry block now gives you the Slurry Bucket. The
   block has no item form of its own, so picking it used to do nothing.
+- Crystal clusters can now be fed to Crushing Wheels. Crushing yields one less than mining, plus a
+  50% chance of a full extra batch (16 for a Redstone Cluster, 7 for a Lapis Cluster, taking the
+  middle of its 4–9, and 2 for an Ancient Debris Cluster, the middle of its 1–3).
+- A new status effect, Frost Walker: for the 10 seconds after drinking a Flammable Ice Slurry Bottle
+  or a Flammable Sundae, the water under your feet freezes, so you can walk straight across it.
+- The Smart Drill's Ponder gained a Redstone Control scene: redstone power locks it, and only the
+  face it points at is unaffected by redstone.
+- The Flammable Ice building blocks are shelved in this mod's own creative tab as well, not only in
+  Create's Building Blocks tab.
 
 ### Changed
 
@@ -47,6 +56,10 @@ section at the top.
   Bottle and the Flammable Sundae can be consumed now.
 - The Flammable Sundae no longer grants Fire Resistance. That resistance cancelled the Scorching Cold
   burn outright, which would have made the Magma Cream on top pointless.
+- The Mechanical Cleaner's Ponder says the right thing about airflow direction now: blowing or
+  sucking is switched in its interface, and the side slot only handles filters and amounts.
+- Flammable Ice Slurry blocks are carried along by contraptions instead of being dropped halfway.
+  The Slurry Bucket is registered in the common bucket tag, so other mods treat it as a plain bucket.
 
 ## 1.0.6 · 2026-10-05 ~ 2026-10-06
 

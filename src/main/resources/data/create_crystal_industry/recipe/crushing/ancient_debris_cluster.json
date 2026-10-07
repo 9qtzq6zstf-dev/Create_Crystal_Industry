@@ -1,0 +1,20 @@
+{
+  "type": "create:crushing",
+  "ingredients": [
+    {
+      "item": "create_crystal_industry:ancient_debris_cluster"
+    }
+  ],
+  "processing_time": 250,
+  "results": [
+    {
+      "count": 1,
+      "id": "minecraft:netherite_scrap"
+    },
+    {
+      "chance": 0.5,
+      "count": 2,
+      "id": "minecraft:netherite_scrap"
+    }
+  ]
+}
