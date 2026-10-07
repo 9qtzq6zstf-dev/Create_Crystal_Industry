@@ -8,12 +8,12 @@
   "processing_time": 250,
   "results": [
     {
-      "count": 15,
+      "count": 31,
       "id": "minecraft:redstone"
     },
     {
       "chance": 0.5,
-      "count": 16,
+      "count": 1,
       "id": "minecraft:redstone"
     }
   ]

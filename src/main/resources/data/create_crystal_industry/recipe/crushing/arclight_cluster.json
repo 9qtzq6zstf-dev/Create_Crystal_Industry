@@ -8,6 +8,10 @@
   "processing_time": 250,
   "results": [
     {
+      "count": 1,
+      "id": "create_crystal_industry:arclight"
+    },
+    {
       "chance": 0.5,
       "count": 1,
       "id": "create_crystal_industry:arclight"

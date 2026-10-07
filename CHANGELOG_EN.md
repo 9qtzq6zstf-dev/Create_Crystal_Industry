@@ -41,9 +41,9 @@ section at the top.
   sparks of its own.
 - In creative, middle-clicking a Flammable Ice Slurry block now gives you the Slurry Bucket. The
   block has no item form of its own, so picking it used to do nothing.
-- Crystal clusters can now be fed to Crushing Wheels. Crushing yields one less than mining, plus a
-  50% chance of a full extra batch (16 for a Redstone Cluster, 7 for a Lapis Cluster, taking the
-  middle of its 4–9, and 2 for an Ancient Debris Cluster, the middle of its 1–3).
+- Crystal clusters can now be fed to Crushing Wheels. Crushing yields **twice the mining amount minus
+  one**, plus a 50% chance of one more (31–32 for a Redstone Cluster; 13–14 for a Lapis Cluster,
+  taking the middle of its 4–9; and 3–4 for an Ancient Debris Cluster, the middle of its 1–3).
 - A new status effect, Frost Walker: for the 10 seconds after drinking a Flammable Ice Slurry Bottle
   or a Flammable Sundae, the water under your feet freezes, so you can walk straight across it.
 - The Smart Drill's Ponder gained a Redstone Control scene: redstone power locks it, and only the

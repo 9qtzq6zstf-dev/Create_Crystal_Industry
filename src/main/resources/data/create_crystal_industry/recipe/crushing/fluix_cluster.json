@@ -14,6 +14,10 @@
   "processing_time": 250,
   "results": [
     {
+      "count": 1,
+      "id": "ae2:fluix_crystal"
+    },
+    {
       "chance": 0.5,
       "count": 1,
       "id": "ae2:fluix_crystal"
