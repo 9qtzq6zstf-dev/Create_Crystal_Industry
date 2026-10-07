@@ -48,15 +48,29 @@ section at the top.
   or a Flammable Sundae, the water under your feet freezes, so you can walk straight across it.
 - The Smart Drill's Ponder gained a Redstone Control scene: redstone power locks it, and only the
   face it points at is unaffected by redstone.
+- The Smart Temperature Chamber gained Ponder scenes: one for heating a Basin, one for shared
+  capacity, and one for heating a Steam Boiler.
+- A locked Smart Drill now shows its redstone indicator on the sides as well, not only on top.
 - The Flammable Ice building blocks are shelved in this mod's own creative tab as well, not only in
   Create's Building Blocks tab.
 - A new block, the Smart Temperature Chamber: place it directly beneath a Basin, feed it Flammable
   Ice Slurry, and that Basin **ignores its heat requirement and just runs** — whether the recipe asks
   for heated, superheated, or a cooled state added by another mod. It carries its own 1000 mB tank
   that pipes and buckets can fill, and the Engineer's Goggles read the level out.
-- Adjacent Smart Temperature Chambers share their fuel. A connected row is one larger tank: the
-  capacity is the sum of the parts, a full burn still takes exactly as long as a lone chamber, and a
-  single pipe into any one of them lights up the whole row.
+- Smart Temperature Chambers built as one block **share their capacity**. Chambers on the same
+  level, edge-adjacent to one another, are cut into rectangles which each form a group, and a
+  group's capacity is the sum of its parts (four of them make 4000 mB): a pipe into any one of them
+  fills the whole group, and fuel added to any one lights them all at the same instant. They do
+  **not** equalise fuel between themselves — when nothing is burning, each keeps exactly what it
+  had. Stacking them vertically does not group them. The shape does not have to be a rectangle
+  itself: a 3x3 missing one corner is cut into the 2x3 inside it, with the remaining two forming a
+  group of their own.
+- Smart Temperature Chambers have connected textures: the frames between chambers that **share
+  capacity** drop away, so their sides and bases merge and a block of them reads as a single machine.
+  Chambers that merely sit next to each other without landing in the same rectangle stay separate —
+  connecting and sharing are the same test.
+- Smart Temperature Chambers can now heat a Steam Boiler: put one underneath and, while it burns,
+  it supplies the same top heat level as a Blaze Burner, and stops when the fuel runs out.
 
 ### Changed
 

@@ -22,6 +22,7 @@ import com.minecart.yunxian.datagen.YunxianDataGen;
 import com.minecart.yunxian.registry.*;
 import com.minecart.yunxian.util.NightVisionWearHelper;
 import com.simibubi.create.api.behaviour.movement.MovementBehaviour;
+import com.simibubi.create.api.boiler.BoilerHeater;
 import com.simibubi.create.api.stress.BlockStressValues;
 import com.simibubi.create.content.equipment.goggles.GogglesItem;
 import net.neoforged.bus.api.IEventBus;
@@ -131,6 +132,13 @@ public class Yunxian {
             // 显示链接器的数据源要等方块注册完才能挂上去（见 ModDisplaySources 的类注释）
             ModDisplaySources.associateBlocks();
             BlockStressValues.IMPACTS.register(ModBlocks.MECHANICAL_CLEANER.get(), () -> 4.0);
+            // 智能温控室也当蒸汽锅炉的热源：直接借 Create 给附属模组留的那个
+            // BoilerHeater.BLAZE_BURNER —— 它读的正是 BlazeBurnerBlock.HEAT_LEVEL 这一位，
+            // 而我们方块挂的就是同一个属性实例（见 SmartTemperatureChamberBlock），
+            // 于是烧着（SEETHING）= 2 档满热、没燃料 = 不着火，一字不用自己写。
+            // 挂在这里而不是方块注册期：SimpleRegistry 没有冻结检查，晚加是安全的，
+            // 而且这个位置与其它"等注册表齐了再挂"的钩子（ModDisplaySources 等）一致
+            BoilerHeater.REGISTRY.register(ModBlocks.SMART_TEMPERATURE_CHAMBER.get(), BoilerHeater.BLAZE_BURNER);
             MovementBehaviour.REGISTRY.register(
                     ModBlocks.SMART_DRILL.get(),
                     new SmartDrillMovementBehaviour()

@@ -7,6 +7,13 @@ import com.simibubi.create.content.processing.basin.BasinBlockEntity;
 import com.simibubi.create.content.processing.burner.BlazeBurnerBlock;
 import com.simibubi.create.content.processing.burner.BlazeBurnerBlock.HeatLevel;
 
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Deque;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.sounds.SoundEvents;
@@ -16,19 +23,16 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.EntityBlock;
-import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
-import net.minecraft.world.level.block.state.properties.BlockStateProperties;
-import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
@@ -52,9 +56,14 @@ import org.jetbrains.annotations.Nullable;
  * <b>刻意不进的 Create 标签</b>：{@code create:passive_boiler_heaters}、
  * {@code create:fan_processing_catalysts/blasting} 与 {@code .../smoking}。
  * 那几处虽然也读 {@code HEAT_LEVEL}，但都先问「这个方块在不在对应标签里」，
- * 不登记就等于这块方块只会加热工作盆——不会顺带变成蒸汽锅炉热源或风扇的超热催化剂。
- * （{@code BoilerHeaters} 与 {@code ConductorBlockInteractionBehavior.BlazeBurner} 更窄，
- * 它们按方块实例注册，我们本来就命中不了。）
+ * 不登记就不会顺带变成风扇的超热催化剂。
+ * <p>
+ * <b>锅炉热源则是另外单独挂的</b>（{@code Yunxian#commonSetup} 里把
+ * {@code BoilerHeater.BLAZE_BURNER} 注册到本方块上）：走那条路拿到的是<b>按档位算热</b>——
+ * 烧着 = 2 档满热，没燃料 = 不热；而进了 {@code passive_boiler_heaters} 标签只有被动的一档，
+ * 那是给火、岩浆块这类免费热源用的，对一台要烧燃料的机器不合适。
+ * （{@code ConductorBlockInteractionBehavior.BlazeBurner} 更窄，按方块实例注册，我们命中不了，
+ * 所以放到火车上不会像烈焰人燃烧室那样当导体。）
  * <p>
  * <p>
  * <b>但这一位属性只解决 Create 侧</b>：别的模组会在 {@code BasinRecipe.apply} 里挂自己的判定，
@@ -68,7 +77,7 @@ import org.jetbrains.annotations.Nullable;
  * 所以永远不会有「状态说有燃料、罐里其实是空的」这种两面不一致。
  * 液体本身、消耗节奏都在 {@link SmartTemperatureChamberBlockEntity}。
  */
-public class SmartTemperatureChamberBlock extends HorizontalDirectionalBlock implements EntityBlock {
+public class SmartTemperatureChamberBlock extends BaseEntityBlock {
 
     public static final MapCodec<SmartTemperatureChamberBlock> CODEC =
             simpleCodec(SmartTemperatureChamberBlock::new);
@@ -80,35 +89,9 @@ public class SmartTemperatureChamberBlock extends HorizontalDirectionalBlock imp
      */
     public static final EnumProperty<HeatLevel> HEAT_LEVEL = BlazeBurnerBlock.HEAT_LEVEL;
 
-    /**
-     * 朝向：高炉模型只有一面是"炉口"（{@code front}），摆下去得让炉口对着玩家。
-     * <p>
-     * 用原版那一位 {@code facing}（只有四个水平方向），语义与高炉、熔炉完全一致——
-     * 方块状态 JSON 里就是靠它给模型加 {@code y} 旋转的（见
-     * {@code blockstates/smart_temperature_chamber.json}，4 个朝向 × 5 个档位共 20 条变体）。
-     */
-    public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
-
     public SmartTemperatureChamberBlock(Properties properties) {
         super(properties);
-        registerDefaultState(defaultBlockState()
-                .setValue(HEAT_LEVEL, HeatLevel.NONE)
-                .setValue(FACING, Direction.NORTH));
-    }
-
-    /**
-     * 炉口对着<b>放下它的玩家</b>（取玩家水平朝向的反方向，与原版熔炉、高炉同一个写法）。
-     * <p>
-     * 只设 {@code FACING}：燃料档位是方块实体按罐里液体现算的，摆放那一刻一律从 {@code NONE} 起步
-     * （{@code defaultBlockState()} 里的值），不在这里画蛇添足。
-     * <p>
-     * {@code rotate} / {@code mirror} 不用自己写：父类 {@link HorizontalDirectionalBlock} 已经把
-     * 这一位接上了，结构方块旋转、{@code /place structure} 出来的朝向都是对的。
-     */
-    @Override
-    public BlockState getStateForPlacement(BlockPlaceContext context) {
-        return defaultBlockState()
-                .setValue(FACING, context.getHorizontalDirection().getOpposite());
+        registerDefaultState(defaultBlockState().setValue(HEAT_LEVEL, HeatLevel.NONE));
     }
 
     @Override
@@ -119,7 +102,7 @@ public class SmartTemperatureChamberBlock extends HorizontalDirectionalBlock imp
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         super.createBlockStateDefinition(builder);
-        builder.add(HEAT_LEVEL, FACING);
+        builder.add(HEAT_LEVEL);
     }
 
     /**
@@ -153,6 +136,187 @@ public class SmartTemperatureChamberBlock extends HorizontalDirectionalBlock imp
         BlockState below = level.getBlockState(basin.getBlockPos().below());
         return below.getBlock() instanceof SmartTemperatureChamberBlock
                 && below.getValue(HEAT_LEVEL) != HeatLevel.NONE;
+    }
+
+    /**
+     * 一整片连通块最多几格。超过就<b>整块都不共享</b>，每台退回只管自己那一桶。
+     * <p>
+     * 这是纯粹的代价上限：每一台都要独立算出"自己属于哪个矩形"（见 {@link #groupAt}），
+     * 而那件事要在整块连通域上反复切矩形。现实里没人会把几十台摆成一坨，
+     * 但一条 50 格的长龙是摆得出来的，不能让它把服务器拖死。
+     */
+    public static final int MAX_COMPONENT_CELLS = 64;
+
+    /** 外接矩形的面积上限，同样是给切矩形的算法兜底（防止一条 1x64 的长龙撑出 64x64 的网格） */
+    private static final int MAX_BOX_AREA = 256;
+
+    /**
+     * 从 {@code origin} 出发，算出它属于哪一组。
+     * <p>
+     * 规则：先在<b>同一个 Y 上、四向相邻</b>的整片连通域里切出一个<b>面积最大的全满矩形</b>，
+     * 那一批算一组；把切走的格子拿掉，对剩下的再切一次，直到切到 {@code origin} 所在的那一个为止。
+     * 于是连成一片的温控室会被划分成若干块矩形，<b>每块各自共享容量</b>。
+     * <p>
+     * 之所以不要求"整片就是一个矩形"：3x3 缺一个角这种很常见的摆法，外接矩形没填满，
+     * 一刀切判否会让八台一台都不共享；切出它里面那个 2x3 才是玩家期待的。
+     * <p>
+     * 面积并列时按<b>先宽、后高、再取左上角靠前</b>来定（例如 2x3 与 3x2 都是 6，取宽的那个），
+     * 保证同一块连通域无论从哪一格问起、切法都完全一样。
+     * <p>
+     * 垂直方向不算（上下叠着的不共享）；判定不成立或超上限时<b>只返回 {@code origin} 自己</b>，
+     * 所以调用方拿到的列表一定可以直接用：容量 = 长度 × 单台容量，燃料 = 各格之和。
+     * <p>
+     * <b>方块实体与客户端的连接材质共用这一个方法</b>，两边必须得出同样的结果——
+     * 连接纹理只在共享容量的那几台之间才画，靠的就是"同一个判据"。所以这里只读
+     * {@link BlockGetter} 与方块状态，不去碰方块实体：客户端未必有实体，而方块状态两端都有。
+     */
+    public static List<BlockPos> groupAt(BlockGetter level, BlockPos origin) {
+        List<BlockPos> solo = List.of(origin);
+        if (level == null) {
+            return solo;
+        }
+
+        // 1) 取连通域。
+        //    探过的格子(seen)与真正的成员(members)必须分开：seen 里还躺着**探过但不是温控室**的
+        //    邻居，拿它去铺网格会踩到外接矩形外面（曾经就这么崩过：Index -1 out of bounds）
+        Set<BlockPos> seen = new HashSet<>();
+        Deque<BlockPos> queue = new ArrayDeque<>();
+        List<BlockPos> members = new ArrayList<>();
+        int minX = origin.getX();
+        int maxX = minX;
+        int minZ = origin.getZ();
+        int maxZ = minZ;
+        seen.add(origin);
+        queue.add(origin);
+        while (!queue.isEmpty()) {
+            BlockPos current = queue.poll();
+            members.add(current);
+            minX = Math.min(minX, current.getX());
+            maxX = Math.max(maxX, current.getX());
+            minZ = Math.min(minZ, current.getZ());
+            maxZ = Math.max(maxZ, current.getZ());
+            // 一边走一边就判上限：真摆出一个 20x20 时不能先把整片扫完再放弃
+            if (members.size() > MAX_COMPONENT_CELLS) {
+                return solo;
+            }
+            for (Direction dir : Direction.Plane.HORIZONTAL) {
+                BlockPos next = current.relative(dir);
+                if (seen.add(next) && isChamber(level, next)) {
+                    queue.add(next);
+                }
+            }
+        }
+
+        int width = maxX - minX + 1;
+        int depth = maxZ - minZ + 1;
+        if (width * depth > MAX_BOX_AREA) {
+            return solo;
+        }
+
+        // 2) 铺成一张网格，反复切最大全满矩形，直切到 origin 所在的那一个
+        boolean[][] remaining = new boolean[width][depth];
+        for (BlockPos pos : members) {
+            remaining[pos.getX() - minX][pos.getZ() - minZ] = true;
+        }
+        int originX = origin.getX() - minX;
+        int originZ = origin.getZ() - minZ;
+
+        while (true) {
+            Rect best = largestRectangle(remaining, width, depth);
+            if (best == null) {
+                return solo; // 走不到：origin 自己那一格总在某块矩形里
+            }
+            if (best.contains(originX, originZ)) {
+                List<BlockPos> group = new ArrayList<>(best.area());
+                for (int x = best.x; x < best.x + best.width; x++) {
+                    for (int z = best.z; z < best.z + best.depth; z++) {
+                        group.add(new BlockPos(x + minX, origin.getY(), z + minZ));
+                    }
+                }
+                return group;
+            }
+            best.clearFrom(remaining);
+        }
+    }
+
+    /**
+     * 网格里面积最大的全满矩形。<b>单调栈</b>按行扫（每行维护"往上连续有多高"，再求直方图里的最大矩形），
+     * 一行一次 O(宽 x 深)，比穷举所有左上/右下角快得多。
+     * <p>
+     * 并列时的取舍写死在 {@link #better} 里，这是"同一块连通域切法唯一"的根。
+     * 不返回 {@code null} 除非整张网格都是空的。
+     */
+    @Nullable
+    private static Rect largestRectangle(boolean[][] grid, int width, int depth) {
+        int[] heights = new int[depth];
+        Rect best = null;
+        for (int x = 0; x < width; x++) {
+            for (int z = 0; z < depth; z++) {
+                heights[z] = grid[x][z] ? heights[z] + 1 : 0;
+            }
+            // 直方图求最大矩形；末尾补一个 0 把栈里剩的弹干净
+            Deque<Integer> stack = new ArrayDeque<>();
+            for (int col = 0; col <= depth; col++) {
+                int barHeight = col == depth ? 0 : heights[col];
+                while (!stack.isEmpty() && heights[stack.peek()] >= barHeight) {
+                    int popped = stack.pop();
+                    int height = heights[popped];
+                    int left = stack.isEmpty() ? 0 : stack.peek() + 1;
+                    Rect candidate = new Rect(x - height + 1, left, height, col - left);
+                    if (better(candidate, best)) {
+                        best = candidate;
+                    }
+                }
+                stack.push(col);
+            }
+        }
+        return best;
+    }
+
+    /** 两个候选谁更该被切走：先比面积，再比宽，再比高，最后取左上角靠前的 */
+    private static boolean better(Rect candidate, @Nullable Rect current) {
+        if (current == null) {
+            return true;
+        }
+        if (candidate.area() != current.area()) {
+            return candidate.area() > current.area();
+        }
+        if (candidate.width != current.width) {
+            return candidate.width > current.width;
+        }
+        if (candidate.depth != current.depth) {
+            return candidate.depth > current.depth;
+        }
+        if (candidate.x != current.x) {
+            return candidate.x < current.x;
+        }
+        return candidate.z < current.z;
+    }
+
+    /** 网格坐标下的一块矩形（{@code x}/{@code z} 是左上角，{@code width}/{@code depth} 是格数） */
+    private record Rect(int x, int z, int width, int depth) {
+
+        int area() {
+            return width * depth;
+        }
+
+        boolean contains(int px, int pz) {
+            return px >= x && px < x + width && pz >= z && pz < z + depth;
+        }
+
+        void clearFrom(boolean[][] grid) {
+            for (int gx = x; gx < x + width; gx++) {
+                for (int gz = z; gz < z + depth; gz++) {
+                    grid[gx][gz] = false;
+                }
+            }
+        }
+    }
+
+    /** 这一格是不是温控室。用 {@code instanceof} 而不是比对注册表句柄，理由同 {@link #heatsBasin} */
+    public static boolean isChamber(BlockGetter level, BlockPos pos) {
+        return level.getBlockState(pos)
+                .getBlock() instanceof SmartTemperatureChamberBlock;
     }
 
     /**

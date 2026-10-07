@@ -9,6 +9,7 @@ import com.minecart.yunxian.ponder.scenes.CrystalScenes;
 import com.minecart.yunxian.ponder.scenes.MechanicalCleanerScenes;
 import com.minecart.yunxian.ponder.scenes.ResonanceScenes;
 import com.minecart.yunxian.ponder.scenes.SmartDrillScenes;
+import com.minecart.yunxian.ponder.scenes.TemperatureChamberScenes;
 import com.minecart.yunxian.registry.ModBlocks;
 import com.minecart.yunxian.registry.ModItems;
 
@@ -87,7 +88,16 @@ public class AllYunxianPonderScenes {
                 .addStoryBoard("resonance_table/resonance_display", ResonanceScenes::resonanceDisplay,
                         AllYunxianPonderTags.MACHINES);
 
-        // 7) 共振过滤器：与共振台挂同一整套分镜，鼠标停在物品上也能直接看全部
+        // 7) 智能温控室：给工作盆供热 / 拼起来共享一只大罐 / 当蒸汽锅炉的热源
+        blocks.forComponents(ModBlocks.SMART_TEMPERATURE_CHAMBER.get())
+                .addStoryBoard("temperature_chamber/heating", TemperatureChamberScenes::chamberHeating,
+                        AllYunxianPonderTags.MACHINES)
+                .addStoryBoard("temperature_chamber/sharing", TemperatureChamberScenes::chamberSharing,
+                        AllYunxianPonderTags.MACHINES)
+                .addStoryBoard("temperature_chamber/boiler", TemperatureChamberScenes::chamberBoiler,
+                        AllYunxianPonderTags.MACHINES);
+
+        // 8) 共振过滤器：与共振台挂同一整套分镜，鼠标停在物品上也能直接看全部
         helper.withKeyFunction(BuiltInRegistries.ITEM::getKey)
                 .forComponents(ModItems.RESONANCE_FILTER.get())
                 .addStoryBoard("resonance_table/resonance_table", ResonanceScenes::resonanceTable,

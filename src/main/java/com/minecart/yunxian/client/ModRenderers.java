@@ -7,6 +7,7 @@ import com.minecart.yunxian.Yunxian;
 import com.minecart.yunxian.client.battery.CrystalBatteryModel;
 import com.minecart.yunxian.client.deco.FlammableIceLayeredModel;
 import com.minecart.yunxian.client.deco.FlammableIcePillarModel;
+import com.minecart.yunxian.client.deco.SmartTemperatureChamberModel;
 import com.minecart.yunxian.client.nightvision.model.NightVisionGogglesModel;
 import com.minecart.yunxian.client.tooltip.GenericTooltipModifier;
 import com.minecart.yunxian.client.echo.CameraSync;
@@ -153,6 +154,9 @@ public class ModRenderers {
             FlammableIcePillarModel.register();
             // 层叠可燃冰块：连接材质（侧面 2x2 图集、端面与柱子共用）
             FlammableIceLayeredModel.register();
+            // 智能温控室：连接材质。侧面是横排三格（不是方格阵），所以没走 Create 的 CTModel，
+            // 自绘了 UV 换算，见那个类的注释
+            SmartTemperatureChamberModel.register();
             // ===== 物品提示（机械动力风格，统一走 GenericTooltipModifier）=====
             // 夜视仪护目镜：简介含当前按键名，动态求值
             GenericTooltipModifier.register(ModItems.NIGHT_VISION_GOGGLES.get(),
