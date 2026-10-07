@@ -9,6 +9,7 @@ import com.minecart.yunxian.block.MechanicalAcceleratorBlock;
 import com.minecart.yunxian.block.MechanicalCleanerBlock;
 import com.minecart.yunxian.block.ResonanceTableBlock;
 import com.minecart.yunxian.block.SmartDrillBlock;
+import com.minecart.yunxian.block.SmartTemperatureChamberBlock;
 import com.minecart.yunxian.item.CrystalBatteryItem;
 import com.minecart.yunxian.item.FlammableSundaeItem;
 import com.minecart.yunxian.item.ResonanceTableItem;
@@ -292,6 +293,39 @@ public final class ModBlocks {
     public static final DeferredBlock<Block> RESONANCE_TABLE = registerBlock("resonance_table",
             () -> new ResonanceTableBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.ANDESITE)),
             ResonanceTableItem::new);
+
+    /**
+     * 智能温控室：烧可燃冰沙，把正上方的工作盆顶到「无视热量条件」。
+     * <p>
+     * 属性逐条对齐烈焰人燃烧室那一档（铁块底子 + 金属音效），只额外挂一个 {@code lightLevel}
+     * ——烧着亮 15、不烧不亮，和燃烧室同一个做法（见 {@code BlazeBurnerBlock.getLight}）。
+     * <p>
+     * 铁块那一套带 {@code requiresCorrectToolForDrops}，所以它<b>必须</b>进
+     * {@code mineable/pickaxe}（见 {@code ModBlockTagsProvider}）：不进的话任何工具都算不上
+     * "正确工具"，挖掉一格都不掉——和共振台、水晶电池是同一个坑。
+     * <p>
+     * <b>模型与贴图都先用原版高炉那一套顶替</b>（见 {@code models/block/smart_temperature_chamber}
+     * 与 {@code textures/block/smart_temperature_chamber}），等专属美术到位再换。
+     * <p>
+     * 抄的就是原版 {@code minecraft:block/blast_furnace} 的结构：两个模型都 parent 原版的
+     * {@code minecraft:block/orientable}（要 {@code front} / {@code side} / {@code top} 三个槽，
+     * {@code bottom} 它自己接成 {@code #top}），只把 {@code front} 换成自己的贴图——
+     * 不烧用 {@code blast_furnace_front}，烧着用 {@code blast_furnace_front_on}
+     * （那张是 16×32 的两帧动画，配套的 {@code .mcmeta} 也一起抄了过来）。
+     * <p>
+     * 高炉是整块实心立方体，所以<b>不需要</b> {@code noOcclusion}、也不用自己收窄形状
+     * ——照常遮挡、照常传导红石，和本模组其它整块机器一致。
+     * <p>
+     * 四个贴图都是不带 {@code tRNS} 的不透明图，模型里因此<b>不写 {@code render_type}</b>
+     * （不写就是默认的 {@code solid}，正是想要的）。这与之前那套烈焰人燃烧室的 OBJ 占位不同：
+     * 那几张贴图带透明区，非写 cutout 不可。
+     * <p>
+     * 炉口朝向靠方块自己的 {@code facing}（原版那一位水平朝向，见 {@code SmartTemperatureChamberBlock}）：
+     * 放下时对着玩家。方块状态 JSON 因此是 4 个朝向 × 5 个档位共 20 条变体，靠 {@code y} 旋转复用同两个模型。
+     */
+    public static final DeferredBlock<Block> SMART_TEMPERATURE_CHAMBER = registerBlock("smart_temperature_chamber",
+            () -> new SmartTemperatureChamberBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK)
+                    .lightLevel(SmartTemperatureChamberBlock::getLight)));
 
     /** AE2 是否加载：可选联动（福鲁伊克斯母岩）的开关 */
     public static final boolean AE2_LOADED =

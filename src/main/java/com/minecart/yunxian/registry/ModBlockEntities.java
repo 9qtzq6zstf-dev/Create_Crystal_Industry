@@ -58,6 +58,13 @@ public final class ModBlockEntities {
                     ModBlocks.RESONANCE_TABLE.get()
             ).build(null));
 
+    // 智能温控室：可燃冰沙的罐 + 每 8 tick 扣 5 mB，方块状态上的 blaze 档位由罐现算（见该类注释）
+    public static final Supplier<BlockEntityType<SmartTemperatureChamberBlockEntity>> SMART_TEMPERATURE_CHAMBER =
+            BLOCK_ENTITIES.register("smart_temperature_chamber", () -> BlockEntityType.Builder.of(
+                    SmartTemperatureChamberBlockEntity::new,
+                    ModBlocks.SMART_TEMPERATURE_CHAMBER.get()
+            ).build(null));
+
     // 水晶电池：多方块容器，骨架复用 Create 的 ConnectivityHandler
     public static final Supplier<BlockEntityType<CrystalBatteryBlockEntity>> CRYSTAL_BATTERY =
             BLOCK_ENTITIES.register("crystal_battery", () -> BlockEntityType.Builder.of(

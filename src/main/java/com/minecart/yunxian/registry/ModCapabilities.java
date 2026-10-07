@@ -47,6 +47,13 @@ public final class ModCapabilities {
                 ModBlockEntities.FLUID_TANK_BUDDING.get(),
                 (blockEntity, side) -> blockEntity
         );
+        // 智能温控室：可燃冰沙的罐，六个面都通。管道/泵与手持容器都靠这个能力进出——
+        // 少了这一行，方块照样能右键灌、玩家不会觉得不对，但管道一滴也推不进来（静默失效）
+        event.registerBlockEntity(
+                Capabilities.FluidHandler.BLOCK,
+                ModBlockEntities.SMART_TEMPERATURE_CHAMBER.get(),
+                (blockEntity, side) -> blockEntity
+        );
         // 弧光石母岩：1 M FE 的能量容器，只吃不吐（见 ArclightBuddingBlockEntity 的类注释）
         event.registerBlockEntity(
                 Capabilities.EnergyStorage.BLOCK,

@@ -11,7 +11,8 @@
         "FilterItemStackMixin",
         "DepotBehaviourAccessor",
         "DepotBehaviourMixin",
-        "LightningBoltMixin"
+        "LightningBoltMixin",
+        "BasinOperatingBlockEntityMixin"
     ],
     "client": [
         "LevelChunkMixin",
