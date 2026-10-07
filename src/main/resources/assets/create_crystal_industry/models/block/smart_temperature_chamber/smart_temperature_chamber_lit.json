@@ -1,8 +1,6 @@
 {
-    "parent": "minecraft:block/orientable",
+    "parent": "create_crystal_industry:block/smart_temperature_chamber/smart_temperature_chamber",
     "textures": {
-        "front": "create_crystal_industry:block/smart_temperature_chamber/smart_temperature_chamber_front_on",
-        "side": "create_crystal_industry:block/smart_temperature_chamber/smart_temperature_chamber_side",
-        "top": "create_crystal_industry:block/smart_temperature_chamber/smart_temperature_chamber_top"
+        "4": "create_crystal_industry:block/smart_temperature_chamber/smart_temperature_chamber_top_lit"
     }
 }

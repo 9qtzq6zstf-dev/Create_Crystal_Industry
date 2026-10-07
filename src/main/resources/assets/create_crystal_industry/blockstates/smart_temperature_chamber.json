@@ -1,79 +1,19 @@
 {
-    "variants": {
-        "blaze=none,facing=north": {
-            "model": "create_crystal_industry:block/smart_temperature_chamber/smart_temperature_chamber"
-        },
-        "blaze=none,facing=east": {
-            "model": "create_crystal_industry:block/smart_temperature_chamber/smart_temperature_chamber",
-            "y": 90
-        },
-        "blaze=none,facing=south": {
-            "model": "create_crystal_industry:block/smart_temperature_chamber/smart_temperature_chamber",
-            "y": 180
-        },
-        "blaze=none,facing=west": {
-            "model": "create_crystal_industry:block/smart_temperature_chamber/smart_temperature_chamber",
-            "y": 270
-        },
-        "blaze=smouldering,facing=north": {
-            "model": "create_crystal_industry:block/smart_temperature_chamber/smart_temperature_chamber_lit"
-        },
-        "blaze=smouldering,facing=east": {
-            "model": "create_crystal_industry:block/smart_temperature_chamber/smart_temperature_chamber_lit",
-            "y": 90
-        },
-        "blaze=smouldering,facing=south": {
-            "model": "create_crystal_industry:block/smart_temperature_chamber/smart_temperature_chamber_lit",
-            "y": 180
-        },
-        "blaze=smouldering,facing=west": {
-            "model": "create_crystal_industry:block/smart_temperature_chamber/smart_temperature_chamber_lit",
-            "y": 270
-        },
-        "blaze=fading,facing=north": {
-            "model": "create_crystal_industry:block/smart_temperature_chamber/smart_temperature_chamber_lit"
-        },
-        "blaze=fading,facing=east": {
-            "model": "create_crystal_industry:block/smart_temperature_chamber/smart_temperature_chamber_lit",
-            "y": 90
-        },
-        "blaze=fading,facing=south": {
-            "model": "create_crystal_industry:block/smart_temperature_chamber/smart_temperature_chamber_lit",
-            "y": 180
-        },
-        "blaze=fading,facing=west": {
-            "model": "create_crystal_industry:block/smart_temperature_chamber/smart_temperature_chamber_lit",
-            "y": 270
-        },
-        "blaze=kindled,facing=north": {
-            "model": "create_crystal_industry:block/smart_temperature_chamber/smart_temperature_chamber_lit"
-        },
-        "blaze=kindled,facing=east": {
-            "model": "create_crystal_industry:block/smart_temperature_chamber/smart_temperature_chamber_lit",
-            "y": 90
-        },
-        "blaze=kindled,facing=south": {
-            "model": "create_crystal_industry:block/smart_temperature_chamber/smart_temperature_chamber_lit",
-            "y": 180
-        },
-        "blaze=kindled,facing=west": {
-            "model": "create_crystal_industry:block/smart_temperature_chamber/smart_temperature_chamber_lit",
-            "y": 270
-        },
-        "blaze=seething,facing=north": {
-            "model": "create_crystal_industry:block/smart_temperature_chamber/smart_temperature_chamber_lit"
-        },
-        "blaze=seething,facing=east": {
-            "model": "create_crystal_industry:block/smart_temperature_chamber/smart_temperature_chamber_lit",
-            "y": 90
-        },
-        "blaze=seething,facing=south": {
-            "model": "create_crystal_industry:block/smart_temperature_chamber/smart_temperature_chamber_lit",
-            "y": 180
-        },
-        "blaze=seething,facing=west": {
-            "model": "create_crystal_industry:block/smart_temperature_chamber/smart_temperature_chamber_lit",
-            "y": 270
-        }
+  "variants": {
+    "blaze=none": {
+      "model": "create_crystal_industry:block/smart_temperature_chamber/smart_temperature_chamber"
+    },
+    "blaze=smouldering": {
+      "model": "create_crystal_industry:block/smart_temperature_chamber/smart_temperature_chamber_lit"
+    },
+    "blaze=fading": {
+      "model": "create_crystal_industry:block/smart_temperature_chamber/smart_temperature_chamber_lit"
+    },
+    "blaze=kindled": {
+      "model": "create_crystal_industry:block/smart_temperature_chamber/smart_temperature_chamber_lit"
+    },
+    "blaze=seething": {
+      "model": "create_crystal_industry:block/smart_temperature_chamber/smart_temperature_chamber_lit"
     }
+  }
 }
