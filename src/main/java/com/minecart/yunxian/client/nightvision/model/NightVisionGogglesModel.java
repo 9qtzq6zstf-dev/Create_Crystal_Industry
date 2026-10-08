@@ -42,8 +42,10 @@ public class NightVisionGogglesModel extends BakedModelWrapper<BakedModel> {
             return player.getData(EchoAttachments.NIGHT_VISION);
         }
         if (entity instanceof ArmorStand) {
-            // 盔甲架：环境光暗时显示 ON（夜视主题）
-            return entity.level().getMaxLocalRawBrightness(entity.blockPosition()) <= 7;
+            // 盔甲架：固定显示"戴上"的形态（即原先光照暗时的样子）。
+            // 原先按环境光每帧现算一次，既随光照闪烁、又要在渲染热路径上查光照；
+            // 展示用的盔甲架不需要这个区分，直接常亮。
+            return true;
         }
         // 其他生物（僵尸等）：默认 OFF
         return false;
