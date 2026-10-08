@@ -1,0 +1,28 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "pattern": [
+        " A ",
+        "BCB",
+        "DED"
+    ],
+    "key": {
+        "A": {
+            "item": "create_crystal_industry:flammable_ice_block"
+        },
+        "B": {
+            "item": "create:brass_sheet"
+        },
+        "C": {
+            "item": "create:brass_casing"
+        },
+        "D": {
+            "item": "create:electron_tube"
+        },
+        "E": {
+            "item": "create:precision_mechanism"
+        }
+    },
+    "result": {
+        "id": "create_crystal_industry:smart_temperature_chamber"
+    }
+}
