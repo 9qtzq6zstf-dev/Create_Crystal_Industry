@@ -693,8 +693,8 @@ The "whole End / whole Nether" cases go through the biome tags `#minecraft:is_en
 
 ## License
 
-**This mod may be included in modpacks published on CurseForge without asking for permission** — public or private, free or monetized.
+**This mod is licensed All Rights Reserved, but modpacks may include it without asking for permission.**
 
-The modpack must use **the CurseForge packaging method**: reference this mod in `manifest.json` by CurseForge project ID and file ID so the launcher downloads it from CurseForge itself. **Do not bundle the mod jar inside the archive**, and do not publish it on any platform other than CurseForge. The condition is that you credit the author (YunXian_LI) and link to the official download page.
+**Every modpack** MUST reference this mod in `manifest.json` / `.mrpack` by project ID and file ID, so the launcher downloads it from the platform itself — **do not bundle the mod jar inside the archive**. Re-publishing this mod as a standalone download, or distributing a modified version (including a jar with translation files added), requires prior written permission. For translations, distribute a resource pack, or open a PR to have them merged into the official jar.
 
 See [LICENSE.txt](LICENSE.txt) for the full terms.

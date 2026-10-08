@@ -12,7 +12,7 @@ section at the top.
 
 ---
 
-## 1.0.7 · 2026-10-06 ~ 2026-10-07
+## 1.0.7 · 2026-10-06 ~ 2026-10-08
 
 ### Added
 
@@ -56,7 +56,8 @@ section at the top.
 - A new block, the Smart Temperature Chamber: place it directly beneath a Basin, feed it Flammable
   Ice Slurry, and that Basin **ignores its heat requirement and just runs** — whether the recipe asks
   for heated, superheated, or a cooled state added by another mod. It carries its own 1000 mB tank
-  that pipes and buckets can fill, and the Engineer's Goggles read the level out.
+  that pipes and buckets can fill, and the Engineer's Goggles read out both the level and how much
+  slurry the group burns per second. The block is transparent and lets light through.
 - Smart Temperature Chambers built as one block **share their capacity**. Chambers on the same
   level, edge-adjacent to one another, are cut into rectangles which each form a group, and a
   group's capacity is the sum of its parts (four of them make 4000 mB): a pipe into any one of them
@@ -74,15 +75,14 @@ section at the top.
 
 ### Changed
 
-- Flammable Ice itself and the whole Flammable Ice decoration set are **no longer edible**. They
-  used to be, but right-clicking a burner with one fed you instead of the burner. Only the Slurry
-  Bottle and the Flammable Sundae can be consumed now.
 - The Flammable Sundae no longer grants Fire Resistance. That resistance cancelled the Scorching Cold
   burn outright, which would have made the Magma Cream on top pointless.
 - The Mechanical Cleaner's Ponder says the right thing about airflow direction now: blowing or
   sucking is switched in its interface, and the side slot only handles filters and amounts.
 - Flammable Ice Slurry blocks are carried along by contraptions instead of being dropped halfway.
   The Slurry Bucket is registered in the common bucket tag, so other mods treat it as a plain bucket.
+- Night Vision Goggles on an Armor Stand now stay in their worn form instead of flickering between
+  worn and unworn as the ambient light changes.
 
 ## 1.0.6 · 2026-10-05 ~ 2026-10-06
 

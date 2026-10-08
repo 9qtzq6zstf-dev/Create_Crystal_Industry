@@ -696,8 +696,8 @@ BuddingGrowthEngine.tryGrow(serverLevel, pos, random, definition, gate);
 
 ## 授权
 
-**本模组仅允许收录进发布在 CurseForge 上的整合包，无需另行申请许可**——公开或私有、免费或盈利均可。
+**本模组以 All Rights Reserved 授权，但整合包可直接收录，无需另行申请。**
 
-整合包必须使用 **CurseForge 的标准打包方式**：在 `manifest.json` 中以本模组的 CurseForge 项目 ID 与文件 ID 引用，由启动器从 CurseForge 自行下载。**不得把模组 jar 直接打进压缩包**，也不得发布到 CurseForge 以外的平台。条件是保留作者署名（YunXian_LI）并附上官方发布页链接。
+**任何整合包**都必须在 `manifest.json` / `.mrpack` 中按本模组的项目 ID 与文件 ID 引用，由启动器自行下载——**不得把模组 jar 直接打进压缩包**。转载本模组本体的独立下载，或分发修改版（含加过翻译的 jar），均需事先书面许可。翻译请以资源包形式分发，或提 PR 合入官方 jar。
 
 完整条款见 [LICENSE.txt](LICENSE.txt)。
