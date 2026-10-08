@@ -35,10 +35,16 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 智能温控室：烧<b>可燃冰沙</b>给正上方的工作盆供热。
+ * 智能温控室：烧<b>可燃冰沙</b>，把正上方的工作盆调成配方要的温度。
+ * <p>
+ * 定位上是<b>控温</b>而不是供热：配方要加热、要超级加热，还是别的模组加的冷却，它一律照做
+ * （"供热"那句会把话说小，见 {@code SmartTemperatureChamberBlockEntity#addToGoggleTooltip}
+ * 里那段同样的取舍）。
  * <p>
  * <b>它凭什么能顶替烈焰人燃烧室</b>——Create 判定工作盆热量的唯一入口是
  * {@code BasinBlockEntity.getHeatLevelOf(BlockState)}，第一句就是
@@ -426,5 +432,48 @@ public class SmartTemperatureChamberBlock extends BaseEntityBlock {
     @Override
     public RenderShape getRenderShape(BlockState state) {
         return RenderShape.MODEL;
+    }
+
+    /**
+     * 遮挡形状给空：这个方块<b>不参与面剔除</b>，它画的永远是模型本来的样子。
+     * <p>
+     * 模型不是整块实心——炉身四角各挖了一条竖槽、顶盖又比炉身收进 2 格，那张 casing 贴图本身
+     * 还有三成像素是镂空的（那几片像素由模型文件里的 {@code render_type} 去挖，见 {@code ModBlocks}）
+     * ——而默认的 {@code getShape}（也就是遮挡形状的默认来源）是整块实心立方体。原版的剔除判据是
+     * "我这一面的遮挡形状整个被邻居盖住，就把这一面<b>所有</b>四边形一起丢掉"
+     * （{@code Block.shouldRenderFace} 拿两边的 {@code getFaceOcclusionShape} 做差），
+     * 于是整机会被当成实心方块：邻居的面被剔掉（从这个方块的凹槽看过去就是一个个洞），
+     * 而它自己那些<b>凹进去</b>的面——槽壁、顶盖上收进去的内壁、上面压着东西时的那道台阶——
+     * 也会被一起剔掉，那些面是看得见的。
+     * <p>
+     * {@code noOcclusion()}（见 {@code ModBlocks}）只关掉"我挡不挡别人"那一半；另一半判的是
+     * <b>我自己的</b>遮挡形状，那一步根本不看 {@code canOcclude}，所以这里也要给空——
+     * 空形状会让 {@code shouldRenderFace} 在第二个分支就返回 true。邻居若也是温控室，
+     * 两边各自照常画自己的面（也就是两片贴在一起、法线相反的面，背面的那片被背面剔除吃掉，
+     * 不会有深度冲突），和 Create 的流体储罐一样不为此写 {@code skipRendering}。
+     * <p>
+     * 只动遮挡：碰撞形状仍是默认的整块实心（{@code getOcclusionShape} 不参与碰撞），
+     * 走路该撞还是撞。透光见下面那两位——它是<b>玻璃那样的透明方块</b>，不挡光。
+     */
+    @Override
+    protected VoxelShape getOcclusionShape(BlockState state, BlockGetter level, BlockPos pos) {
+        return Shapes.empty();
+    }
+
+    /**
+     * 光按玻璃那样整片穿过去。原版 {@code minecraft:glass} 就是靠这一位做到的
+     * （{@code TransparentBlock} 里只覆写了 {@code propagatesSkylightDown}、{@code getShadeBrightness}
+     * 与 {@code getVisualShape}，没碰 {@code getLightBlock}）。
+     * <p>
+     * 默认实现够不着：{@code propagatesSkylightDown} 的默认值是"形状不是整块实心"，
+     * 而这里的形状（碰撞用的那个）偏偏是整块实心，于是默认只肯给 1 级衰减——树叶、水那一档的
+     * 半透明，拿它砌的墙/地板仍会一层层把光吃掉。改成 true 之后不必再动
+     * {@code getLightBlock}：那个默认实现走 {@code isSolidRender}，而我们已经声明不遮挡，
+     * 于是它自己就得出 0（衰减为零）。这一位正好与染色玻璃 {@code TintedGlassBlock} 相反
+     * ——那位是"看不见但挡光"，这里是"看得见也不挡光"。
+     */
+    @Override
+    protected boolean propagatesSkylightDown(BlockState state, BlockGetter level, BlockPos pos) {
+        return true;
     }
 }

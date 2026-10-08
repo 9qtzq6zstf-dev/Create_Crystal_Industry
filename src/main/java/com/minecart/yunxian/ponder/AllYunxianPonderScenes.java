@@ -88,7 +88,7 @@ public class AllYunxianPonderScenes {
                 .addStoryBoard("resonance_table/resonance_display", ResonanceScenes::resonanceDisplay,
                         AllYunxianPonderTags.MACHINES);
 
-        // 7) 智能温控室：给工作盆供热 / 拼起来共享一只大罐 / 当蒸汽锅炉的热源
+        // 7) 智能温控室：把工作盆调到配方要的温度 / 拼起来共享容量 / 当蒸汽锅炉的热源
         blocks.forComponents(ModBlocks.SMART_TEMPERATURE_CHAMBER.get())
                 .addStoryBoard("temperature_chamber/heating", TemperatureChamberScenes::chamberHeating,
                         AllYunxianPonderTags.MACHINES)

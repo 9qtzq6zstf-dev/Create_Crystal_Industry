@@ -178,7 +178,7 @@ public final class ModBlocks {
     /**
      * 可燃冰圣代：玻璃杯碗盛着的可燃冰，顶上点缀熔岩，既能喝也能当摆件。
      * <p>
-     * 属性抄玻璃（音效、硬度、无遮挡、不导电），因为它的外形就是一只玻璃杯碗；
+     * 属性抄玻璃（音效、硬度、无遮挡、不导电），因为它的外形就是一个玻璃杯碗；
      * 形状由方块自己收窄、点着的亮度走 {@code lightLevel}（和原版蜡烛同一个写法），
      * 其余行为见 {@link FlammableSundaeBlock}：右键收回、冻住周围的水、像蜡烛一样能点着。
      * <p>
@@ -308,14 +308,30 @@ public final class ModBlocks {
      * {@code textures/block/smart_temperature_chamber}）：不烧与烧着只差顶面一张贴图
      * （{@code smart_temperature_chamber_lit} 继承基础模型、只覆盖 {@code 4} 号槽）。
      * <p>
-     * 形状是整块实心立方体，<b>不需要</b> {@code noOcclusion}、也不用自己收窄形状——
-     * 照常遮挡、照常传导红石，和本模组其它整块机器一致。
+     * <b>它是玻璃那样的透明方块</b>，属性表按本模组别的机器那一套写（{@code noOcclusion} 加三个
+     * {@code false}），理由分两半：
+     * <p>
+     * 一是<b>模型不是整块实心</b>——炉身四角各挖了一条竖槽、顶盖比炉身收进 2 格，贴图本身也留了
+     * 大片镂空——而默认的 {@code getShape}（也正是遮挡形状的来源）是整块实心立方体。不带
+     * {@code noOcclusion} 的话它会被当成实心方块去剔邻居的面：凹槽正对着的那块石头会缺一面，
+     * 从槽里看过去就是一个个洞；它自己那一侧的面也会被邻居剔掉。方块那一半由
+     * {@code SmartTemperatureChamberBlock#getOcclusionShape} 兜（给空形状），镂空的那几片像素
+     * 由模型文件里的 {@code render_type} 兜（规矩见 {@code ModRenderers} 里水晶电池那一段）。
+     * <p>
+     * 二是<b>透光与红石</b>：光按玻璃那样整片穿过去（方块类里覆写的
+     * {@code propagatesSkylightDown}），而 {@code isRedstoneConductor} / {@code isSuffocating} /
+     * {@code isViewBlocking} 三个 {@code false} 与电力催生器一字不差——机器不做红石导体。
+     * 碰撞形状仍是默认的整块实心，走路照样撞得到。
      * <p>
      * 方块状态只有 {@code blaze} 一位（5 档位 5 条变体），没有朝向——专属模型是中心对称的，
      * 没有"正面"可言。
      */
     public static final DeferredBlock<Block> SMART_TEMPERATURE_CHAMBER = registerBlock("smart_temperature_chamber",
             () -> new SmartTemperatureChamberBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK)
+                    .noOcclusion()
+                    .isRedstoneConductor((state, level, pos) -> false)
+                    .isSuffocating((state, level, pos) -> false)
+                    .isViewBlocking((state, level, pos) -> false)
                     .lightLevel(SmartTemperatureChamberBlock::getLight)));
 
     /** AE2 是否加载：可选联动（福鲁伊克斯母岩）的开关 */

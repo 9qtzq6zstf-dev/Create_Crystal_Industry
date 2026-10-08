@@ -1,4 +1,5 @@
 {
+    "render_type": "minecraft:cutout_mipped",
     "parent": "create_crystal_industry:block/smart_temperature_chamber/smart_temperature_chamber",
     "textures": {
         "4": "create_crystal_industry:block/smart_temperature_chamber/smart_temperature_chamber_top_lit"

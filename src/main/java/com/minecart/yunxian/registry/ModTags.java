@@ -47,7 +47,7 @@ public final class ModTags {
     /**
      * 通用桶标签 c:buckets（<b>物品</b>标签，NeoForge 通用标签的一支）。
      * <p>
-     * 别的模组按「这是不是一只桶」筛物品时读的就是它（Create 自己的蜂蜜桶、巧克力桶也在里面）。
+     * 别的模组按「这是不是一个桶」筛物品时读的就是它（Create 自己的蜂蜜桶、巧克力桶也在里面）。
      * 可燃冰沙桶虽然装的是方块、不是流体（见 {@code ModItems#FLAMMABLE_ICE_SLURRY_BUCKET}），
      * 但它终归是「用桶舀起来、倒出去」的一件容器，语义上归这一档。
      */

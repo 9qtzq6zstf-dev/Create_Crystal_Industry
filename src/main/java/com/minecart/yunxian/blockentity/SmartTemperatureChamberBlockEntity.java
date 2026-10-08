@@ -12,6 +12,7 @@ import com.simibubi.create.content.processing.burner.BlazeBurnerBlock.HeatLevel;
 import com.simibubi.create.foundation.utility.CreateLang;
 
 import net.minecraft.ChatFormatting;
+import net.minecraft.SharedConstants;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
@@ -30,7 +31,7 @@ import net.neoforged.neoforge.fluids.capability.templates.FluidTank;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 智能温控室的方块实体：一只可燃冰沙的罐子，烧它给上方的工作盆供热。
+ * 智能温控室的方块实体：装着可燃冰沙的罐子，烧它把上方的工作盆调成配方要的温度。
  * <p>
  * <b>罐是主人，方块状态是投影</b>。罐里有没有足够烧一个周期的量，直接决定方块状态上的
  * {@code blaze} 是不是 {@link HeatLevel#SEETHING}（工作盆只读那一位，见
@@ -52,7 +53,7 @@ import org.jetbrains.annotations.Nullable;
  * <b>共享容量</b>：同一个 Y 上、四向相邻的一批温控室，会被切成若干块<b>矩形</b>
  * （反复取面积最大的全满矩形，剩下的再切，见 {@link SmartTemperatureChamberBlock#groupAt}），
  * 每块各自算一组。垂直方向不算，形状不必是一个矩形——3x3 缺一角会切出它里面那块 2x3。
- * 整组共享一只 {@code 台数 x 1000 mB} 的大罐：
+ * 整组共享一个 {@code 台数 x 1000 mB} 的大罐：
  * <ul>
  *   <li>够不够烧看的是<b>整组</b>的总量，所以组里任意一格补到料，整组当 tick 一起点着；</li>
  *   <li>管子接到任意一格都能把整组灌满（自己先涨、溢出给同组其它格，见 {@link #fill}）；</li>
@@ -309,8 +310,8 @@ public class SmartTemperatureChamberBlockEntity extends BlockEntity implements I
     // ==================== 流体能力 ====================
 
     /*
-     * 对外这一格就是<b>整组那一只大罐</b>：容量报整组的、存量报整组的总和，灌与抽也都在整组上做。
-     * 管道、储罐表、注液器看到的因此都是一只 N x 1000 mB 的罐，而不是"某一块方块的 1000 mB"。
+     * 对外这一格就是<b>整组共享的那一个罐</b>：容量报整组的、存量报整组的总和，灌与抽也都在整组上做。
+     * 管道、储罐表、注液器看到的因此都是一个 N x 1000 mB 的罐，而不是"某一块方块的 1000 mB"。
      * 只有真正的存放还是各格各放（这样结构拆分/合并不会丢料），那属于实现细节。
      */
 
@@ -441,7 +442,7 @@ public class SmartTemperatureChamberBlockEntity extends BlockEntity implements I
     // ==================== 护目镜 ====================
 
     /**
-     * 两行：液位（够烧绿、不够红），以及不够时把原因说明白。
+     * 浮窗从上到下：液位（够烧绿、不够红）、共享了几台、整组每秒烧多少，不够时再把原因说明白。
      * <p>
      * 流体的名字报<b>罐里那一份的实名</b>（{@code FluidStack#getHoverName}），空罐时退回流体类型
      * 自己的名字——罐只收一种流体，但空着的时候总得有个名字可显示。
@@ -468,9 +469,11 @@ public class SmartTemperatureChamberBlockEntity extends BlockEntity implements I
                             .withStyle(ChatFormatting.GRAY))
                     .forGoggles(tooltip, 1);
         }
+        // 报的是<b>整组</b>的速率：组里每一台各按自己的周期烧，N 台就是单台的 N 倍。
+        // 台数从同步过来的容量反推（见 groupDrainPerSecond），客户端不必再扫一遍全组
         CreateLang.builder()
                 .add(Component.translatable("create_crystal_industry.goggles.temperature_chamber.fluid_cost",
-                                DRAIN_AMOUNT, DRAIN_INTERVAL_TICKS)
+                                formatRate(groupDrainPerSecond()))
                         .withStyle(ChatFormatting.GRAY))
                 .forGoggles(tooltip, 1);
 
@@ -483,5 +486,30 @@ public class SmartTemperatureChamberBlockEntity extends BlockEntity implements I
                     .forGoggles(tooltip, 1);
         }
         return true;
+    }
+
+    /**
+     * 整组每秒烧掉多少 mB：单台每 {@link #DRAIN_INTERVAL_TICKS} tick 扣 {@link #DRAIN_AMOUNT} mB，
+     * 组里每一台各烧各的，所以是单台的 {@code 台数} 倍（这也就是"总续航与单台一样"的另一面）。
+     * <p>
+     * 台数由同步过来的 {@code sharedCapacity} 反推——每台正好 {@link #CAPACITY}，
+     * 而客户端手里只有共享容量与总燃料这两个数（理由见 {@link #sharedFuel} 那段），扫不了全组。
+     * 容量万一还没同步过来（构造时就默认 {@code CAPACITY}）也只会报成单台的速率，不会报 0。
+     */
+    private double groupDrainPerSecond() {
+        int members = Math.max(1, sharedCapacity / CAPACITY);
+        return members * (double) DRAIN_AMOUNT * SharedConstants.TICKS_PER_SECOND / DRAIN_INTERVAL_TICKS;
+    }
+
+    /**
+     * 速率写成字符串：整数不带小数点（{@code 25}），否则保留一位（单台是 {@code 12.5}，
+     * 这个小数点后那位是常态，不能直接取整）。按 0.1 mB 为单位四舍五入一次，
+     * 常数以后改了也不至于显示成 {@code 14.2...} 这种一串。
+     */
+    private static String formatRate(double rate) {
+        long tenths = Math.round(rate * 10.0);
+        return tenths % 10 == 0
+                ? Long.toString(tenths / 10)
+                : tenths / 10 + "." + tenths % 10;
     }
 }

@@ -1,6 +1,7 @@
 {
 	"format_version": "1.9.0",
 	"credit": "Made with Blockbench",
+	"render_type": "minecraft:cutout_mipped",
 	"parent": "create:block/block",
 	"textures": {
 		"1": "create_crystal_industry:block/smart_temperature_chamber/smart_temperature_chamber_inner",
