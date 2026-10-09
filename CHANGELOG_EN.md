@@ -12,6 +12,14 @@ section at the top.
 
 ---
 
+## 1.0.8 · 2026-10-09
+
+### Changed
+
+- Feeding Flammable Ice to the Blaze Burner no longer stops after the second piece: it now tops up
+  piece by piece like coal, up to the same cap as any ordinary fuel. It still drives the burner
+  superheated — only how much can be stockpiled has changed.
+
 ## 1.0.7 · 2026-10-06 ~ 2026-10-08
 
 ### Added
