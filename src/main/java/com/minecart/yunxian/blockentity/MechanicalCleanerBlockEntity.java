@@ -64,7 +64,11 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
     /** 吸尘器内部库存 */
     private final ItemStackHandler inventory = new ItemStackHandler(INVENTORY_SIZE);
 
-    /** 侧面的过滤 / 方向配置槽（吹出数量与模式也由它承载，见 FilteringBehaviour 的 showCount 机制） */
+    /**
+     * 侧面的过滤 / 方向配置槽（吹出数量与模式也由它承载，见 FilteringBehaviour 的 showCount 机制）。
+     * 数量滑块只在该配置真正生效时显示：吹出模式恒显示；吸气模式仅在正前方有容器时显示，
+     * 敞开吸气（无容器）时隐藏，只保留过滤功能（见 {@link #shouldShowCount()}）。
+     */
     private MechanicalCleanerFilterBehaviour filtering;
 
     // ===== 气流（复用鼓风机 AirCurrent）=====
@@ -195,7 +199,7 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
             updateAirFlow = true;
             sendData();
             updateChute();
-        }).showCountWhen(() -> true);   // 始终显示数量配置（智能溜槽同款机制）
+        }).showCountWhen(this::shouldShowCount);   // 数量配置只在生效时显示（智能溜槽同款机制）
         filtering.setLabel(Component.translatable("create_crystal_industry.mechanical_cleaner.filter"));
         behaviours.add(filtering);
     }
@@ -258,6 +262,31 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
     /** 是否处于"吸入"模式（气流方向与朝向相反） */
     private boolean isPulling() {
         return getRotationDirection() == MechanicalCleanerFilterBehaviour.RotationDirection.REVERSED;
+    }
+
+    /**
+     * 值框"数量"滑块是否显示（两端都会调用：客户端画标签、服务端判 {@code acceptsValueSettings}）。
+     * <p>
+     * 数量配置只服务两处 —— 吹出模式的筛选条件（{@link #ejectItems()}）、
+     * 以及吸气时从正前方容器直抽的每次上限（{@link #collectItemsFromContainer()}）。
+     * 吹出模式恒显示；吸气模式仅当正前方真有容器时才显示，
+     * 敞开吸气（无容器）时该配置永远读不到，隐藏滑块以免误导玩家。
+     */
+    private boolean shouldShowCount() {
+        return !isPulling() || getFrontContainer() != null;
+    }
+
+    /**
+     * 吸尘器正前方（FACING 方向）区块面向自身的那个面所暴露的容器；没有则返回 {@code null}。
+     * 吸气取数、吹出直送、以及数量滑块的显隐都用它，保证判定口径一致。
+     * 能力在客户端同样注册（无 dist 门控），故两端结果一致。
+     */
+    private IItemHandler getFrontContainer() {
+        if (level == null)
+            return null;
+        Direction facing = getBlockState().getValue(MechanicalCleanerBlock.FACING);
+        return level.getCapability(Capabilities.ItemHandler.BLOCK,
+                worldPosition.relative(facing), facing.getOpposite());
     }
 
     /** 渲染用转速：方向反转时取负，仅影响视觉旋转方向（不改变动能网络） */
@@ -615,10 +644,8 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
      * 只走物品过滤（canSuck）；数量精确/小于等于模式只影响吹出，不影响吸取上限。
      */
     private void collectItemsFromContainer() {
-        Direction facing = getBlockState().getValue(MechanicalCleanerBlock.FACING);
-        BlockPos frontPos = worldPosition.relative(facing);
-        // 访问前方面对吸尘器的那个面（与 ejectItems 直送容器时一致）
-        IItemHandler source = level.getCapability(Capabilities.ItemHandler.BLOCK, frontPos, facing.getOpposite());
+        // 正前方没有容器就直接返回（与数量滑块显隐同一口径，见 getFrontContainer）
+        IItemHandler source = getFrontContainer();
         if (source == null)
             return;
 
@@ -761,7 +788,7 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
         ItemStack stack = inventory.extractItem(slotToEject, stackCount, false);
 
         // 正前方是容器：直接输送
-        IItemHandler target = level.getCapability(Capabilities.ItemHandler.BLOCK, frontPos, facing.getOpposite());
+        IItemHandler target = getFrontContainer();
         if (target != null) {
             ItemStack remainder = ItemHandlerHelper.insertItemStacked(target, stack, false);
             if (!remainder.isEmpty()) {
