@@ -216,9 +216,14 @@ public class SmartTemperatureChamberBlockEntity extends BlockEntity implements I
     /**
      * 组内总燃料：把各格罐里的量加起来。
      * <p>
-     * <b>每 tick 现算，不跟结构一起缓存</b>——这样往任意一格补一桶，整组当 tick 就会点亮。
-     * 成员就那么几个（上限 {@link SmartTemperatureChamberBlock#MAX_COMPONENT_CELLS}），
-     * 加一遍是几十次数组访问，很便宜。
+     * <b>每 tick 现算，不跟结构一起缓存</b>——这样往任意一格补一桶，整组当 tick 就会点亮，
+     * 而且组里每一台护目镜上的总数都会跟着变（每台只看得见同步过来的那两个数）。
+     * <p>
+     * 代价是摆满时这一遍加总是 <b>O(台数²)</b>：一组最多
+     * {@link SmartTemperatureChamberBlock#MAX_COMPONENT_CELLS} 台，每台每 tick 都扫一遍整组。
+     * 四五十台以内可以忽略；真摆满一整块 16x16（256 台）时每 tick 是 256 x 256
+     * 约六万五千次方块实体查找，量级在几毫秒。想省掉就得改成"只有一台算、算完通知同组其它台"，
+     * 而那会让读数比现在多一个 tick 的延迟，这里按"即时"优先。
      */
     private int groupFuel() {
         int total = 0;

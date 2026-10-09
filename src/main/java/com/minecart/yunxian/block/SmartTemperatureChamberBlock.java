@@ -147,13 +147,19 @@ public class SmartTemperatureChamberBlock extends BaseEntityBlock {
     /**
      * 一整片连通块最多几格。超过就<b>整块都不共享</b>，每台退回只管自己那一桶。
      * <p>
-     * 这是纯粹的代价上限：每一台都要独立算出"自己属于哪个矩形"（见 {@link #groupAt}），
-     * 而那件事要在整块连通域上反复切矩形。现实里没人会把几十台摆成一坨，
-     * 但一条 50 格的长龙是摆得出来的，不能让它把服务器拖死。
+     * 取 256 = 一整块 <b>16x16</b>：摆满 16x16 照样共享（正好卡在线上，不再往上放），
+     * 再大就退回各自为政。上限之所以存在，是因为一组的代价随台数走：
+     * 每一台都要独立算出"自己属于哪个矩形"（见 {@link #groupAt}，要在整块连通域上反复切矩形），
+     * 每 tick 还要把整组成员扫一遍把燃料加总（见 {@code SmartTemperatureChamberBlockEntity}），
+     * 摆满 256 台时这份加总是 O(台数²)。
      */
-    public static final int MAX_COMPONENT_CELLS = 64;
+    public static final int MAX_COMPONENT_CELLS = 256;
 
-    /** 外接矩形的面积上限，同样是给切矩形的算法兜底（防止一条 1x64 的长龙撑出 64x64 的网格） */
+    /**
+     * 外接矩形的面积上限：给切矩形的算法兜底，也挡住"稀疏的一大片"
+     * （256 格散在一张 256x256 的网里，每一台都要在那张网上切矩形）。
+     * 16x16 正好是 256，所以摆满一整块 16x16 仍在这条线以内。
+     */
     private static final int MAX_BOX_AREA = 256;
 
     /**
