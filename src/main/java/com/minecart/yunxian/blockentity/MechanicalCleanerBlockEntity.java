@@ -1,5 +1,6 @@
 package com.minecart.yunxian.blockentity;
 
+import com.minecart.yunxian.Yunxian;
 import com.minecart.yunxian.advancement.YunxianAdvancements;
 import com.minecart.yunxian.behaviour.MechanicalCleanerFilterBehaviour;
 import com.minecart.yunxian.menu.MechanicalCleanerMenu;
@@ -14,9 +15,12 @@ import com.simibubi.create.content.kinetics.fan.IAirCurrentSource;
 import com.simibubi.create.content.kinetics.fan.NozzleBlockEntity;
 import com.simibubi.create.content.logistics.chute.ChuteBlockEntity;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
+import com.simibubi.create.foundation.item.TooltipHelper;
 import com.simibubi.create.foundation.utility.CreateLang;
 import com.simibubi.create.infrastructure.config.AllConfigs;
 import com.simibubi.create.infrastructure.config.CKinetics;
+import net.createmod.catnip.lang.FontHelper;
+import net.createmod.catnip.lang.Lang;
 import net.createmod.catnip.math.VecHelper;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
@@ -52,6 +56,12 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
     /** 容器容量：27 格 */
     public static final int INVENTORY_SIZE = 27;
 
+    /**
+     * 满仓提示的翻译键，<b>不含命名空间</b>（LangBuilder 会自己补 {@code Yunxian.MODID}）。
+     * 资源包里对应的条目见 {@code assets/create_crystal_industry/lang/}。
+     */
+    private static final String FULL_HINT_KEY = "hint.full_mechanical_cleaner";
+
     /** 目标气流长度最小值（格） */
     public static final int SUCK_RANGE_MIN = 1;
 
@@ -63,6 +73,13 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
 
     /** 吸尘器内部库存 */
     private final ItemStackHandler inventory = new ItemStackHandler(INVENTORY_SIZE);
+
+    /**
+     * 库存已满：27 格全部塞满，再吸不进任何物品。
+     * 判定只在服务端做（客户端不持有库存，库存不走客户端包），结果随客户端包同步下去，
+     * 供 {@link #getSpeed()}（风力与扇叶渲染）和护目镜提示读取——两边读的是同一个值。
+     */
+    private boolean inventoryFull;
 
     /**
      * 侧面的过滤 / 方向配置槽（吹出数量与模式也由它承载，见 FilteringBehaviour 的 showCount 机制）。
@@ -329,6 +346,8 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
         // 两端都读：客户端需要计算气流长度（SuckRange）与 GUI 初始值
         suckRange = Math.max(SUCK_RANGE_MIN, Math.min(SUCK_RANGE_MAX, compound.getInt("SuckRange")));
         if (clientPacket) {
+            // 先落满仓标志：rebuildAirBounds 会问 getSpeed()，它读的就是这个值
+            inventoryFull = compound.getBoolean("InventoryFull");
             rebuildAirBounds();
 
             // 解析服务端发来的"吸入事件"，加入客户端幻影渲染队列
@@ -353,6 +372,8 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
         if (compound.contains("Inventory")) {
             inventory.deserializeNBT(registries, compound.getCompound("Inventory"));
         }
+        // 满仓标志不入档：它是库存的派生状态，读档后立刻重算，免得第一 tick 之前读到旧值
+        inventoryFull = isInventoryFull();
     }
 
     @Override
@@ -360,6 +381,8 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
         super.write(compound, registries, clientPacket);
         compound.putInt("SuckRange", suckRange);
         if (clientPacket) {
+            // 满仓标志：客户端靠它冻结扇叶、清空风场、给出护目镜提示
+            compound.putBoolean("InventoryFull", inventoryFull);
             // 客户端包：携带待播放的吸入事件并清空待发队列
             if (!pendingPhantoms.isEmpty()) {
                 CompoundTag list = new CompoundTag();
@@ -387,17 +410,47 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
         return getBlockState().getValue(MechanicalCleanerBlock.POWERED);
     }
 
-    /** 红石锁定时转速汇报为 0：无风、不吸不吹 */
+    /**
+     * 转速汇报：两种情况下汇报 0，表现都是"无风、扇叶冻结"。
+     * <ul>
+     *   <li>红石锁定：彻底停止；</li>
+     *   <li>满仓停摆（见 {@link #isStalled()}）：吸不动了，也就不转了。</li>
+     * </ul>
+     * 两者都不影响动能网络本身与传动杆渲染（见 {@link #getTrueSpeed()}）。
+     */
     @Override
     public float getSpeed() {
-        if (isRedstoneLocked())
+        if (isRedstoneLocked() || isStalled())
             return 0;
         return super.getSpeed();
     }
 
-    /** 真实网络转速：不受红石锁影响，供传动杆渲染使用 */
+    /** 真实网络转速：不受红石锁与满仓停摆影响，供传动杆渲染使用 */
     public float getTrueSpeed() {
         return super.getSpeed();
+    }
+
+    // ==================== 满仓停摆 ====================
+
+    /**
+     * 库存是否已经塞满：27 格全部达到各自的最大堆叠数，此时再吸不进任何物品。
+     * 与过滤无关——过滤决定的是"吸什么"，不是"有没有地方放"。
+     */
+    private boolean isInventoryFull() {
+        for (int slot = 0; slot < inventory.getSlots(); slot++) {
+            ItemStack stack = inventory.getStackInSlot(slot);
+            if (stack.isEmpty() || stack.getCount() < stack.getMaxStackSize())
+                return false;
+        }
+        return true;
+    }
+
+    /**
+     * 是否因满仓而停摆：只在吸气模式下成立。
+     * 吹出模式不能被自己锁死——它正靠把库存吹出去腾地方，满仓时照常工作。
+     */
+    public boolean isStalled() {
+        return isPulling() && inventoryFull;
     }
 
     // ==================== 气流驱动（仿鼓风机） ====================
@@ -473,6 +526,17 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
 
         boolean server = !level.isClientSide;
 
+        // 满仓判定只在服务端做：客户端没有库存，结果靠下面的客户端包同步下去。
+        // 翻转时顺手把气流标记为待重建——既让本侧的风场跟着收放，也借那次 sendData
+        // 把标志发给客户端（扇叶冻结、风场清空、护目镜提示都靠它）。
+        if (server) {
+            boolean full = isInventoryFull();
+            if (full != inventoryFull) {
+                inventoryFull = full;
+                updateAirFlow = true;
+            }
+        }
+
         // 周期性检查阻挡：每 fanBlockCheckRate(30) tick 重建一次气流
         if (server && airCurrentUpdateCooldown-- <= 0) {
             airCurrentUpdateCooldown = AllConfigs.server().kinetics.fanBlockCheckRate.get();
@@ -485,11 +549,12 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
             sendData();
         }
 
-        boolean hasPower = getTrueSpeed() != 0;   // 是否有动力输入（网络转速，不受红石锁影响）
+        boolean hasPower = getTrueSpeed() != 0;   // 是否有动力输入（网络转速，不受红石锁与满仓影响）
         boolean locked = isRedstoneLocked();      // 红石锁：完全停止
+        boolean stalled = isStalled();            // 满仓停摆：吸不动了，同样不转
 
-        // 有动力且未锁定：驱动气流
-        if (hasPower && !locked) {
+        // 有动力、未锁定、未停摆：驱动气流
+        if (hasPower && !locked && !stalled) {
             // 每 5 tick 刷新气流中的实体列表
             if (entitySearchCooldown-- <= 0) {
                 entitySearchCooldown = 5;
@@ -499,8 +564,8 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
         }
 
         if (server) {
-            if (locked)
-                return;   // 红石锁：不吸不吹
+            if (locked || stalled)
+                return;   // 红石锁 / 满仓停摆：不吸不吹
 
             if (isPulling()) {
                 if (hasPower) {
@@ -824,9 +889,10 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
      * <p>
      * 只在"这一 tick 本来就会被 {@link #collectItemsInFlow} 收走"时才接管，逐条对齐：
      * <ul>
-     *   <li>{@code getSpeed() != 0}：与 tick 里的 {@code hasPower && !locked} 等价
-     *       （红石锁与无动力都汇报 0）。少了这一条，红石锁切换后风场边界还没重建的那几 tick
-     *       会把物品收进来，而那几 tick 吸尘器其实是不吸的。</li>
+     *   <li>{@code getSpeed() != 0}：与 tick 里的 {@code hasPower && !locked && !stalled} 等价
+     *       （无动力、红石锁与满仓停摆都汇报 0）。少了这一条，红石锁切换后风场边界还没重建的那几 tick
+     *       会把物品收进来，而那几 tick 吸尘器其实是不吸的；满仓时同理，接管的判定一旦漏掉，
+     *       就会绕开 {@link #isStalled()} 把物品收进来。</li>
      *   <li>点在 {@code airCurrent.bounds} 内：这正是 {@link #collectItemsInFlow} 用的范围。</li>
      *   <li>该点所在的气流段没有加工催化剂（熔岩、营火等）：那一段气流会把物品洗涤、熔炼，
      *       接管就跳过了加工。留给实体流程，它被吸走时拿到的才是加工后的产物。</li>
@@ -916,6 +982,42 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
     /** 该命中点是否落在侧面过滤/方向配置栏位（值框）上 */
     public boolean isHitOnConfigSlot(Vec3 hit) {
         return filtering != null && filtering.testHit(hit);
+    }
+
+    /**
+     * 悬停信息：满仓停摆时给出提示。
+     * 文案与排版都照着机械动力给"机械手"（部署器）写的那条来：金色标题 + 灰白正文。
+     * <p>
+     * 排版没直接调 {@code TooltipHelper.addHint}：它内部走 {@code CreateLang}，而 LangBuilder 会
+     * 往 key 前面<b>再拼一个命名空间</b>（部署器传的是不带命名空间的 {@code "hint.full_deployer"}）。
+     * 换成我们自己的 key 就会被拼成 {@code create.create_crystal_industry.hint...}，
+     * 游戏里只会显示原始键名。这里改用 {@link Lang#builder(String)} 显式带上本模组的命名空间。
+     * <p>
+     * 只在"有动力、却是被自己的库存卡住"时提示：没动力时它本来就不转，
+     * 这时再报一句"无法工作"只会误导玩家去找不存在的问题。
+     */
+    @Override
+    public boolean addToTooltip(List<Component> tooltip, boolean isPlayerSneaking) {
+        // 过载 / 转速不足由基类先行提示（与部署器同款写法）
+        if (super.addToTooltip(tooltip, isPlayerSneaking))
+            return true;
+        if (getTrueSpeed() == 0)
+            return false;
+        if (!isStalled())
+            return false;
+
+        // 标题（金色）——LangBuilder 负责补上"create_crystal_industry."前缀与护目镜缩进
+        Lang.builder(Yunxian.MODID)
+                .translate(FULL_HINT_KEY + ".title")
+                .style(ChatFormatting.GOLD)
+                .forGoggles(tooltip);
+        // 正文（灰白相间）："_…_"包住的部分是高亮，按行宽切好再逐行挂上去
+        List<Component> lines = TooltipHelper.cutTextComponent(
+                Component.translatable(Yunxian.MODID + "." + FULL_HINT_KEY),
+                FontHelper.Palette.GRAY_AND_WHITE);
+        for (Component line : lines)
+            Lang.builder(Yunxian.MODID).add(line).forGoggles(tooltip);
+        return true;
     }
 
     @Override

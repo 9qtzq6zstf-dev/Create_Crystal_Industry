@@ -51,6 +51,7 @@ public final class ModCreativeTabs {
                         output.accept(ModBlocks.SMART_DRILL.get());
                         output.accept(ModBlocks.MECHANICAL_CLEANER.get());
                         output.accept(ModBlocks.SMART_TEMPERATURE_CHAMBER.get());
+                        output.accept(ModBlocks.PRESSURE_RELIEF_HATCH.get());
                         // 水晶电池还是半成品，暂时不上物品栏（方块与物品仍在注册表里，/give 能拿到）；
                         // 做完之后把这一行加回来即可
                         output.accept(ModBlocks.RESONANCE_TABLE.get());

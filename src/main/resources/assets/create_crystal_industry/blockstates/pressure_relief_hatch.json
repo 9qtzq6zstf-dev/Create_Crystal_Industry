@@ -1,0 +1,27 @@
+{
+    "variants": {
+        "facing=up": {
+            "model": "create_crystal_industry:block/pressure_relief_hatch/block",
+            "x": 90
+        },
+        "facing=down": {
+            "model": "create_crystal_industry:block/pressure_relief_hatch/block",
+            "x": 270
+        },
+        "facing=north": {
+            "model": "create_crystal_industry:block/pressure_relief_hatch/block",
+            "y": 180
+        },
+        "facing=south": {
+            "model": "create_crystal_industry:block/pressure_relief_hatch/block"
+        },
+        "facing=east": {
+            "model": "create_crystal_industry:block/pressure_relief_hatch/block",
+            "y": 270
+        },
+        "facing=west": {
+            "model": "create_crystal_industry:block/pressure_relief_hatch/block",
+            "y": 90
+        }
+    }
+}

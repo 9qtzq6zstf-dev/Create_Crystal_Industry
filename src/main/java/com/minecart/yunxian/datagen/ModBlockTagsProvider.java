@@ -63,6 +63,7 @@ public class ModBlockTagsProvider extends BlockTagsProvider {
                 ModBlocks.ACCELERATOR.get(),
                 ModBlocks.SMART_DRILL.get(), ModBlocks.MECHANICAL_ACCELERATOR.get(),
                 ModBlocks.MECHANICAL_CLEANER.get(), ModBlocks.CRYSTAL_BATTERY.get(),
+                ModBlocks.PRESSURE_RELIEF_HATCH.get(),
                 ModBlocks.RESONANCE_TABLE.get(), ModBlocks.SMART_TEMPERATURE_CHAMBER.get());
         // minecraft:walls —— 原版把每一种墙都登记进来。墙的形状与连接不依赖这个标签，
         // 它是给数据包/别的模组认「这是一堵墙」用的约定标签；物品侧由

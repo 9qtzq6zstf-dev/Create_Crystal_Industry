@@ -7,6 +7,7 @@ import com.minecart.yunxian.block.FlammableIceSlurryBlock;
 import com.minecart.yunxian.block.FlammableSundaeBlock;
 import com.minecart.yunxian.block.MechanicalAcceleratorBlock;
 import com.minecart.yunxian.block.MechanicalCleanerBlock;
+import com.minecart.yunxian.block.PressureReliefHatchBlock;
 import com.minecart.yunxian.block.ResonanceTableBlock;
 import com.minecart.yunxian.block.SmartDrillBlock;
 import com.minecart.yunxian.block.SmartTemperatureChamberBlock;
@@ -276,6 +277,33 @@ public final class ModBlocks {
     // 动力吸尘器
     public static final DeferredBlock<Block> MECHANICAL_CLEANER = registerBlock("mechanical_cleaner",
             () -> new MechanicalCleanerBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK).noOcclusion()));
+
+    /**
+     * 泄压舱口：可贴在任意方块面上的小舱门（现在只有外观，没有功能）。
+     * <p>
+     * 依附规则、六向可放、含水与掉落全部走 {@link PressureReliefHatchBlock}（原版晶簇那一套）；
+     * 这里的属性表照原版紫水晶晶簇那张抄——{@code forceSolidOn} / {@code noOcclusion} /
+     * {@code pushReaction(DESTROY)} 一模一样，只把"料子"那几条换成金属的：
+     * 金属色与金属音效、{@code strength(3, 6)} 的薄铁件手感，并且不要原版那档亮度
+     * （晶簇自带 5 级光，舱口不该发光）。
+     * {@code forceSolidOn} 与 {@code noOcclusion} 必须留着——碰撞箱是收窄的，
+     * 少了 {@code noOcclusion} 会让侧面的面被邻居剔掉、出现镂空。
+     * <p>
+     * {@code pushReaction(DESTROY)} 与晶簇一致：活塞推过来直接把它打掉。
+     * <p>
+     * 之所以不用 {@code ofFullCopy(Blocks.IRON_BLOCK)}（本类其它机器都那么写）：那份属性带
+     * {@code requiresCorrectToolForDrops}，一旦带了就必须进 {@code mineable/pickaxe} 标签，
+     * 否则任何工具都算不上"正确工具"、挖掉什么都不掉。这里干脆不要这条，
+     * 挖掘工具只影响速度、不影响掉落；标签仍然登记（见 {@code ModBlockTagsProvider}）。
+     */
+    public static final DeferredBlock<Block> PRESSURE_RELIEF_HATCH = registerBlock("pressure_relief_hatch",
+            () -> new PressureReliefHatchBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.METAL)
+                    .forceSolidOn()
+                    .noOcclusion()
+                    .sound(SoundType.METAL)
+                    .strength(3.0F, 6.0F)
+                    .pushReaction(PushReaction.DESTROY)));
 
     // 水晶电池：属性逐条对齐机械动力流体储罐（铜块底 + 无遮挡 + 始终导电 + 掉落自己算，不走掉落表）
     // 物品用 CrystalBatteryItem：在 2x2 / 3x3 结构上再放一层时一次补齐整层
