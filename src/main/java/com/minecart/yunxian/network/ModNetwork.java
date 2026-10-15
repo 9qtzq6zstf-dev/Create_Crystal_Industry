@@ -26,6 +26,11 @@ public final class ModNetwork {
                 SetFilterPayload::handle
         );
         registrar.playToServer(
+                SetNetworkNamePayload.TYPE,
+                SetNetworkNamePayload.STREAM_CODEC,
+                SetNetworkNamePayload::handle
+        );
+        registrar.playToServer(
                 NightVisionTogglePayload.TYPE,
                 NightVisionTogglePayload.STREAM_CODEC,
                 NightVisionTogglePayload::handle

@@ -3,6 +3,7 @@ package com.minecart.yunxian.registry;
 import com.minecart.yunxian.menu.MechanicalCleanerMenu;
 import com.minecart.yunxian.Yunxian;
 import com.minecart.yunxian.menu.EchoSpyglassFilterMenu;
+import com.minecart.yunxian.menu.ResonanceFilterMenu;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.inventory.MenuType;
 import net.neoforged.bus.api.IEventBus;
@@ -20,6 +21,9 @@ public final class ModMenus {
     public static final DeferredHolder<MenuType<?>, MenuType<MechanicalCleanerMenu>> MECHANICAL_CLEANER =
             MENUS.register("mechanical_cleaner",
                     () -> IMenuTypeExtension.create(MechanicalCleanerMenu::new));
+    public static final DeferredHolder<MenuType<?>, MenuType<ResonanceFilterMenu>> RESONANCE_FILTER_MENU =
+            MENUS.register("resonance_filter",
+                    () -> IMenuTypeExtension.create(ResonanceFilterMenu::new));
 
     private ModMenus() {
     }

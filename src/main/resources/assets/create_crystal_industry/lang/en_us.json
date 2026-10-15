@@ -530,6 +530,9 @@
 
     "block.create_crystal_industry.resonance_table": "Resonance Table",
     "item.create_crystal_industry.resonance_filter": "Resonance Filter",
+    "create_crystal_industry.resonance_filter.network_name.hint": "Network name",
+    "create_crystal_industry.resonance_filter.network_name.unlinked": "Not linked to a network",
+    "create_crystal_industry.resonance_filter.network_name.tooltip": "Network name: %s",
     "message.create_crystal_industry.resonance_table.new_network_started": "New link network started",
     "create.create_crystal_industry.resonance_table.stack_size": "Item Stack Size",
     "create_crystal_industry.display_source.resonance_filter_list": "Resonance Network Filter"

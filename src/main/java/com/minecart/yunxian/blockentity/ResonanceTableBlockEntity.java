@@ -5,6 +5,7 @@ import com.minecart.yunxian.item.ResonanceFilterItem;
 import com.minecart.yunxian.mixin.DepotBehaviourAccessor;
 import com.minecart.yunxian.registry.ModBlockEntities;
 import com.minecart.yunxian.registry.ModDataComponents;
+import com.minecart.yunxian.resonance.ResonanceNetworkNames;
 import com.minecart.yunxian.resonance.ResonanceParadox;
 import com.simibubi.create.content.logistics.depot.DepotBehaviour;
 import com.simibubi.create.content.logistics.filter.FilterItemStack;
@@ -23,11 +24,13 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.Arrays;
@@ -71,8 +74,31 @@ public class ResonanceTableBlockEntity extends SmartBlockEntity {
     /** 充能瞬间冻结下来的那一份台面物品；没充能时是空的 */
     private ItemStack lockedFilter = ItemStack.EMPTY;
 
+    /**
+     * 本台所在网络的<b>名字缓存</b>，只为了能把它画到方块上方。
+     * <p>
+     * 名字的正主在 {@link ResonanceNetworkNames}（按网络 id 记在世界存档里的一张表）——
+     * 那张表只有服务端读得到，而画字的是客户端，所以这里存一份跟着 NBT 走、也同步给客户端的副本。
+     * 服务端负责在台子加载时、以及网络被改名后把它刷新，见 {@link #refreshNetworkName()}。
+     * <b>别把它当正主用</b>：界面上显示的名字、判定用的网络一律走那张表。
+     */
+    private String networkName = "";
+
+    /**
+     * 网络名字牌离方块中心的高度（方块上方的格数）。
+     * 渲染器按它画字，{@link #createRenderBoundingBox()} 也按它撑开渲染包围盒 —— 两边必须同一个数，
+     * 而且这里得高于台面上可能浮着的物品。
+     */
+    public static final double NAME_TAG_HEIGHT = 1.5;
+
     public ResonanceTableBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.RESONANCE_TABLE.get(), pos, state);
+    }
+
+    @Override
+    public void initialize() {
+        super.initialize();
+        refreshNetworkName();
     }
 
     @Override
@@ -190,6 +216,9 @@ public class ResonanceTableBlockEntity extends SmartBlockEntity {
         super.write(tag, registries, clientPacket);
         tag.putBoolean("Powered", powered);
         tag.put("LockedFilter", lockedFilter.saveOptional(registries));
+        // 名字两遍都写：存盘是为了区块刚加载、客户端还没拿到推送时也有字可画，
+        // 同步给客户端是为了名字牌。服务端随后会用正主（ResonanceNetworkNames）把它刷成最新的。
+        tag.putString("NetworkName", networkName);
     }
 
     @Override
@@ -197,6 +226,7 @@ public class ResonanceTableBlockEntity extends SmartBlockEntity {
         super.read(tag, registries, clientPacket);
         powered = tag.getBoolean("Powered");
         lockedFilter = ItemStack.parseOptional(registries, tag.getCompound("LockedFilter"));
+        networkName = tag.getString("NetworkName");
     }
 
     /**
@@ -217,6 +247,60 @@ public class ResonanceTableBlockEntity extends SmartBlockEntity {
     /** 本台所在网络的 id。新放下的台子各有一个随机 id，也就是默认自成一个网络。 */
     public UUID getNetwork() {
         return linkBehaviour.freqId;
+    }
+
+    /** 本台所在网络的名字，没有名字就是空串。名字牌读它。 */
+    public String getNetworkName() {
+        return networkName;
+    }
+
+    // ==================== 网络名字 ====================
+
+    /**
+     * 把名字正主（{@link ResonanceNetworkNames}）里这张网络的名字抄一份到本台。
+     * <p>
+     * 只在服务端动手：客户端那份是跟着 NBT 同步过来的。抄完发现跟原来不一样才
+     * {@link #notifyUpdate()} —— 既存盘也把新的名字推给正看着它的客户端。
+     * 两个调用点：台子加载完（{@link #initialize()}）、以及网络被改名之后
+     * （{@link #refreshNetworkNames(UUID, Level)}）。
+     */
+    public void refreshNetworkName() {
+        if (level == null || level.isClientSide)
+            return;
+        MinecraftServer server = level.getServer();
+        if (server == null)
+            return;
+
+        String name = ResonanceNetworkNames.get(server).getName(getNetwork());
+        if (networkName.equals(name))
+            return;
+        networkName = name;
+        notifyUpdate();
+    }
+
+    /**
+     * 改名之后，让这张网络里每张<b>够得着的</b>台子把名字刷新一遍。
+     * <p>
+     * 同一张网络可能横跨好几个维度、大半台子都在没加载的区块里，那些台子上的旧名字
+     * 只能等它们下次加载时由 {@link #initialize()} 自己刷掉 —— 反正那时玩家才会看到它们。
+     */
+    public static void refreshNetworkNames(UUID network, Level level) {
+        if (level == null || level.isClientSide)
+            return;
+        for (LogisticallyLinkedBehaviour link : LogisticallyLinkedBehaviour.getAllPresent(network, false)) {
+            // 再核一次 id：那张注册表是按 400 tick 续期维护的，刚并到别的网络的台子可能还挂在旧网络下
+            if (link.freqId.equals(network) && link.blockEntity instanceof ResonanceTableBlockEntity table)
+                table.refreshNetworkName();
+        }
+    }
+
+    /**
+     * 名字牌画在台子上方，只按方块本身算渲染包围盒的话，方块刚滑出屏幕名字就先消失
+     * （创建官方那些会往外伸的机器也都是这么撑开的，见 {@code PulleyBlockEntity}）。
+     */
+    @Override
+    protected AABB createRenderBoundingBox() {
+        return super.createRenderBoundingBox().expandTowards(0, NAME_TAG_HEIGHT, 0);
     }
 
     /**
@@ -391,5 +475,7 @@ public class ResonanceTableBlockEntity extends SmartBlockEntity {
         LogisticallyLinkedBehaviour.keepAlive(linkBehaviour);
         setChanged();
         sendData();
+        // 换了网络就得换名字（新网络可能叫别的，也可能根本没名字）
+        refreshNetworkName();
     }
 }

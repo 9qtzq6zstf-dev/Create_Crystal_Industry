@@ -530,6 +530,9 @@
 
     "block.create_crystal_industry.resonance_table": "共振台",
     "item.create_crystal_industry.resonance_filter": "共振过滤器",
+    "create_crystal_industry.resonance_filter.network_name.hint": "网络名称",
+    "create_crystal_industry.resonance_filter.network_name.unlinked": "未接入网络",
+    "create_crystal_industry.resonance_filter.network_name.tooltip": "网络名称：%s",
     "message.create_crystal_industry.resonance_table.new_network_started": "成功新建了一个过滤网络",
     "create.create_crystal_industry.resonance_table.stack_size": "物品堆数量",
     "create_crystal_industry.display_source.resonance_filter_list": "共振网络过滤物"

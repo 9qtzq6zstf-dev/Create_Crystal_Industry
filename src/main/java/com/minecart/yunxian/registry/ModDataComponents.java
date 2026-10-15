@@ -1,7 +1,9 @@
 package com.minecart.yunxian.registry;
 
 import com.minecart.yunxian.Yunxian;
+import com.mojang.serialization.Codec;
 import net.minecraft.core.UUIDUtil;
+import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.registries.Registries;
 import net.neoforged.bus.api.IEventBus;
@@ -32,6 +34,21 @@ public final class ModDataComponents {
             DATA_COMPONENTS.register("resonance_network", () -> DataComponentType.<UUID>builder()
                     .persistent(UUIDUtil.CODEC)
                     .networkSynchronized(UUIDUtil.STREAM_CODEC)
+                    .build());
+
+    /**
+     * 共振过滤器所在网络的名字，<b>只是一份给客户端看的副本</b>。
+     * <p>
+     * 名字的正主是 {@code ResonanceNetworkNames} 那张按网络 id 记在世界存档里的表，只有服务端读得到；
+     * 而工具提示是客户端画的，客户端手里只有这件物品自己的组件。所以把名字抄一份挂在物品上，
+     * 和网络 id 一样跟着物品走（进箱子、进蓝图、被搬来搬去都带着）。
+     * 服务端在接入网络时写上、退出网络时摘掉，之后靠 {@code ResonanceFilterItem#inventoryTick}
+     * 每秒对一次答案 —— <b>别拿它当正主</b>，判定与界面一律走那张表。
+     */
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<String>> RESONANCE_NETWORK_NAME =
+            DATA_COMPONENTS.register("resonance_network_name", () -> DataComponentType.<String>builder()
+                    .persistent(Codec.STRING)
+                    .networkSynchronized(ByteBufCodecs.STRING_UTF8)
                     .build());
 
     private ModDataComponents() {
