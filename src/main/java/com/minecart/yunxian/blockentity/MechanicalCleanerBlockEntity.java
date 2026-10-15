@@ -13,8 +13,11 @@ import com.simibubi.create.content.kinetics.belt.behaviour.DirectBeltInputBehavi
 import com.simibubi.create.content.kinetics.fan.AirCurrent;
 import com.simibubi.create.content.kinetics.fan.IAirCurrentSource;
 import com.simibubi.create.content.kinetics.fan.NozzleBlockEntity;
+import com.simibubi.create.content.logistics.box.PackageEntity;
+import com.simibubi.create.content.logistics.box.PackageItem;
 import com.simibubi.create.content.logistics.chute.ChuteBlockEntity;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
+import com.simibubi.create.foundation.item.ItemHelper;
 import com.simibubi.create.foundation.item.TooltipHelper;
 import com.simibubi.create.foundation.utility.CreateLang;
 import com.simibubi.create.infrastructure.config.AllConfigs;
@@ -31,6 +34,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.world.MenuProvider;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -40,6 +44,7 @@ import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.capabilities.Capabilities;
@@ -49,6 +54,7 @@ import net.neoforged.neoforge.items.ItemStackHandler;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Predicate;
 
 public class MechanicalCleanerBlockEntity extends KineticBlockEntity
         implements MenuProvider, IAirCurrentSource {
@@ -564,25 +570,29 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
         }
 
         if (server) {
-            if (locked || stalled)
-                return;   // 红石锁 / 满仓停摆：不吸不吹
-
-            if (isPulling()) {
-                if (hasPower) {
-                    // 有动力：气流范围 + 喷嘴覆盖范围 + 面前容器直吸 + 内部凹陷吸取
-                    collectItemsInFlow();
-                    collectItemsFromNozzle();
-                    collectItemsFromContainer();
-                    collectItemsInInterior();
-                } else {
-                    // 无动力：只被动吸掉落物（不依赖风）；容器直吸不生效；凹陷内仍可吸
-                    collectItemsPassive();
-                    collectItemsInInterior();
+            if (!locked && !stalled) {   // 红石锁 / 满仓停摆：不吸不吹
+                if (isPulling()) {
+                    if (hasPower) {
+                        // 有动力：气流范围 + 喷嘴覆盖范围 + 面前容器直吸 + 内部凹陷吸取
+                        collectItemsInFlow();
+                        collectItemsFromNozzle();
+                        collectItemsFromContainer();
+                        collectItemsInInterior();
+                    } else {
+                        // 无动力：只被动吸掉落物（不依赖风）；容器直吸不生效；凹陷内仍可吸
+                        collectItemsPassive();
+                        collectItemsInInterior();
+                    }
+                } else if (hasPower) {
+                    // 吹出模式需要动力
+                    ejectItems();
                 }
-            } else if (hasPower) {
-                // 吹出模式需要动力
-                ejectItems();
             }
+
+            // 含水：库存里的包裹一律拆开。放在收取之后——这样本 tick 刚吸进来的包裹当场就拆掉，
+            // 不用等下一 tick。也不看锁定/停摆：起作用的是"水"，跟有没有风没关系
+            if (isWaterlogged())
+                unpackWaterloggedPackages();
         }
     }
 
@@ -601,9 +611,27 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
         if (flowBounds == null || flowBounds.getSize() <= 0)
             return;
 
-        List<ItemEntity> items = level.getEntitiesOfClass(ItemEntity.class, flowBounds);
-        for (ItemEntity itemEntity : items) {
-            suckItem(itemEntity);
+        suckAllIn(flowBounds, null);
+    }
+
+    /**
+     * 扫一片范围，把"能被吸走的东西"收进来。两类实体分开扫：
+     * 常见的是 {@link ItemEntity}，另一类是 Create 的包裹 {@link PackageEntity}
+     * ——它是 {@code LivingEntity} 而不是 ItemEntity，所以以前那些只扫 ItemEntity 的循环
+     * 根本看不见包裹，包裹就永远吸不进来（见 {@link #suckPackage}）。
+     *
+     * @param extra 额外的逐实体条件（喷嘴那条要用：超出半径、没有视线的都不吸），null = 全收
+     */
+    private void suckAllIn(AABB area, Predicate<Entity> extra) {
+        if (level == null)
+            return;
+        for (ItemEntity itemEntity : level.getEntitiesOfClass(ItemEntity.class, area)) {
+            if (extra == null || extra.test(itemEntity))
+                suckItem(itemEntity);
+        }
+        for (PackageEntity packageEntity : level.getEntitiesOfClass(PackageEntity.class, area)) {
+            if (extra == null || extra.test(packageEntity))
+                suckPackage(packageEntity);
         }
     }
 
@@ -640,10 +668,7 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
                 Math.max(first.getZ(), last.getZ()) + 1);
         AABB area = new AABB(minCorner, maxCorner);
 
-        List<ItemEntity> items = level.getEntitiesOfClass(ItemEntity.class, area);
-        for (ItemEntity itemEntity : items) {
-            suckItem(itemEntity);
-        }
+        suckAllIn(area, null);
     }
 
     /**
@@ -653,10 +678,7 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
      */
     private void collectItemsInInterior() {
         AABB interior = new AABB(worldPosition);
-        List<ItemEntity> items = level.getEntitiesOfClass(ItemEntity.class, interior);
-        for (ItemEntity itemEntity : items) {
-            suckItem(itemEntity);
-        }
+        suckAllIn(interior, null);
     }
 
     /**
@@ -680,22 +702,16 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
         float radius = getMaxDistance();
         AABB coverage = new AABB(center, center).inflate(radius);
 
-        List<ItemEntity> items = level.getEntitiesOfClass(ItemEntity.class, coverage);
-        for (ItemEntity itemEntity : items) {
-            // 与喷嘴自身行为一致：超出半径或无视线的不吸
-            if (itemEntity.position().distanceTo(center) > radius)
-                continue;
-            if (!canSeeNozzle(itemEntity, nozzlePos))
-                continue;
-            suckItem(itemEntity);
-        }
+        // 与喷嘴自身行为一致：超出半径或无视线的不吸（掉落物与包裹同一套条件）
+        suckAllIn(coverage, entity ->
+                entity.position().distanceTo(center) <= radius && canSeeNozzle(entity, nozzlePos));
     }
 
     /**
      * 与 NozzleBlockEntity.canSee 相同：从物品位置到喷嘴中心做碰撞射线，
      * 命中喷嘴自身才视为可见（风能真正覆盖到）。
      */
-    private boolean canSeeNozzle(ItemEntity entity, BlockPos nozzlePos) {
+    private boolean canSeeNozzle(Entity entity, BlockPos nozzlePos) {
         ClipContext context = new ClipContext(entity.position(), VecHelper.getCenterOf(nozzlePos),
                 ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, entity);
         return nozzlePos.equals(level.clip(context).getBlockPos());
@@ -769,6 +785,79 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
         if (filtering.anyAmount())
             return -1;
         return filtering.getAmount();
+    }
+
+    // ==================== 含水解包 ====================
+
+    /**
+     * 含水时把库存里的包裹当场拆开：内容物倒进库存，包装消失。
+     * <p>
+     * 用的是 Create 自己那对小工具——{@link PackageItem#getContents(ItemStack)} 按 9 格读出内容物、
+     * {@link ItemHelper#getNonEmptyStacks} 滤掉空格，与打包机拆包走的是同一套口径。
+     * 包装本身按 Create 的惯例直接吃掉（打包机拆完也不还纸板）；<b>空包裹也一并销毁</b>——
+     * 里面没东西可留，而且空包裹本来是自动化运不走的死物。
+     * <p>
+     * 有内容物时，只在"整个包裹都放得下"时才拆：放不下就整包留着，绝不拆到一半把塞不下的部分吞掉
+     * （包裹的地址存在物品组件里，拆一半没法把剩下的重新包回去）。
+     * <p>
+     * 含水就有了这一条以后，含水吸尘器顺带成了拆包口：吸进来的包裹变成散件，
+     * 散件是能被漏斗之类正常运走的——包裹本身因为
+     * {@code PackageItem#canFitInsideContainerItems()} 为 false，是运不走的。
+     */
+    private void unpackWaterloggedPackages() {
+        boolean changed = false;
+        for (int slot = 0; slot < inventory.getSlots(); slot++) {
+            ItemStack box = inventory.getStackInSlot(slot);
+            if (!PackageItem.isPackage(box))
+                continue;
+
+            List<ItemStack> items = ItemHelper.getNonEmptyStacks(PackageItem.getContents(box));
+            if (items.isEmpty()) {
+                // 空包裹直接销毁：里面本来就没东西，纸板按上面那套规矩一起吃掉
+                inventory.setStackInSlot(slot, ItemStack.EMPTY);
+                changed = true;
+                continue;
+            }
+            if (!contentsFit(items, slot))
+                continue;
+
+            inventory.setStackInSlot(slot, ItemStack.EMPTY);
+            for (ItemStack item : items) {
+                insertAll(item.copy());
+            }
+            changed = true;
+        }
+        if (changed) {
+            setChanged();
+            sendData();   // 一轮拆完只发一次，别每拆一格发一个包
+        }
+    }
+
+    /**
+     * 把包装占的那一格腾空之后，这些内容物能不能全部塞进库存。
+     * 拿一份库存副本试插（副本走的是同一套 {@link ItemStackHandler#insertItem} 逻辑，
+     * 所以合并、每格上限这些规矩与真插入完全一致）。
+     */
+    private boolean contentsFit(List<ItemStack> contents, int emptiedSlot) {
+        ItemStackHandler probe = new ItemStackHandler(inventory.getSlots());
+        for (int slot = 0; slot < inventory.getSlots(); slot++) {
+            if (slot != emptiedSlot)
+                probe.setStackInSlot(slot, inventory.getStackInSlot(slot).copy());
+        }
+        for (ItemStack content : contents) {
+            ItemStack remaining = content.copy();
+            for (int slot = 0; slot < probe.getSlots() && !remaining.isEmpty(); slot++) {
+                remaining = probe.insertItem(slot, remaining, false);
+            }
+            if (!remaining.isEmpty())
+                return false;
+        }
+        return true;
+    }
+
+    /** 方块是否含水（与气流洗涤那条 mixin 读的是同一个状态位） */
+    private boolean isWaterlogged() {
+        return getBlockState().getValue(BlockStateProperties.WATERLOGGED);
     }
 
     /** 模拟计算 stack 最多能有多少被放入自身库存 */
@@ -960,6 +1049,50 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
         if (itemEntity.getItem().isEmpty()) {
             itemEntity.discard();
         }
+
+        // 服务端：把吸入事件随下一次 sendData 同步给客户端
+        if (level != null && !level.isClientSide) {
+            phantomStack.setCount(inserted);
+            pendingPhantoms.add(new SuckPhantom(phantomStack, origin));
+            if (pendingPhantoms.size() > 8)
+                pendingPhantoms.remove(0);
+            sendData();
+        }
+
+        setChanged();
+    }
+
+    /**
+     * 吸包裹。Create 的包裹掉在地上时<span>不是</span> {@code ItemEntity}：
+     * {@code PackageItem#hasCustomEntity} 会把它换成 {@link PackageEntity}（一个 {@code LivingEntity}），
+     * 所以上面那些只扫 {@code ItemEntity} 的循环根本看不见它——这就是"包裹吸不进来"的全部原因。
+     * <p>
+     * 处理方式与 {@link #suckItem} 一致，只是物品挂在实体身上而不是实体本身：过滤 → 塞库存 →
+     * 把拿走的量从包裹里扣掉（扣空了就把实体收掉），并照旧记一条幻影事件播飞入动画。
+     * <p>
+     * <b>注意这里绕过了 Create 的一道闸。</b>{@code PackageItem#canFitInsideContainerItems()} 返回 false，
+     * 意思是"包裹不该被漏斗这类自动化搬进普通容器"（正经通道是包裹港 / 蛙港）。本模组的库存是直接往
+     * {@code ItemStackHandler} 里 insertItem，那条闸门管不到这儿——也就是说这个功能是<b>特意</b>做的，
+     * 不是漏网。哪天不想要了，把 {@link #suckAllIn} 里扫包裹那个循环删掉即可。
+     */
+    private void suckPackage(PackageEntity packageEntity) {
+        ItemStack box = packageEntity.getBox();
+        if (box.isEmpty() || !canSuck(box))
+            return;
+
+        ItemStack remaining = insertAll(box.copy());
+        int inserted = box.getCount() - remaining.getCount();
+        if (inserted <= 0)
+            return;
+
+        // 吸走前先备份一份 + 记录起始位置（用于幻影动画）
+        ItemStack phantomStack = box.copy();
+        Vec3 origin = packageEntity.position();
+
+        if (remaining.isEmpty())
+            packageEntity.discard();
+        else
+            packageEntity.setBox(remaining);
 
         // 服务端：把吸入事件随下一次 sendData 同步给客户端
         if (level != null && !level.isClientSide) {

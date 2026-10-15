@@ -2,6 +2,7 @@ package com.minecart.yunxian.blockentity;
 
 import com.minecart.yunxian.config.ModConfig;
 import com.minecart.yunxian.registry.ModBlocks;
+import com.simibubi.create.content.logistics.box.PackageEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -50,10 +51,22 @@ public final class CleanerDropAbsorption {
         if (!(event.getLevel() instanceof ServerLevel level) || event.loadedFromDisk()) {
             return;
         }
-        if (!(event.getEntity() instanceof ItemEntity itemEntity)) {
+        if (!ModConfig.Common.CLEANER_DIRECT_ABSORB.get()) {
             return;
         }
-        if (!ModConfig.Common.CLEANER_DIRECT_ABSORB.get()) {
+
+        // 包裹走的是 Create 的 PackageEntity（LivingEntity，不是 ItemEntity），同样接管：
+        // 吸尘器按 tick 扫的那条路也能收到它，这里只是让它和前两类物品一样"压根不生成实体"
+        if (event.getEntity() instanceof PackageEntity packageEntity) {
+            ItemStack box = packageEntity.getBox();
+            if (!box.isEmpty() && absorbIntoSuction(level, packageEntity.position(), box)) {
+                packageEntity.discard();
+                event.setCanceled(true);
+            }
+            return;
+        }
+
+        if (!(event.getEntity() instanceof ItemEntity itemEntity)) {
             return;
         }
 
