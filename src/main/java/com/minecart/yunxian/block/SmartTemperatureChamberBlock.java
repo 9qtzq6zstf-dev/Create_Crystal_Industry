@@ -165,36 +165,121 @@ public class SmartTemperatureChamberBlock extends BaseEntityBlock {
     /**
      * 从 {@code origin} 出发，算出它属于哪一组。
      * <p>
-     * 规则：先在<b>同一个 Y 上、四向相邻</b>的整片连通域里，从坐标最小的格子起长出一个矩形
-     * （只按整行/整列往外吃，见 {@link #growFromSmallest}），那一批算一组；把已分组的格子拿掉，
-     * 对剩下的再长一次，直到长到 {@code origin} 所在的那一个为止。
-     * 于是连成一片的温控室会被划分成若干块矩形，<b>每块各自共享容量</b>。
+     * <b>分组是记下来的，不是现算的</b>：每台温控室的方块实体里存着一个"组锚点"，
+     * 同一组各格记的值相同。放下时只有"自己并进去之后仍然是一个矩形"才并入某一组
+     * （见 {@link #assignGroupOnPlace}），所以已经形成的矩形不会被后来补的格子拆开——
+     * 新格子要么只是把某一块撑大，要么自成一格。
+     * <p>
+     * 兜底：整片里只要有<b>一格</b>还没拿到锚点（老存档第一次进来、客户端这块还没同步到、
+     * 思索世界的方块实体不走 {@code onLoad}），就整片退回 {@link #canonicalGroup} 那套
+     * 纯函数切法（标准朝向 + 整行/整列长矩形），保证两端算出来的一样。
      * <p>
      * 之所以不要求"整片就是一个矩形"：3x3 缺一个角这种很常见的摆法，外接矩形没填满，
      * 一刀切判否会让八台一台都不共享；切出它里面那块矩形才是玩家期待的。
-     * <p>
-     * <b>只按整行/整列长，是为了不拆散已经连好的那一片</b>：已经摆成 1x3 的长龙，侧面再补两格时
-     * 会切成 1x3 + 1x2（原样保留），而不是把那条 1x3 拆成 2x2 + 1x1；一整块矩形补满一条边时
-     * 也还是同一个矩形。代价是这套切法只看得到当前摆法、看不到"谁先摆的"——同样五格的两种摆法史
-     * （先 1x3 后补两格 / 先 2x2 后补一格）在网格上一模一样，纯函数只能给出同一个答案，
-     * 这里选的是前者。
      * <p>
      * 垂直方向不算（上下叠着的不共享）；判定不成立或超上限时<b>只返回 {@code origin} 自己</b>，
      * 所以调用方拿到的列表一定可以直接用：容量 = 长度 × 单台容量，燃料 = 各格之和。
      * <p>
      * <b>方块实体与客户端的连接材质共用这一个方法</b>，两边必须得出同样的结果——
-     * 连接纹理只在共享容量的那几台之间才画，靠的就是"同一个判据"。所以这里只读
-     * {@link BlockGetter} 与方块状态，不去碰方块实体：客户端未必有实体，而方块状态两端都有。
+     * 连接纹理只在共享容量的那几台之间才画，靠的就是"同一个判据"。判据就是上面那个锚点，
+     * 所以这里要读方块实体（{@link BlockGetter} 本来就带 {@code getBlockEntity}），
+     * 读不到就整片回退到纯函数切法。
      */
     public static List<BlockPos> groupAt(BlockGetter level, BlockPos origin) {
         List<BlockPos> solo = List.of(origin);
         if (level == null) {
             return solo;
         }
+        Component component = componentAt(level, origin);
+        if (component == null) {
+            return solo;
+        }
 
-        // 1) 取连通域。
-        //    探过的格子(seen)与真正的成员(members)必须分开：seen 里还躺着**探过但不是温控室**的
-        //    邻居，拿它去铺网格会踩到外接矩形外面（曾经就这么崩过：Index -1 out of bounds）
+        BlockPos mine = anchorAt(level, origin);
+        if (mine == null) {
+            return canonicalGroup(component, origin);
+        }
+        List<BlockPos> group = new ArrayList<>();
+        for (BlockPos member : component.members()) {
+            BlockPos anchor = anchorAt(level, member);
+            if (anchor == null) {
+                // 有一格还没拿到锚点：整片退回纯函数切法，保证两端算出来一样
+                return canonicalGroup(component, origin);
+            }
+            if (anchor.equals(mine)) {
+                group.add(member);
+            }
+        }
+        return group.isEmpty() ? solo : group;
+    }
+
+    /**
+     * 纯函数切法：标准朝向 + 整行/整列长矩形，返回 {@code origin} 所在的那一片。
+     * 老存档补分组、兜底、拆掉一格后重切都用它；只看方块状态，两端算出来一致。
+     */
+    public static List<BlockPos> canonicalGroup(BlockGetter level, BlockPos origin) {
+        Component component = componentAt(level, origin);
+        return component == null ? List.of(origin) : canonicalGroup(component, origin);
+    }
+
+    private static List<BlockPos> canonicalGroup(Component component, BlockPos origin) {
+        for (List<BlockPos> piece : canonicalPieces(component)) {
+            if (piece.contains(origin)) {
+                return piece;
+            }
+        }
+        return List.of(origin); // 走不到：origin 自己那一格总在某块矩形里
+    }
+
+    /**
+     * 把这一片切成若干矩形：先摆成"标准朝向"，在标准朝向上从坐标最小的格子起长矩形，
+     * 只按整行/整列吃（长满一条边才并进来），切完按映射写回原坐标。
+     * <p>
+     * 世界坐标的东南西北不该影响分组——同一片方块整体转个方向、换个角摆，必须切出同样的分法，
+     * 所以要先挑标准朝向（见 {@link #canonicalOrientation}）。
+     */
+    private static List<List<BlockPos>> canonicalPieces(Component component) {
+        List<BlockPos> members = component.members();
+        int minX = component.minX();
+        int minZ = component.minZ();
+        Orientation canonical = canonicalOrientation(members, minX, minZ,
+                component.width(), component.depth());
+
+        boolean[][] remaining = new boolean[canonical.outWidth()][canonical.outDepth()];
+        int[][] fromX = new int[canonical.outWidth()][canonical.outDepth()];
+        int[][] fromZ = new int[canonical.outWidth()][canonical.outDepth()];
+        int y = members.get(0).getY();
+        for (BlockPos pos : members) {
+            int[] at = canonical.forward(pos.getX() - minX, pos.getZ() - minZ);
+            remaining[at[0]][at[1]] = true;
+            fromX[at[0]][at[1]] = pos.getX();
+            fromZ[at[0]][at[1]] = pos.getZ();
+        }
+
+        List<List<BlockPos>> pieces = new ArrayList<>();
+        Rect rect;
+        while ((rect = growFromSmallest(remaining, canonical.outWidth(), canonical.outDepth())) != null) {
+            List<BlockPos> piece = new ArrayList<>(rect.area());
+            for (int x = rect.x; x < rect.x + rect.width; x++) {
+                for (int z = rect.z; z < rect.z + rect.depth; z++) {
+                    piece.add(new BlockPos(fromX[x][z], y, fromZ[x][z]));
+                }
+            }
+            pieces.add(piece);
+            rect.clearFrom(remaining);
+        }
+        return pieces;
+    }
+
+    /**
+     * 取连通域（同一个 Y 上、四向相邻）与它的外接矩形。超过上限
+     * （{@link #MAX_COMPONENT_CELLS} / {@link #MAX_BOX_AREA}）时返回 {@code null}，
+     * 调用方退回"只管自己那一格"。
+     */
+    @Nullable
+    private static Component componentAt(BlockGetter level, BlockPos origin) {
+        // 探过的格子(seen)与真正的成员(members)必须分开：seen 里还躺着**探过但不是温控室**的
+        // 邻居，拿它去铺网格会踩到外接矩形外面（曾经就这么崩过：Index -1 out of bounds）
         Set<BlockPos> seen = new HashSet<>();
         Deque<BlockPos> queue = new ArrayDeque<>();
         List<BlockPos> members = new ArrayList<>();
@@ -213,7 +298,7 @@ public class SmartTemperatureChamberBlock extends BaseEntityBlock {
             maxZ = Math.max(maxZ, current.getZ());
             // 一边走一边就判上限：真摆出一个 20x20 时不能先把整片扫完再放弃
             if (members.size() > MAX_COMPONENT_CELLS) {
-                return solo;
+                return null;
             }
             for (Direction dir : Direction.Plane.HORIZONTAL) {
                 BlockPos next = current.relative(dir);
@@ -222,51 +307,221 @@ public class SmartTemperatureChamberBlock extends BaseEntityBlock {
                 }
             }
         }
+        if ((maxX - minX + 1) * (maxZ - minZ + 1) > MAX_BOX_AREA) {
+            return null;
+        }
+        return new Component(members, minX, maxX, minZ, maxZ);
+    }
 
-        int width = maxX - minX + 1;
-        int depth = maxZ - minZ + 1;
-        if (width * depth > MAX_BOX_AREA) {
-            return solo;
+    /** 把一堆格子包成"一片"（外接矩形自己算）。拆掉一格后重切时用，调用方保证它们本来就连通 */
+    private static Component componentOf(List<BlockPos> cells) {
+        int minX = Integer.MAX_VALUE;
+        int maxX = Integer.MIN_VALUE;
+        int minZ = Integer.MAX_VALUE;
+        int maxZ = Integer.MIN_VALUE;
+        for (BlockPos pos : cells) {
+            minX = Math.min(minX, pos.getX());
+            maxX = Math.max(maxX, pos.getX());
+            minZ = Math.min(minZ, pos.getZ());
+            maxZ = Math.max(maxZ, pos.getZ());
+        }
+        return new Component(cells, minX, maxX, minZ, maxZ);
+    }
+
+    /** 一片连通域：成员 + 外接矩形 */
+    private record Component(List<BlockPos> members, int minX, int maxX, int minZ, int maxZ) {
+
+        int width() {
+            return maxX - minX + 1;
         }
 
-        // 2) 先摆成"标准朝向"，再切矩形。
-        //    世界坐标的东南西北不该影响分组：同一片方块整体转个方向、换个角摆，必须切出同样的分法。
-        //    所以在一整片的 8 种旋转/翻转里挑最小的那一种当标准朝向，在它上面切，切完按映射写回原坐标。
-        Orientation canonical = canonicalOrientation(members, minX, minZ, width, depth);
+        int depth() {
+            return maxZ - minZ + 1;
+        }
+    }
 
-        boolean[][] remaining = new boolean[canonical.outWidth()][canonical.outDepth()];
-        int[][] fromX = new int[canonical.outWidth()][canonical.outDepth()];
-        int[][] fromZ = new int[canonical.outWidth()][canonical.outDepth()];
-        int originX = 0;
-        int originZ = 0;
-        for (BlockPos pos : members) {
-            int relX = pos.getX() - minX;
-            int relZ = pos.getZ() - minZ;
-            int[] at = canonical.forward(relX, relZ);
-            remaining[at[0]][at[1]] = true;
-            fromX[at[0]][at[1]] = pos.getX();
-            fromZ[at[0]][at[1]] = pos.getZ();
-            if (pos.equals(origin)) {
-                originX = at[0];
-                originZ = at[1];
+    /** 这一格的组锚点；不是温控室、或它的方块实体还没到位时为 {@code null} */
+    @Nullable
+    private static BlockPos anchorAt(BlockGetter level, BlockPos pos) {
+        return level.getBlockEntity(pos) instanceof SmartTemperatureChamberBlockEntity chamber
+                ? chamber.groupAnchor()
+                : null;
+    }
+
+    /** 一组的"标准锚点"：最小 x、其次最小 z 的那一格。补分组（老存档、拆后重切）用它，两端算出来一致 */
+    public static BlockPos anchorOf(List<BlockPos> group) {
+        BlockPos best = group.get(0);
+        for (BlockPos pos : group) {
+            if (pos.getX() < best.getX() || (pos.getX() == best.getX() && pos.getZ() < best.getZ())) {
+                best = pos;
             }
         }
+        return best;
+    }
 
-        while (true) {
-            Rect best = growFromSmallest(remaining, canonical.outWidth(), canonical.outDepth());
-            if (best == null) {
-                return solo; // 走不到：origin 自己那一格总在某块矩形里
-            }
-            if (best.contains(originX, originZ)) {
-                List<BlockPos> group = new ArrayList<>(best.area());
-                for (int x = best.x; x < best.x + best.width; x++) {
-                    for (int z = best.z; z < best.z + best.depth; z++) {
-                        group.add(new BlockPos(fromX[x][z], origin.getY(), fromZ[x][z]));
-                    }
+    /**
+     * 从 {@code from} 出发，把同一片连通域里锚点等于 {@code anchor} 的那些格子收出来。
+     * 一组按定义就是一个矩形，所以这就是"那一组的全部格子"。
+     */
+    private static List<BlockPos> groupOf(BlockGetter level, BlockPos from, BlockPos anchor) {
+        List<BlockPos> group = new ArrayList<>();
+        Set<BlockPos> seen = new HashSet<>();
+        Deque<BlockPos> queue = new ArrayDeque<>();
+        seen.add(from);
+        queue.add(from);
+        while (!queue.isEmpty()) {
+            BlockPos current = queue.poll();
+            group.add(current);
+            for (Direction dir : Direction.Plane.HORIZONTAL) {
+                BlockPos next = current.relative(dir);
+                if (seen.add(next) && anchor.equals(anchorAt(level, next))) {
+                    queue.add(next);
                 }
-                return group;
             }
-            best.clearFrom(remaining);
+        }
+        return group;
+    }
+
+    /** 这一堆格子是不是正好摆满一个矩形（不多不少） */
+    private static boolean isFullRectangle(List<BlockPos> cells) {
+        if (cells.isEmpty()) {
+            return false;
+        }
+        Set<BlockPos> set = new HashSet<>(cells);
+        if (set.size() != cells.size()) {
+            return false; // 有重复：两组叠在一起了（不该发生，保守判否）
+        }
+        int minX = Integer.MAX_VALUE;
+        int maxX = Integer.MIN_VALUE;
+        int minZ = Integer.MAX_VALUE;
+        int maxZ = Integer.MIN_VALUE;
+        for (BlockPos pos : cells) {
+            minX = Math.min(minX, pos.getX());
+            maxX = Math.max(maxX, pos.getX());
+            minZ = Math.min(minZ, pos.getZ());
+            maxZ = Math.max(maxZ, pos.getZ());
+        }
+        if ((maxX - minX + 1) * (maxZ - minZ + 1) != cells.size()) {
+            return false;
+        }
+        for (int x = minX; x <= maxX; x++) {
+            for (int z = minZ; z <= maxZ; z++) {
+                if (!set.contains(new BlockPos(x, cells.get(0).getY(), z))) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    /** 把某一格的组锚点写进方块实体，并让客户端跟着知道（连接材质要拿它跟邻居比） */
+    private static void setAnchor(Level level, BlockPos pos, BlockPos anchor) {
+        if (level.getBlockEntity(pos) instanceof SmartTemperatureChamberBlockEntity chamber) {
+            chamber.setGroupAnchor(anchor);
+            chamber.dropGroupCache();
+            BlockState state = level.getBlockState(pos);
+            level.sendBlockUpdated(pos, state, state, Block.UPDATE_CLIENTS);
+        }
+    }
+
+    /**
+     * 放下这一格时定它归哪一组：看四邻已经形成的矩形，
+     * <b>只有"把自己并进去之后仍然是一个矩形"才并入</b>（也就是某一条整边被填满）；
+     * 能同时并进两块（两条边一起补齐）就合成一块更大的；并不进任何一块就自成一格。
+     * <p>
+     * 这就是"不破坏已有矩形"的全部实现：新格子要么只是把某一块撑大，要么单独成组，
+     * 绝不会把已经连好的那一块切成两半。
+     */
+    private static void assignGroupOnPlace(Level level, BlockPos pos) {
+        List<List<BlockPos>> neighbours = new ArrayList<>(4);
+        for (Direction dir : Direction.Plane.HORIZONTAL) {
+            BlockPos side = pos.relative(dir);
+            BlockPos anchor = anchorAt(level, side);
+            if (anchor == null) {
+                continue;
+            }
+            List<BlockPos> group = groupOf(level, side, anchor);
+            boolean known = false;
+            for (List<BlockPos> seen : neighbours) {
+                if (seen.equals(group)) {
+                    known = true;
+                    break;
+                }
+            }
+            if (!known) {
+                neighbours.add(group);
+            }
+        }
+
+        List<BlockPos> best = null;
+        for (int mask = 1; mask < (1 << neighbours.size()); mask++) {
+            List<BlockPos> union = new ArrayList<>();
+            union.add(pos);
+            for (int i = 0; i < neighbours.size(); i++) {
+                if ((mask & (1 << i)) != 0) {
+                    union.addAll(neighbours.get(i));
+                }
+            }
+            if (isFullRectangle(union) && (best == null || union.size() > best.size())) {
+                best = union;
+            }
+        }
+
+        if (best == null) {
+            setAnchor(level, pos, pos);
+            return;
+        }
+        // 沿用被并进来的那一组的锚点：早放的那一组身份不变，只有新格子需要同步
+        BlockPos anchor = null;
+        for (BlockPos cell : best) {
+            if (!cell.equals(pos)) {
+                anchor = anchorAt(level, cell);
+                if (anchor != null) {
+                    break;
+                }
+            }
+        }
+        if (anchor == null) {
+            anchor = pos;
+        }
+        for (BlockPos cell : best) {
+            setAnchor(level, cell, anchor);
+        }
+    }
+
+    /**
+     * 拆掉一格之后善后：它原来那一组剩下的格子不再是一个矩形，所以只把<b>那一组</b>重切一次
+     * （用纯函数那套），其余各组原样不动。切完给每一片重新定锚点（取该片最小 x/z 的那一格）。
+     * <p>
+     * 残余是从四邻找出来的：邻居里同锚点的那些格，就是这一组去掉 {@code pos} 之后剩下的
+     * ——方块这时已经被拆掉了，扫连通域不会再包含它。
+     */
+    private static void regroupAfterRemoval(Level level, BlockPos pos) {
+        List<BlockPos> survivors = new ArrayList<>();
+        Set<BlockPos> seen = new HashSet<>();
+        // 拆掉的那一格自己要排掉：方块实体可能还留着（取决于 onRemove 与方块实体移除的先后），
+        // 它留着的话会被当成"残余"里的一格，切出来又把它算进去
+        seen.add(pos);
+        for (Direction dir : Direction.Plane.HORIZONTAL) {
+            BlockPos side = pos.relative(dir);
+            BlockPos anchor = anchorAt(level, side);
+            if (anchor == null || seen.contains(side)) {
+                continue;
+            }
+            for (BlockPos cell : groupOf(level, side, anchor)) {
+                if (seen.add(cell)) {
+                    survivors.add(cell);
+                }
+            }
+        }
+        if (survivors.isEmpty()) {
+            return;
+        }
+        for (List<BlockPos> piece : canonicalPieces(componentOf(survivors))) {
+            BlockPos anchor = anchorOf(piece);
+            for (BlockPos cell : piece) {
+                setAnchor(level, cell, anchor);
+            }
         }
     }
 
@@ -469,6 +724,7 @@ public class SmartTemperatureChamberBlock extends BaseEntityBlock {
         if (level.isClientSide) {
             return;
         }
+        assignGroupOnPlace(level, pos);
         notifyBasinAbove(level, pos);
     }
 
@@ -483,6 +739,7 @@ public class SmartTemperatureChamberBlock extends BaseEntityBlock {
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
         if (!state.is(newState.getBlock()) && !level.isClientSide) {
+            regroupAfterRemoval(level, pos);
             notifyBasinAbove(level, pos);
         }
         super.onRemove(state, level, pos, newState, isMoving);

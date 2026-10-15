@@ -2,6 +2,7 @@ package com.minecart.yunxian.blockentity;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Predicate;
 
 import com.minecart.yunxian.block.SmartTemperatureChamberBlock;
@@ -16,6 +17,7 @@ import net.minecraft.SharedConstants;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtUtils;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
@@ -96,6 +98,44 @@ public class SmartTemperatureChamberBlockEntity extends BlockEntity implements I
     private int groupCacheTtl;
 
     /**
+     * 自己所属那一组的"锚点"：这一组刚成组时留下来的那一格，组内各格记的是同一个值。
+     * <p>
+     * 分组为什么要记下来：早先它是从方块状态<b>现算</b>的纯函数（每次找面积最大的全满矩形），
+     * 那样"谁先放的"看不见——已经摆成 1x3 的长龙，侧面再补两格就会被拆成 2x2 + 1x1。
+     * 现在改成记下来：放下时只有"自己并进去之后仍然是一个矩形"才并入
+     * （见 {@code SmartTemperatureChamberBlock#assignGroupOnPlace}），已形成的矩形因此拆不开。
+     * <p>
+     * 它跟罐一起存盘、一起同步（客户端画连接材质时要拿它跟邻居比）。老存档第一次载入时
+     * 这个字段还是空的，由 {@link #onLoad} 按纯函数切法补一份，两端算出来一致。
+     */
+    @Nullable
+    private BlockPos groupAnchor;
+
+    /** 本格的组锚点；还没定过（老存档刚载入、或这一格刚放下还没算）时为 {@code null} */
+    @Nullable
+    public BlockPos groupAnchor() {
+        return groupAnchor;
+    }
+
+    /** 定/改组锚点。变了才写盘；同步给客户端由调用方负责（{@code Block#setAnchor} 里做） */
+    public void setGroupAnchor(@Nullable BlockPos anchor) {
+        if (Objects.equals(groupAnchor, anchor)) {
+            return;
+        }
+        groupAnchor = anchor;
+        setChanged();
+    }
+
+    /**
+     * 让结构缓存作废，下一 tick 重扫。放下/拆掉一格时由 {@code Block#setAnchor} 对<b>整片</b>都喊一遍：
+     * 组变大变小时，那些锚点没变的格子（比如被并进来那一边）缓存也过期了。
+     */
+    public void dropGroupCache() {
+        groupCache = null;
+        groupCacheTtl = 0;
+    }
+
+    /**
      * 组内总燃料与总容量。<b>这两个数是同步给客户端的</b>（写进方块实体包），
      * 护目镜在客户端只能读这两个——客户端没法自己扫一遍全组去加总。
      * 服务端每 tick 重新写一遍，变了才发包。
@@ -134,6 +174,12 @@ public class SmartTemperatureChamberBlockEntity extends BlockEntity implements I
         // 只在服务端重算：客户端读的是同步过来的 sharedFuel，扫描既白费又可能撞上还没就绪的区块
         if (level != null && !level.isClientSide) {
             updateHeatState(isFueled());
+        }
+        // 老存档第一次载入（以及客户端这块刚同步到）时组锚点还是空的：按纯函数切法补一份。
+        // 那套只读方块状态、两边算出来一致，所以补完不用再同步；之后按"放下时并入"的规矩走。
+        if (level != null && groupAnchor == null) {
+            setGroupAnchor(SmartTemperatureChamberBlock.anchorOf(
+                    SmartTemperatureChamberBlock.canonicalGroup(level, worldPosition)));
         }
     }
 
@@ -403,6 +449,9 @@ public class SmartTemperatureChamberBlockEntity extends BlockEntity implements I
         tank.writeToNBT(registries, tag);
         tag.putInt("SharedFuel", sharedFuel);
         tag.putInt("SharedCapacity", sharedCapacity);
+        if (groupAnchor != null) {
+            tag.put("GroupAnchor", NbtUtils.writeBlockPos(groupAnchor));
+        }
     }
 
     @Override
@@ -412,6 +461,9 @@ public class SmartTemperatureChamberBlockEntity extends BlockEntity implements I
         // 客户端要靠这两个数画护目镜；服务端下一 tick 就会自己重算覆盖掉
         sharedFuel = tag.getInt("SharedFuel");
         sharedCapacity = tag.contains("SharedCapacity") ? tag.getInt("SharedCapacity") : CAPACITY;
+        groupAnchor = tag.contains("GroupAnchor")
+                ? NbtUtils.readBlockPos(tag, "GroupAnchor").orElse(null)
+                : null;
     }
 
     /** 方块实体包带上整罐流体：护目镜浮窗在客户端读它（罐只有一桶，整份发不心疼） */
