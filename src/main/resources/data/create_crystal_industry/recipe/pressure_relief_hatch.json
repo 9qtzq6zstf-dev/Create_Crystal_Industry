@@ -1,0 +1,14 @@
+{
+    "type": "minecraft:crafting_shapeless",
+    "ingredients": [
+        {
+            "item": "create:item_hatch"
+        },
+        {
+            "item": "create:nozzle"
+        }
+    ],
+    "result": {
+        "id": "create_crystal_industry:pressure_relief_hatch"
+    }
+}

@@ -1,0 +1,22 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "pattern": [
+        "A",
+        "B",
+        "C"
+    ],
+    "key": {
+        "A": {
+            "item": "create:brass_sheet"
+        },
+        "B": {
+            "item": "create_crystal_industry:pressure_relief_hatch"
+        },
+        "C": {
+            "item": "create:electron_tube"
+        }
+    },
+    "result": {
+        "id": "create_crystal_industry:smart_pressure_relief_hatch"
+    }
+}

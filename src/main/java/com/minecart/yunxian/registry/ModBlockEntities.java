@@ -58,6 +58,13 @@ public final class ModBlockEntities {
                     ModBlocks.PRESSURE_RELIEF_HATCH.get()
             ).build(null));
 
+    // 智能泄压舱口：与上面同一个方块实体，只是侧面槽上多了个"数量"滑块
+    public static final Supplier<BlockEntityType<SmartPressureReliefHatchBlockEntity>> SMART_PRESSURE_RELIEF_HATCH =
+            BLOCK_ENTITIES.register("smart_pressure_relief_hatch", () -> BlockEntityType.Builder.of(
+                    SmartPressureReliefHatchBlockEntity::new,
+                    ModBlocks.SMART_PRESSURE_RELIEF_HATCH.get()
+            ).build(null));
+
     // 共振台：组合 Create 的 DepotBehaviour，交互/渲染都照置物台那套
     public static final Supplier<BlockEntityType<ResonanceTableBlockEntity>> RESONANCE_TABLE =
             BLOCK_ENTITIES.register("resonance_table", () -> BlockEntityType.Builder.of(

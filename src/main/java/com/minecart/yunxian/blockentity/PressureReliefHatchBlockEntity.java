@@ -18,6 +18,7 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.block.AmethystClusterBlock;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -46,10 +47,11 @@ import java.util.List;
  * 顺带一提：泄压舱口自己的碰撞箱在垂直于朝向的方向上是"有洞的"（网罩那圈中间是空的），
  * Create 的 `findMaxDepth` 判定有洞就整格放行，所以侧风是真的穿过本格，不是吹到脸上。
  * <p>
- * <b>吐多少。</b>一次吐几个由侧面槽上那个"数量"决定（{@link #ventAmount}，滚轮可调，
- * 范围 1 ~ 过滤物品的最大堆叠数，一般是 64）。那个控件就是 Create 过滤行为自带的数量，
- * 与动力吸尘器侧面那个槽是同一套；它上面还有一档 "≤ / ="：默认的 "≤" 是能吐多少吐多少，
- * "=" 则要求容器里凑够这个数才整批吐（凑不够就一个都不动）。
+ * <b>吐多少。</b>一批就是"一组"：按待吐物品里最小的那个堆叠数走（16 堆叠的东西一次最多 16 个，
+ * 混装时取最严的上限），再兜一个 {@link #MAX_VENT_AMOUNT} 的天花板。
+ * 侧面那个槽<b>只做过滤</b>，没有数量控件 —— 要调"每次吐几个"的是子类
+ * {@code SmartPressureReliefHatchBlockEntity}（智能泄压舱口），它把数量滑块加回来，
+ * 并通过覆写 {@link #batchSize(int)} / {@link #requiresFullBatch()} 接上这里的吐货逻辑。
  * 节奏跟着风源转速走（间隔 = max(2, 100/转速) tick，与动力吸尘器吹出同一套公式）；
  * 风源不是动能方块（比如喷嘴后面那台机器缺动力、或者干脆是另一台吸尘器）时退回
  * {@link #FALLBACK_INTERVAL}。
@@ -62,11 +64,11 @@ public class PressureReliefHatchBlockEntity extends SmartBlockEntity {
     /** 风源给不出转速时的兜底节奏（tick / 批） */
     private static final int FALLBACK_INTERVAL = 10;
 
-    /** 侧面槽"数量"上限：一次最多吐这么多（控件本身按过滤物品的堆叠数夹，这里只兜脏 NBT） */
-    private static final int MAX_VENT_AMOUNT = 64;
+    /** 一批的上限兜底：无论怎么算，一次都不会吐超过这个数（智能舱口的滑块也夹在里面） */
+    protected static final int MAX_VENT_AMOUNT = 64;
 
-    /** 侧面 4 个槽共用同一个过滤器，只有过滤通过的物品才会被吐出来 */
-    private FilteringBehaviour filtering;
+    /** 侧面 4 个槽共用同一个过滤器，只有过滤通过的物品才会被吐出来；子类要用它读数量 */
+    protected FilteringBehaviour filtering;
 
     /** 当前"打得到本格"的风场，null = 没风；每 {@link #SCAN_INTERVAL} tick 重扫一次 */
     private AirCurrent activeCurrent;
@@ -75,20 +77,33 @@ public class PressureReliefHatchBlockEntity extends SmartBlockEntity {
     private int ventCooldown;
 
     public PressureReliefHatchBlockEntity(BlockPos pos, BlockState state) {
-        super(ModBlockEntities.PRESSURE_RELIEF_HATCH.get(), pos, state);
+        this(ModBlockEntities.PRESSURE_RELIEF_HATCH.get(), pos, state);
+    }
+
+    /** 子类注册自己的方块实体类型用（{@code BlockEntityType.Builder} 认的是那个两参构造器） */
+    protected PressureReliefHatchBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
+        super(type, pos, state);
     }
 
     @Override
     public void addBehaviours(List<BlockEntityBehaviour> behaviours) {
-        // showCount() 把"数量"挂到这个槽上：侧面滚轮即可调每次吐几个（1 ~ 过滤物品的最大堆叠数，
-        // 通常是 64），与动力吸尘器那个槽是完全同一套控件（Create 的过滤行为自带的数量）。
         filtering = new FilteringBehaviour(this, new PressureReliefHatchValueBoxTransform())
-                .showCount()
                 .withCallback(stack -> sendData());
-        // Create 那边这个数量的默认值是 64（一整组）。对过滤槽来说无所谓，但对"每次吐几个"
-        // 就是默认开满闸——满速风扇下 2 tick 一批、一批 64 件，那是喷泉不是泄压。
-        filtering.setLabel(Component.translatable("create_crystal_industry.pressure_relief_hatch.filter"));
+        // 数量滑块只有子类（智能泄压舱口）要，本类一批就吐"一组"，滑块没有意义
+        if (showsAmountSlider())
+            filtering.showCount();
+        filtering.setLabel(Component.translatable(filterLabelKey()));
         behaviours.add(filtering);
+    }
+
+    /** 侧面槽上是否带"数量"滑块。泄压舱口不带；智能泄压舱口覆写成 true */
+    protected boolean showsAmountSlider() {
+        return false;
+    }
+
+    /** 侧面过滤槽的标题翻译键 */
+    protected String filterLabelKey() {
+        return "create_crystal_industry.pressure_relief_hatch.filter";
     }
 
     @Override
@@ -194,19 +209,33 @@ public class PressureReliefHatchBlockEntity extends SmartBlockEntity {
 
     /**
      * 从依附容器里取走一批"过滤通过"的物品，在舱口所在方块的正中心丢出去。
-     * 一次取几个由侧面那个槽的数量决定（{@link #ventAmount}），节奏由 {@link #ventInterval} 控制。
+     * 一批几个 = 侧面槽上的数量（{@link #ventAmount}），但还要再受<b>物品自己的堆叠数</b>压一头：
+     * 一批就是"一组"，16 堆叠的东西不该一次吐 64 个出来。节奏由 {@link #ventInterval} 控制。
      * <p>
-     * 数量不够跨槽接着取，所以"每次 64 个"在散装容器上也能凑齐。取出来的每一段各生成一个
-     * 掉落物实体（不同槽的物品本来就叠不到一起）。
+     * 先扫一遍容器：算出能吐的总数，以及这几样物品里最小的堆叠数（混装时取最严的那个上限，
+     * 保证这批不会超过任何一样物品的"一组"）。数量不够跨槽接着取，所以散装容器也凑得齐；
+     * 取出来的每一段各生成一个掉落物实体（不同槽的物品本来就叠不到一起）。
      */
     private void vent() {
         IItemHandler source = getAttachedContainer();
         if (source == null)
             return;
 
-        int budget = ventAmount();
-        // "=" 那一档：容器里凑不够这个数就一个都不吐（整批走）。默认的 "≤" 档则是能吐多少吐多少
-        if (filtering != null && !filtering.upTo && countVentable(source) < budget)
+        int available = 0;
+        int groupSize = MAX_VENT_AMOUNT;
+        for (int slot = 0; slot < source.getSlots(); slot++) {
+            ItemStack stack = source.getStackInSlot(slot);
+            if (stack.isEmpty() || !canVent(stack))
+                continue;
+            available += stack.getCount();
+            groupSize = Math.min(groupSize, stack.getMaxStackSize());
+        }
+        if (available <= 0)
+            return;
+
+        int budget = batchSize(groupSize);
+        // 智能舱口那边 "=" 那一档：容器里凑不够这一批就一个都不吐（整批走）
+        if (requiresFullBatch() && available < budget)
             return;
 
         for (int slot = 0; slot < source.getSlots() && budget > 0; slot++) {
@@ -224,24 +253,17 @@ public class PressureReliefHatchBlockEntity extends SmartBlockEntity {
     }
 
     /**
-     * 侧面槽上"数量"的当前值 = 每次吐几个。控件本身已经把范围夹在 1 ~ 过滤物品的最大堆叠数
-     * （没有过滤物品时就是 64），这里再兜一道底，免得读到脏 NBT。
+     * 这一批吐几个。本类不设数量控件，一批就是"一组"（{@code groupSize} = 待吐物品里最小的
+     * 那个堆叠数），也就是"有多少装得下就吐多少，但不超过一整组"。
+     * 智能泄压舱口覆写它，改为"滑块上的数再被一组压一头"。
      */
-    private int ventAmount() {
-        if (filtering == null)
-            return 1;
-        return Math.max(1, Math.min(MAX_VENT_AMOUNT, filtering.getAmount()));
+    protected int batchSize(int groupSize) {
+        return groupSize;
     }
 
-    /** 容器里"过滤通过"的物品总数，供 "=" 档判断整批够不够 */
-    private int countVentable(IItemHandler source) {
-        int total = 0;
-        for (int slot = 0; slot < source.getSlots(); slot++) {
-            ItemStack stack = source.getStackInSlot(slot);
-            if (!stack.isEmpty() && canVent(stack))
-                total += stack.getCount();
-        }
-        return total;
+    /** 是否要求"凑够一整批才吐"。只有带数量滑块的智能舱口会用到 "=" 那一档 */
+    protected boolean requiresFullBatch() {
+        return false;
     }
 
     /** 过滤器为空 = 全放行；否则只放过滤器认的物品 */

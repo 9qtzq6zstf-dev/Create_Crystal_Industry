@@ -65,6 +65,20 @@ public final class ModTags {
     public static final TagKey<Block> MOVABLE_EMPTY_COLLIDER = TagKey.create(Registries.BLOCK,
             ResourceLocation.fromNamespaceAndPath("create", "movable_empty_collider"));
 
+    /**
+     * 机械动力的「气流穿透」标签 {@code create:fan_transparent}（<b>方块</b>标签）。
+     * <p>
+     * 装的是铁栏杆、篝火、铜格栅这类「有碰撞箱、但风该照常穿过」的方块——
+     * Create 的 {@code AirCurrent#getFlowLimit} 一开头就问这个标签，命中就整格放行，
+     * 连形状都不量。进了这个标签的方块对气流等于不存在。
+     * <p>
+     * 泄压舱口要进来是因为它的安装板正好盖满一个横截面：气流沿它的朝向吹来时，
+     * 形状深度判定会把气流挡在舱口那一格，舱口后面（风的下游）就整片没有风。
+     * 舱口本来就该是"风从中间穿过去"的东西，不该当挡风板。
+     */
+    public static final TagKey<Block> FAN_TRANSPARENT = TagKey.create(Registries.BLOCK,
+            ResourceLocation.fromNamespaceAndPath("create", "fan_transparent"));
+
     // 新增：标记"免疫鼓风机/喷头风力"的盔甲
     public static final TagKey<Item> FAN_IMMUNE = TagKey.create(Registries.ITEM,
             ResourceLocation.fromNamespaceAndPath(Yunxian.MODID, "fan_immune"));

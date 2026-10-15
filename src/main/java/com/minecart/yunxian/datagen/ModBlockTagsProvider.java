@@ -63,7 +63,7 @@ public class ModBlockTagsProvider extends BlockTagsProvider {
                 ModBlocks.ACCELERATOR.get(),
                 ModBlocks.SMART_DRILL.get(), ModBlocks.MECHANICAL_ACCELERATOR.get(),
                 ModBlocks.MECHANICAL_CLEANER.get(), ModBlocks.CRYSTAL_BATTERY.get(),
-                ModBlocks.PRESSURE_RELIEF_HATCH.get(),
+                ModBlocks.PRESSURE_RELIEF_HATCH.get(), ModBlocks.SMART_PRESSURE_RELIEF_HATCH.get(),
                 ModBlocks.RESONANCE_TABLE.get(), ModBlocks.SMART_TEMPERATURE_CHAMBER.get());
         // minecraft:walls —— 原版把每一种墙都登记进来。墙的形状与连接不依赖这个标签，
         // 它是给数据包/别的模组认「这是一堵墙」用的约定标签；物品侧由
@@ -77,6 +77,11 @@ public class ModBlockTagsProvider extends BlockTagsProvider {
         // create:movable_empty_collider —— 细雪、蜘蛛网这类「碰撞箱为空却要被动态结构带走」的方块。
         // 可燃冰沙与细雪同族（无碰撞），不进这个标签的话，装在动态结构上会当场被丢下、只剩空气
         tag(ModTags.MOVABLE_EMPTY_COLLIDER).add(ModBlocks.FLAMMABLE_ICE_SLURRY.get());
+        // create:fan_transparent —— 气流"当它不存在"的方块（铁栏杆、篝火、铜格栅那一类）。
+        // 泄压舱口的安装板正好盖满一个横截面，不进这个标签的话，风沿它的朝向吹来时会停在
+        // 舱口那一格，舱口下游整片没风（见 ModTags#FAN_TRANSPARENT）
+        tag(ModTags.FAN_TRANSPARENT).add(ModBlocks.PRESSURE_RELIEF_HATCH.get(),
+                ModBlocks.SMART_PRESSURE_RELIEF_HATCH.get());
         // 挖掘等级：只有指定了等级的家族才登记（荧石与可燃冰不设等级）
         IntrinsicTagAppender<Block> needsStone = tag(BlockTags.NEEDS_STONE_TOOL);
         // 水晶电池底子取的是铜块属性（requiresCorrectToolForDrops），

@@ -21,6 +21,7 @@ import com.minecart.yunxian.client.mechanical.MechanicalAcceleratorRenderer;
 import com.minecart.yunxian.client.mechanical.MechanicalCleanerRenderer;
 import com.minecart.yunxian.client.mechanical.PressureReliefHatchRenderer;
 import com.minecart.yunxian.client.mechanical.ResonanceTableRenderer;
+import com.minecart.yunxian.client.mechanical.SmartPressureReliefHatchRenderer;
 import com.minecart.yunxian.client.mechanical.SmartDrillRenderer;
 import com.minecart.yunxian.client.sundae.FlammableSundaeFrameRenderer;
 import net.minecraft.client.resources.language.I18n;
@@ -194,10 +195,13 @@ public class ModRenderers {
         event.registerBlockEntityRenderer(
                 ModBlockEntities.MECHANICAL_CLEANER.get(),
                 MechanicalCleanerRenderer::new);
-        // 泄压舱口：方块本体走普通模型，这里只补侧面过滤槽里那件过滤物品
+        // 泄压舱口 / 智能泄压舱口：方块本体走普通模型，这里只补侧面过滤槽里那件过滤物品
         event.registerBlockEntityRenderer(
                 ModBlockEntities.PRESSURE_RELIEF_HATCH.get(),
                 PressureReliefHatchRenderer::new);
+        event.registerBlockEntityRenderer(
+                ModBlockEntities.SMART_PRESSURE_RELIEF_HATCH.get(),
+                SmartPressureReliefHatchRenderer::new);
         event.registerBlockEntityRenderer(
                 ModBlockEntities.RESONANCE_TABLE.get(),
                 ResonanceTableRenderer::new);
