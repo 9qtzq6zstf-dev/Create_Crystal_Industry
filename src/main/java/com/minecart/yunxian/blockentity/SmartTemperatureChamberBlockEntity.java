@@ -175,9 +175,12 @@ public class SmartTemperatureChamberBlockEntity extends BlockEntity implements I
         if (level != null && !level.isClientSide) {
             updateHeatState(isFueled());
         }
-        // 老存档第一次载入（以及客户端这块刚同步到）时组锚点还是空的：按纯函数切法补一份。
-        // 那套只读方块状态、两边算出来一致，所以补完不用再同步；之后按"放下时并入"的规矩走。
-        if (level != null && groupAnchor == null) {
+        // 老存档第一次载入时组锚点还是空的：按纯函数切法补一份当初始分组，之后按"放下时并入"的规矩走。
+        // <b>只服务端补</b>：服务端那份记的是"最先放下的那一格"，客户端自己算的话算的是"最小角那一格"，
+        // 两种摆法（自东向西、自南向北）下这两个格子不是同一个，客户端就会按自己那份分组画连接材质，
+        // 边框当场断开。客户端空着反而对：{@code groupAt} 见到有格子没锚点会整片退回纯函数切法，
+        // 两端算出来一致；等同步包到了再切回锚点那套。
+        if (level != null && !level.isClientSide && groupAnchor == null) {
             setGroupAnchor(SmartTemperatureChamberBlock.anchorOf(
                     SmartTemperatureChamberBlock.canonicalGroup(level, worldPosition)));
         }
@@ -464,6 +467,10 @@ public class SmartTemperatureChamberBlockEntity extends BlockEntity implements I
         groupAnchor = tag.contains("GroupAnchor")
                 ? NbtUtils.readBlockPos(tag, "GroupAnchor").orElse(null)
                 : null;
+        // 锚点这东西是连接材质要拿的模型数据，读完得让客户端重新取一次；不喊这一声，
+        // 新放下的那台跟旁边那台的边框可能就不连（网格是缓存的，方块状态又没变过）。
+        // 服务端调它会被自己挡住（只在客户端生效），所以不用分端判断。
+        requestModelDataUpdate();
     }
 
     /** 方块实体包带上整罐流体：护目镜浮窗在客户端读它（罐只有一桶，整份发不心疼） */

@@ -425,6 +425,34 @@ public class SmartTemperatureChamberBlock extends BaseEntityBlock {
     }
 
     /**
+     * 定完组之后，把这一格与四邻里那几台的渲染各刷一次。
+     * <p>
+     * 连接材质是拿"邻居的组锚点"现算的，所以某一格并入/拆出之后，<b>它自己和四邻</b>的模型数据
+     * 都过期了。方块状态没变（变的只是方块实体里的锚点），光靠方块实体那条同步路不一定让客户端
+     * 重建网格，所以这里对每一格都喊一次 {@code sendBlockUpdated}——客户端收到会重新取一次模型数据
+     * （见方块实体的 {@code loadAdditional} 里那句 {@code requestModelDataUpdate}）。
+     * 少了这一步，刚放下的这台跟旁边那台的边框可能不连。
+     */
+    private static void refreshConnections(Level level, BlockPos pos) {
+        // 拆掉那一格自己已经变成空气了，刷的是它四邻；放下时四邻和它自己都要刷
+        if (isChamber(level, pos)) {
+            updateForRender(level, pos);
+        }
+        for (Direction dir : Direction.Plane.HORIZONTAL) {
+            BlockPos side = pos.relative(dir);
+            if (isChamber(level, side)) {
+                updateForRender(level, side);
+            }
+        }
+    }
+
+    /** 状态不变也发一次方块更新：客户端借这一下重新取模型数据 */
+    private static void updateForRender(Level level, BlockPos pos) {
+        BlockState state = level.getBlockState(pos);
+        level.sendBlockUpdated(pos, state, state, Block.UPDATE_CLIENTS);
+    }
+
+    /**
      * 放下这一格时定它归哪一组：看四邻已经形成的矩形，
      * <b>只有"把自己并进去之后仍然是一个矩形"才并入</b>（也就是某一条整边被填满）；
      * 能同时并进两块（两条边一起补齐）就合成一块更大的；并不进任何一块就自成一格。
@@ -725,6 +753,7 @@ public class SmartTemperatureChamberBlock extends BaseEntityBlock {
             return;
         }
         assignGroupOnPlace(level, pos);
+        refreshConnections(level, pos);
         notifyBasinAbove(level, pos);
     }
 
@@ -740,6 +769,7 @@ public class SmartTemperatureChamberBlock extends BaseEntityBlock {
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
         if (!state.is(newState.getBlock()) && !level.isClientSide) {
             regroupAfterRemoval(level, pos);
+            refreshConnections(level, pos);
             notifyBasinAbove(level, pos);
         }
         super.onRemove(state, level, pos, newState, isMoving);
