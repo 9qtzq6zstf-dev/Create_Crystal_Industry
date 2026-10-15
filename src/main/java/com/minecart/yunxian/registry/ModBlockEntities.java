@@ -51,6 +51,13 @@ public final class ModBlockEntities {
                     ModBlocks.MECHANICAL_CLEANER.get()
             ).build(null));
 
+    // 泄压舱口：自己不带库存，只有侧面过滤槽与被风打到就吐货的逻辑
+    public static final Supplier<BlockEntityType<PressureReliefHatchBlockEntity>> PRESSURE_RELIEF_HATCH =
+            BLOCK_ENTITIES.register("pressure_relief_hatch", () -> BlockEntityType.Builder.of(
+                    PressureReliefHatchBlockEntity::new,
+                    ModBlocks.PRESSURE_RELIEF_HATCH.get()
+            ).build(null));
+
     // 共振台：组合 Create 的 DepotBehaviour，交互/渲染都照置物台那套
     public static final Supplier<BlockEntityType<ResonanceTableBlockEntity>> RESONANCE_TABLE =
             BLOCK_ENTITIES.register("resonance_table", () -> BlockEntityType.Builder.of(

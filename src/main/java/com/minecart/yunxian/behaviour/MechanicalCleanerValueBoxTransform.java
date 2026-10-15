@@ -12,6 +12,13 @@ import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
+/**
+ * 侧面 4 个过滤槽的值框位置。基状态（facing=up）下的槽位与法线写死在 {@link #SLOT_POSITIONS} /
+ * {@link #SLOT_NORMALS} 里，其余五个朝向按模型那套"先 x 后 y"的旋转推出来。
+ * <p>
+ * 泄压舱口的模型朝向与旋转表跟吸尘器完全一致，所以它直接继承本类、只换两样东西：
+ * 读的是哪个 {@code FACING} 属性（{@link #facingOf}）与槽位摆在哪（{@link #slotPositions}）。
+ */
 public class MechanicalCleanerValueBoxTransform extends ValueBoxTransform.Sided {
 
     // 基准模型(facing=up)时，4 个侧面上的槽位位置（体素坐标）
@@ -29,6 +36,16 @@ public class MechanicalCleanerValueBoxTransform extends ValueBoxTransform.Sided 
             new Vec3(-1, 0, 0),   // 西
     };
 
+    /** 槽位在基状态（facing=up）下的位置，下标与 {@link #SLOT_NORMALS} 一一对应 */
+    protected Vec3[] slotPositions() {
+        return SLOT_POSITIONS;
+    }
+
+    /** 本方块把朝向存在哪个属性上。默认是吸尘器那个，泄压舱口覆写它 */
+    protected Direction facingOf(BlockState state) {
+        return state.getValue(MechanicalCleanerBlock.FACING);
+    }
+
     @Override
     protected Vec3 getSouthLocation() {
         return VecHelper.voxelSpace(8, 8, 15.5);
@@ -36,14 +53,15 @@ public class MechanicalCleanerValueBoxTransform extends ValueBoxTransform.Sided 
 
     @Override
     public Vec3 getLocalOffset(LevelAccessor level, BlockPos pos, BlockState state) {
-        Direction facing = state.getValue(MechanicalCleanerBlock.FACING);
+        Direction facing = facingOf(state);
         float[] rot = rotationFor(facing);
         Direction side = getSide();
+        Vec3[] slots = slotPositions();
 
         for (int i = 0; i < 4; i++) {
             Vec3 n = rotateNormal(SLOT_NORMALS[i], rot);
             if (Direction.getNearest(n.x, n.y, n.z) == side)
-                return rotatePoint(SLOT_POSITIONS[i], rot);
+                return rotatePoint(slots[i], rot);
         }
         return null; // 非侧面的方向（前后）不渲染
     }
@@ -51,7 +69,7 @@ public class MechanicalCleanerValueBoxTransform extends ValueBoxTransform.Sided 
     @Override
     public void rotate(LevelAccessor level, BlockPos pos, BlockState state, PoseStack ms) {
         Direction side = getSide();
-        Direction facing = state.getValue(MechanicalCleanerBlock.FACING);
+        Direction facing = facingOf(state);
 
         // 只有方块横放（水平朝向）时的上下两面，数字才按方块朝向修正方向；
         // 四面竖墙保持基类原样（当前正常显示），不做任何改动。
@@ -71,7 +89,7 @@ public class MechanicalCleanerValueBoxTransform extends ValueBoxTransform.Sided 
     @Override
     protected boolean isSideActive(BlockState state, Direction side) {
         // 只激活垂直于朝向的 4 个侧面
-        return side.getAxis() != state.getValue(MechanicalCleanerBlock.FACING).getAxis();
+        return side.getAxis() != facingOf(state).getAxis();
     }
 
     private static Vec3 rotatePoint(Vec3 p, float[] rot) {

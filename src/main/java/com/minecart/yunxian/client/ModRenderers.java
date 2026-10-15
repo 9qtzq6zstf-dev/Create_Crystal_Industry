@@ -19,6 +19,7 @@ import com.minecart.yunxian.client.echo.EchoSpyglassScopeOverlay;
 import com.minecart.yunxian.client.echo.EchoSpyglassUseRenderer;
 import com.minecart.yunxian.client.mechanical.MechanicalAcceleratorRenderer;
 import com.minecart.yunxian.client.mechanical.MechanicalCleanerRenderer;
+import com.minecart.yunxian.client.mechanical.PressureReliefHatchRenderer;
 import com.minecart.yunxian.client.mechanical.ResonanceTableRenderer;
 import com.minecart.yunxian.client.mechanical.SmartDrillRenderer;
 import com.minecart.yunxian.client.sundae.FlammableSundaeFrameRenderer;
@@ -193,6 +194,10 @@ public class ModRenderers {
         event.registerBlockEntityRenderer(
                 ModBlockEntities.MECHANICAL_CLEANER.get(),
                 MechanicalCleanerRenderer::new);
+        // 泄压舱口：方块本体走普通模型，这里只补侧面过滤槽里那件过滤物品
+        event.registerBlockEntityRenderer(
+                ModBlockEntities.PRESSURE_RELIEF_HATCH.get(),
+                PressureReliefHatchRenderer::new);
         event.registerBlockEntityRenderer(
                 ModBlockEntities.RESONANCE_TABLE.get(),
                 ResonanceTableRenderer::new);
