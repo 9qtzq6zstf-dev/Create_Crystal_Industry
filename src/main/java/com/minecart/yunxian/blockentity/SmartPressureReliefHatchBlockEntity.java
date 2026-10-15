@@ -1,5 +1,6 @@
 package com.minecart.yunxian.blockentity;
 
+import com.minecart.yunxian.block.SmartPressureReliefHatchBlock;
 import com.minecart.yunxian.registry.ModBlockEntities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.state.BlockState;
@@ -51,5 +52,11 @@ public class SmartPressureReliefHatchBlockEntity extends PressureReliefHatchBloc
     @Override
     protected boolean requiresFullBatch() {
         return filtering != null && !filtering.upTo;
+    }
+
+    /** 红石锁：收到信号就不吐货（外观同时换成 {@code block_powered} 那套模型） */
+    @Override
+    protected boolean isLocked() {
+        return getBlockState().getValue(SmartPressureReliefHatchBlock.POWERED);
     }
 }

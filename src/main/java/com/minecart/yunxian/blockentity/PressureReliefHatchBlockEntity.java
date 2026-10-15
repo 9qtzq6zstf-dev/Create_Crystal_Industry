@@ -101,6 +101,14 @@ public class PressureReliefHatchBlockEntity extends SmartBlockEntity {
         return false;
     }
 
+    /**
+     * 是否被红石锁住（锁住就不吐货）。泄压舱口没有红石锁，恒 false；
+     * 智能泄压舱口覆写成读 {@code POWERED}。
+     */
+    protected boolean isLocked() {
+        return false;
+    }
+
     /** 侧面过滤槽的标题翻译键 */
     protected String filterLabelKey() {
         return "create_crystal_industry.pressure_relief_hatch.filter";
@@ -114,6 +122,12 @@ public class PressureReliefHatchBlockEntity extends SmartBlockEntity {
         // 但找风场与吐货是纯服务端的事
         if (level == null || level.isClientSide)
             return;
+
+        // 红石锁：不吐货。顺手把风场缓存清掉，免得解锁后拿着一个过期风场先用一拍
+        if (isLocked()) {
+            activeCurrent = null;
+            return;
+        }
 
         if (scanCooldown-- <= 0) {
             scanCooldown = SCAN_INTERVAL;
