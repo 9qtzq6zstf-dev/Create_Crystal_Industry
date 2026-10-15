@@ -1,0 +1,6 @@
+{
+  "parent": "create_crystal_industry:block/pressure_relief_hatch/block",
+  "textures": {
+    "0": "create_crystal_industry:block/smart_pressure_relief_hatch/hatch_powered"
+  }
+}
