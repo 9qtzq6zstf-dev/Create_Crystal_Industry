@@ -165,15 +165,19 @@ public class SmartTemperatureChamberBlock extends BaseEntityBlock {
     /**
      * 从 {@code origin} 出发，算出它属于哪一组。
      * <p>
-     * 规则：先在<b>同一个 Y 上、四向相邻</b>的整片连通域里切出一个<b>面积最大的全满矩形</b>，
-     * 那一批算一组；把切走的格子拿掉，对剩下的再切一次，直到切到 {@code origin} 所在的那一个为止。
+     * 规则：先在<b>同一个 Y 上、四向相邻</b>的整片连通域里，从坐标最小的格子起长出一个矩形
+     * （只按整行/整列往外吃，见 {@link #growFromSmallest}），那一批算一组；把已分组的格子拿掉，
+     * 对剩下的再长一次，直到长到 {@code origin} 所在的那一个为止。
      * 于是连成一片的温控室会被划分成若干块矩形，<b>每块各自共享容量</b>。
      * <p>
      * 之所以不要求"整片就是一个矩形"：3x3 缺一个角这种很常见的摆法，外接矩形没填满，
-     * 一刀切判否会让八台一台都不共享；切出它里面那个 2x3 才是玩家期待的。
+     * 一刀切判否会让八台一台都不共享；切出它里面那块矩形才是玩家期待的。
      * <p>
-     * 面积并列时按<b>先宽、后高、再取左上角靠前</b>来定（例如 2x3 与 3x2 都是 6，取宽的那个），
-     * 保证同一块连通域无论从哪一格问起、切法都完全一样。
+     * <b>只按整行/整列长，是为了不拆散已经连好的那一片</b>：已经摆成 1x3 的长龙，侧面再补两格时
+     * 会切成 1x3 + 1x2（原样保留），而不是把那条 1x3 拆成 2x2 + 1x1；一整块矩形补满一条边时
+     * 也还是同一个矩形。代价是这套切法只看得到当前摆法、看不到"谁先摆的"——同样五格的两种摆法史
+     * （先 1x3 后补两格 / 先 2x2 后补一格）在网格上一模一样，纯函数只能给出同一个答案，
+     * 这里选的是前者。
      * <p>
      * 垂直方向不算（上下叠着的不共享）；判定不成立或超上限时<b>只返回 {@code origin} 自己</b>，
      * 所以调用方拿到的列表一定可以直接用：容量 = 长度 × 单台容量，燃料 = 各格之和。
@@ -225,16 +229,31 @@ public class SmartTemperatureChamberBlock extends BaseEntityBlock {
             return solo;
         }
 
-        // 2) 铺成一张网格，反复切最大全满矩形，直切到 origin 所在的那一个
-        boolean[][] remaining = new boolean[width][depth];
+        // 2) 先摆成"标准朝向"，再切矩形。
+        //    世界坐标的东南西北不该影响分组：同一片方块整体转个方向、换个角摆，必须切出同样的分法。
+        //    所以在一整片的 8 种旋转/翻转里挑最小的那一种当标准朝向，在它上面切，切完按映射写回原坐标。
+        Orientation canonical = canonicalOrientation(members, minX, minZ, width, depth);
+
+        boolean[][] remaining = new boolean[canonical.outWidth()][canonical.outDepth()];
+        int[][] fromX = new int[canonical.outWidth()][canonical.outDepth()];
+        int[][] fromZ = new int[canonical.outWidth()][canonical.outDepth()];
+        int originX = 0;
+        int originZ = 0;
         for (BlockPos pos : members) {
-            remaining[pos.getX() - minX][pos.getZ() - minZ] = true;
+            int relX = pos.getX() - minX;
+            int relZ = pos.getZ() - minZ;
+            int[] at = canonical.forward(relX, relZ);
+            remaining[at[0]][at[1]] = true;
+            fromX[at[0]][at[1]] = pos.getX();
+            fromZ[at[0]][at[1]] = pos.getZ();
+            if (pos.equals(origin)) {
+                originX = at[0];
+                originZ = at[1];
+            }
         }
-        int originX = origin.getX() - minX;
-        int originZ = origin.getZ() - minZ;
 
         while (true) {
-            Rect best = largestRectangle(remaining, width, depth);
+            Rect best = growFromSmallest(remaining, canonical.outWidth(), canonical.outDepth());
             if (best == null) {
                 return solo; // 走不到：origin 自己那一格总在某块矩形里
             }
@@ -242,7 +261,7 @@ public class SmartTemperatureChamberBlock extends BaseEntityBlock {
                 List<BlockPos> group = new ArrayList<>(best.area());
                 for (int x = best.x; x < best.x + best.width; x++) {
                     for (int z = best.z; z < best.z + best.depth; z++) {
-                        group.add(new BlockPos(x + minX, origin.getY(), z + minZ));
+                        group.add(new BlockPos(fromX[x][z], origin.getY(), fromZ[x][z]));
                     }
                 }
                 return group;
@@ -252,57 +271,156 @@ public class SmartTemperatureChamberBlock extends BaseEntityBlock {
     }
 
     /**
-     * 网格里面积最大的全满矩形。<b>单调栈</b>按行扫（每行维护"往上连续有多高"，再求直方图里的最大矩形），
-     * 一行一次 O(宽 x 深)，比穷举所有左上/右下角快得多。
+     * 在这一片的 8 种朝向（旋转 4 种 x 翻转 2 种）里挑"标准朝向"：
+     * 每种朝向下把格子压成一行一个 bit 掩码，逐行比大小，取最小的那一种
+     * （并列时取枚举里靠前的，保证同一片方块无论从哪一格问起都挑到同一个）。
      * <p>
-     * 并列时的取舍写死在 {@link #better} 里，这是"同一块连通域切法唯一"的根。
-     * 不返回 {@code null} 除非整张网格都是空的。
+     * 挑标准朝向是为了让分组<b>与朝向无关</b>：同一片方块整体转 90 度、或者翻个面摆，
+     * 分组必须一模一样——不然同一个摆法只是换了个角，"1x3 保不保得住"就变了。
      */
-    @Nullable
-    private static Rect largestRectangle(boolean[][] grid, int width, int depth) {
-        int[] heights = new int[depth];
-        Rect best = null;
-        for (int x = 0; x < width; x++) {
-            for (int z = 0; z < depth; z++) {
-                heights[z] = grid[x][z] ? heights[z] + 1 : 0;
+    private static Orientation canonicalOrientation(List<BlockPos> members, int minX, int minZ,
+                                                    int width, int depth) {
+        Orientation best = null;
+        long[] bestRows = null;
+        for (int variant = 0; variant < Orientation.VARIANTS; variant++) {
+            Orientation candidate = new Orientation(variant, width, depth);
+            long[] rows = new long[candidate.outWidth()];
+            for (BlockPos pos : members) {
+                int[] at = candidate.forward(pos.getX() - minX, pos.getZ() - minZ);
+                rows[at[0]] |= 1L << at[1];
             }
-            // 直方图求最大矩形；末尾补一个 0 把栈里剩的弹干净
-            Deque<Integer> stack = new ArrayDeque<>();
-            for (int col = 0; col <= depth; col++) {
-                int barHeight = col == depth ? 0 : heights[col];
-                while (!stack.isEmpty() && heights[stack.peek()] >= barHeight) {
-                    int popped = stack.pop();
-                    int height = heights[popped];
-                    int left = stack.isEmpty() ? 0 : stack.peek() + 1;
-                    Rect candidate = new Rect(x - height + 1, left, height, col - left);
-                    if (better(candidate, best)) {
-                        best = candidate;
-                    }
-                }
-                stack.push(col);
+            if (best == null || compareRows(rows, bestRows) < 0) {
+                best = candidate;
+                bestRows = rows;
             }
         }
         return best;
     }
 
-    /** 两个候选谁更该被切走：先比面积，再比宽，再比高，最后取左上角靠前的 */
-    private static boolean better(Rect candidate, @Nullable Rect current) {
-        if (current == null) {
-            return true;
+    /** 逐行比 bit 掩码；行数不同时短的那个算小 */
+    private static int compareRows(long[] a, long[] b) {
+        for (int i = 0; i < a.length && i < b.length; i++) {
+            if (a[i] != b[i]) {
+                return Long.compare(a[i], b[i]);
+            }
         }
-        if (candidate.area() != current.area()) {
-            return candidate.area() > current.area();
+        return Integer.compare(a.length, b.length);
+    }
+
+    /**
+     * 连通域的一种朝向：{@code forward} 把"外接矩形内的相对坐标"映射到该朝向下的坐标。
+     * <p>
+     * 后四种是转置（x/z 对调），所以外接矩形的宽高也跟着换，见 {@link #outWidth()}。
+     */
+    private record Orientation(int variant, int sourceWidth, int sourceDepth) {
+
+        /** 旋转 4 种 x 翻转 2 种 */
+        static final int VARIANTS = 8;
+
+        int outWidth() {
+            return variant < 4 ? sourceWidth : sourceDepth;
         }
-        if (candidate.width != current.width) {
-            return candidate.width > current.width;
+
+        int outDepth() {
+            return variant < 4 ? sourceDepth : sourceWidth;
         }
-        if (candidate.depth != current.depth) {
-            return candidate.depth > current.depth;
+
+        int[] forward(int x, int z) {
+            return switch (variant) {
+                case 0 -> new int[] {x, z};
+                case 1 -> new int[] {sourceWidth - 1 - x, z};
+                case 2 -> new int[] {x, sourceDepth - 1 - z};
+                case 3 -> new int[] {sourceWidth - 1 - x, sourceDepth - 1 - z};
+                case 4 -> new int[] {z, x};
+                case 5 -> new int[] {z, sourceWidth - 1 - x};
+                case 6 -> new int[] {sourceDepth - 1 - z, x};
+                default -> new int[] {sourceDepth - 1 - z, sourceWidth - 1 - x};
+            };
         }
-        if (candidate.x != current.x) {
-            return candidate.x < current.x;
+    }
+
+    /**
+     * 取网格里<b>坐标最小</b>（先 x 后 z）的那个还没被分走的格子当锚点，从它长出一个矩形：
+     * 每一步只吃<b>一整行或一整列</b>（那一条必须整条都还没被分走），两个方向都吃不下去时就长完了。
+     * <p>
+     * 优先方向取<b>锚点那一行与那一列谁更长</b>（一样长时先走 x）。这一条是为"一条长龙"定的：
+     * 摆成 1x3 之后在它侧面补上两格，锚点处的行比列长，于是先沿行吃满、得到 1x3 + 1x2，
+     * 而不是"面积最大的矩形优先"那种切法给出的 2x2 + 1x1 —— 后者会把原来那条 1x3 拆开。
+     * 同理，整块矩形补满一整行/一整列时仍然是同一个矩形（长出新的一整条而已）。
+     * <p>
+     * 因为只吃"整条"，所以每一块的两条边都贴着已经填满的一整行/列，切法对同一块连通域唯一，
+     * 与查询点无关（{@link #groupAt} 保证同一组各格算出的是同一份名单）。
+     * 不返回 {@code null} 除非整张网格都是空的。
+     */
+    @Nullable
+    private static Rect growFromSmallest(boolean[][] grid, int width, int depth) {
+        int anchorX = -1;
+        int anchorZ = -1;
+        for (int x = 0; x < width && anchorX < 0; x++) {
+            for (int z = 0; z < depth; z++) {
+                if (grid[x][z]) {
+                    anchorX = x;
+                    anchorZ = z;
+                    break;
+                }
+            }
         }
-        return candidate.z < current.z;
+        if (anchorX < 0) {
+            return null;
+        }
+
+        int runX = 0;
+        while (anchorX + runX < width && grid[anchorX + runX][anchorZ]) {
+            runX++;
+        }
+        int runZ = 0;
+        while (anchorZ + runZ < depth && grid[anchorX][anchorZ + runZ]) {
+            runZ++;
+        }
+        boolean preferX = runX >= runZ;
+
+        int x = anchorX;
+        int z = anchorZ;
+        int w = 1;
+        int d = 1;
+        while (true) {
+            boolean grew = false;
+            for (int pass = 0; pass < 2 && !grew; pass++) {
+                boolean horizontal = (pass == 0) == preferX;
+                if (horizontal) {
+                    if (x + w < width && columnIsFree(grid, x + w, z, d)) {
+                        w++;
+                        grew = true;
+                    }
+                } else if (z + d < depth && rowIsFree(grid, x, z + d, w)) {
+                    d++;
+                    grew = true;
+                }
+            }
+            if (!grew) {
+                return new Rect(x, z, w, d);
+            }
+        }
+    }
+
+    /** 这一整列（z 起、深 d 格）是不是都还没被分走 */
+    private static boolean columnIsFree(boolean[][] grid, int x, int z, int depth) {
+        for (int i = 0; i < depth; i++) {
+            if (!grid[x][z + i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /** 这一整行（x 起、宽 w 格）是不是都还没被分走 */
+    private static boolean rowIsFree(boolean[][] grid, int x, int z, int width) {
+        for (int i = 0; i < width; i++) {
+            if (!grid[x + i][z]) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /** 网格坐标下的一块矩形（{@code x}/{@code z} 是左上角，{@code width}/{@code depth} 是格数） */
