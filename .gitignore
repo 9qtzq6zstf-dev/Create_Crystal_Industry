@@ -1,7 +1,11 @@
 # Gradle
 .gradle/
+.gradle-build/
 build/
 *.log
+
+# 解包出来的 Create 源码（只读参考，方便对着原版实现抄，不进仓库）
+.create-src/
 
 # IDE
 .idea/

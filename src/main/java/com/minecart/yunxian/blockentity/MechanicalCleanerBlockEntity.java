@@ -74,6 +74,13 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
     /** 目标气流长度最大值（格）：与鼓风机 256 转速下的最大距离一致（fanPushDistance 默认 20） */
     public static final int SUCK_RANGE_MAX = 20;
 
+    /**
+     * 无应力时的被动吸取距离（格）：固定一格，<b>不受 GUI 滑块影响</b>。
+     * 滑块配置的是"风场要多长"（见 {@link #getMaxDistance()}），没有风就没有风场可言；
+     * 无应力时它只是台摆在传送带尽头的普通吸尘口，只捡正前方紧贴的那一格。
+     */
+    public static final int PASSIVE_SUCK_RANGE = 1;
+
     /** 目标气流长度（格）：GUI 调节的数值，实际长度还会受转速上限约束 */
     private int suckRange = SUCK_RANGE_MIN;
 
@@ -579,7 +586,8 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
                         collectItemsFromContainer();
                         collectItemsInInterior();
                     } else {
-                        // 无动力：只被动吸掉落物（不依赖风）；容器直吸不生效；凹陷内仍可吸
+                        // 无动力：不产生风，只捡正前方紧贴的一格（PASSIVE_SUCK_RANGE，不受 GUI 滑块影响）；
+                        // 容器直吸不生效；凹陷内仍可吸
                         collectItemsPassive();
                         collectItemsInInterior();
                     }
@@ -636,16 +644,21 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
     }
 
     /**
-     * 无动力时的被动吸取：不依赖 AirCurrent 的风力，
-     * 按配置的吸取距离（suckRange）扫描前方范围，把掉落物直接收入容器。
+     * 无动力时的被动吸取：不依赖 AirCurrent 的风力，只捡正前方紧贴的那<b>一格</b>
+     * （{@link #PASSIVE_SUCK_RANGE}），把掉落物直接收入容器。
+     * <p>
+     * 距离恒为一格，<b>刻意不读 {@link #getSuckRange()}</b>：那个值是给风场用的长度配额
+     * （见 {@link #getMaxDistance()}）。无应力时压根没有风场，读它就成了"没有风却能隔 20 格吸东西"，
+     * 滑块也就变成了绕过应力的后门。要拉长距离就得通应力，这是这台机器的设计前提。
+     * <p>
      * 与有动力时一致：过滤生效；完整方块（isSuffocating）阻挡。
      */
     private void collectItemsPassive() {
         Direction facing = getBlockState().getValue(MechanicalCleanerBlock.FACING);
 
-        // 逐格扫描，遇到完整方块截断（与早期 getEffectiveSuckRange 行为一致）
+        // 逐格扫描，遇到完整方块截断（与有动力时的阻挡口径一致）
         int effective = 0;
-        for (int i = 1; i <= suckRange; i++) {
+        for (int i = 1; i <= PASSIVE_SUCK_RANGE; i++) {
             BlockPos check = worldPosition.relative(facing, i);
             if (level.getBlockState(check).isSuffocating(level, check))
                 break;

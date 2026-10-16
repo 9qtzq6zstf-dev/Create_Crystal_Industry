@@ -33,7 +33,8 @@ import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
  * 已知不覆盖（两种都保持原样：照常生成实体，随后由吸尘器收走，只是没省下这个实体）：
  * <ul>
  *   <li>喷嘴（分散网）把风场变成以自身为中心的球体，球内但不在轴线上的掉落物查不到；</li>
- *   <li>没有动力的吸尘器没有风场边界，此时靠 {@code collectItemsPassive} 按距离被动吸取，
+ *   <li>没有动力的吸尘器没有风场边界，此时靠 {@code collectItemsPassive} 只捡正前方紧贴的一格
+ *       （{@link MechanicalCleanerBlockEntity#PASSIVE_SUCK_RANGE}），
  *       那部分掉落物照常生成。</li>
  * </ul>
  */
