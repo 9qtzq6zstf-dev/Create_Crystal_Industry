@@ -93,6 +93,22 @@ public class PressureReliefHatchBlock extends AmethystClusterBlock implements En
         return level.getCapability(Capabilities.ItemHandler.BLOCK, support, facing.getOpposite()) != null;
     }
 
+    /**
+     * 天光整片穿过：舱口当通风口用，压在上面的方块的采光不该被它挡掉。
+     * <p>
+     * 基类默认是 {@code !isShapeFullBlock(getShape()) && getFluidState().isEmpty()}——本类碰撞箱
+     * 本来就不是整方块，所以<b>空气中的舱口默认就已经透光</b>；只有 {@code waterlogged=true}
+     * 时那一项会让天光衰减。这里恒返回 true，把含水舱口也一起放行。
+     * <p>
+     * 与"亮度"无关：{@code getLightBlock} 对非整方块默认给的 {@code propagatesSkylightDown ? 0 : 1}
+     * 本来就是 0；而 {@code getShadeBrightness} 的默认值对非整方块也已经是 1.0F，
+     * 不需要（也不该）再覆写一次。
+     */
+    @Override
+    protected boolean propagatesSkylightDown(BlockState state, BlockGetter level, BlockPos pos) {
+        return true;
+    }
+
     // ==================== 方块实体 ====================
 
     @Nullable
