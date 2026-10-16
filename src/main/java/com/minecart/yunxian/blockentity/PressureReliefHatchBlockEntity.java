@@ -220,6 +220,13 @@ public class PressureReliefHatchBlockEntity extends SmartBlockEntity {
         if (current == null)
             return;
 
+        // 记住的风场可以一直用着不复查（每 SCAN_INTERVAL 才验一次），但"吐货"这一下必须
+        // 用当帧的风场状态把关：风源被红石锁住时气流会当场塌掉，这里不挡住就会多吐一批。
+        if (!canStillVent(current)) {
+            forgetCurrent();
+            return;
+        }
+
         if (ventCooldown > 0) {
             ventCooldown--;
             return;
@@ -511,6 +518,25 @@ public class PressureReliefHatchBlockEntity extends SmartBlockEntity {
     /** 这支风场还是本格记着的那支吗，而且还在吹 */
     private boolean isVentCurrent(AirCurrent current) {
         return activeCurrent == current && current.source != null && current.source.getSpeed() != 0;
+    }
+
+    /**
+     * 这一 tick 还该不该吐货。{@link #isVentCurrent} 只看<b>风源转速</b>，而转速归零与
+     * {@code AirCurrent} 塌掉是两步：{@code rebuild()} 在 {@code source.getSpeed() == 0} 时把
+     * {@code bounds} 收成零点、{@code segments} 清空，转速却是当帧就读到的。本方法把"风场真的没了"
+     * 也一并挡住，于是吸尘器被红石锁住（或满仓停转）时，本格在下一个 {@link #SCAN_INTERVAL}
+     * 复查之前就<b>立刻</b>闭嘴，不会再多吐这一批。
+     * <p>
+     * 风源那只 {@code AirCurrent} 是方块实体构造时就 new 出来的（只 rebuild、不换对象），
+     * 所以 {@code source.getAirCurrent() == current} 这条恒等判定可以当"这支风场还挂在风源上"用。
+     */
+    private boolean canStillVent(AirCurrent current) {
+        if (!isVentCurrent(current))
+            return false;
+        if (current.bounds == null || current.bounds.getXsize() <= 0 || current.bounds.getYsize() <= 0
+                || current.bounds.getZsize() <= 0)
+            return false;
+        return current.source.getAirCurrent() == current;
     }
 
     /** 扫描半径：取配置里鼓风机推送/抽吸距离的上限（默认 20） */
