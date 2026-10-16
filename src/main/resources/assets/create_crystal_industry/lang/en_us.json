@@ -131,7 +131,7 @@
     "block.create_crystal_industry.mechanical_cleaner": "Mechanical Cleaner",
     "block.create_crystal_industry.crystal_battery": "Crystal Battery",
     "block.create_crystal_industry.pressure_relief_hatch": "Pressure Relief Hatch",
-    "create_crystal_industry.pressure_relief_hatch.filter": "Extraction Filter",
+    "create_crystal_industry.pressure_relief_hatch.filter": "Extraction Filter \u226416",
     "block.create_crystal_industry.smart_pressure_relief_hatch": "Smart Pressure Relief Hatch",
     "create_crystal_industry.smart_pressure_relief_hatch.filter": "Extraction Filter & Amount",
     "block.create_crystal_industry.smart_temperature_chamber": "Smart Temperature Chamber",

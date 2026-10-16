@@ -39,12 +39,15 @@ public class SmartPressureReliefHatchBlockEntity extends PressureReliefHatchBloc
      * 一批 = 滑块上的数量，但还要再受<span>物品自己的堆叠数</span>压一头：
      * 一批就是"一组"，16 堆叠的东西不该一次吐 64 个。控件本身已经把值夹在
      * 1 ~ 过滤物品的最大堆叠数（没设过滤物品时就是 64），这里再兜一道底，免得读到脏 NBT。
+     * <p>
+     * 天花板是 {@link #SMART_VENT_AMOUNT}（64）——这就是智能舱口比普通舱口（固定 16）多出来的那档，
+     * 与原版溜槽 / 智能溜槽同一套关系。
      */
     @Override
     protected int batchSize(int groupSize) {
         if (filtering == null)
             return 1;
-        int amount = Math.max(1, Math.min(MAX_VENT_AMOUNT, filtering.getAmount()));
+        int amount = Math.max(1, Math.min(SMART_VENT_AMOUNT, filtering.getAmount()));
         return Math.min(amount, groupSize);
     }
 

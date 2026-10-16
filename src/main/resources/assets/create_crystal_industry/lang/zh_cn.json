@@ -131,7 +131,7 @@
     "block.create_crystal_industry.mechanical_cleaner": "动力吸尘器",
     "block.create_crystal_industry.crystal_battery": "水晶电池",
     "block.create_crystal_industry.pressure_relief_hatch": "泄压舱口",
-    "create_crystal_industry.pressure_relief_hatch.filter": "提取 过滤",
+    "create_crystal_industry.pressure_relief_hatch.filter": "提取 过滤 ≤16",
     "block.create_crystal_industry.smart_pressure_relief_hatch": "智能泄压舱口",
     "create_crystal_industry.smart_pressure_relief_hatch.filter": "提取 过滤与数量",
     "block.create_crystal_industry.smart_temperature_chamber": "智能温控室",

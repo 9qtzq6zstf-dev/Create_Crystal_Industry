@@ -47,9 +47,10 @@ import java.util.List;
  * 顺带一提：泄压舱口自己的碰撞箱在垂直于朝向的方向上是"有洞的"（网罩那圈中间是空的），
  * Create 的 `findMaxDepth` 判定有洞就整格放行，所以侧风是真的穿过本格，不是吹到脸上。
  * <p>
- * <b>吐多少。</b>一批就是"一组"：按待吐物品里最小的那个堆叠数走（16 堆叠的东西一次最多 16 个，
- * 混装时取最严的上限），再兜一个 {@link #MAX_VENT_AMOUNT} 的天花板。
- * 侧面那个槽<b>只做过滤</b>，没有数量控件 —— 要调"每次吐几个"的是子类
+ * <b>吐多少。</b>一批最多 {@link #VENT_AMOUNT} 个（<b>16</b>，对齐原版溜槽），再受"一组"压一头：
+ * 按待吐物品里最小的那个堆叠数走（16 堆叠的东西一次最多 16 个，混装时取最严的上限）。
+ * 侧面那个槽<b>只做过滤</b>，没有数量控件 —— 要调"每次吐几个"、并且能把上限抬到
+ * {@link #SMART_VENT_AMOUNT}（64）的是子类
  * {@code SmartPressureReliefHatchBlockEntity}（智能泄压舱口），它把数量滑块加回来，
  * 并通过覆写 {@link #batchSize(int)} / {@link #requiresFullBatch()} 接上这里的吐货逻辑。
  * 节奏跟着风源转速走（间隔 = max(2, 100/转速) tick，与动力吸尘器吹出同一套公式）；
@@ -64,8 +65,18 @@ public class PressureReliefHatchBlockEntity extends SmartBlockEntity {
     /** 风源给不出转速时的兜底节奏（tick / 批） */
     private static final int FALLBACK_INTERVAL = 10;
 
-    /** 一批的上限兜底：无论怎么算，一次都不会吐超过这个数（智能舱口的滑块也夹在里面） */
-    protected static final int MAX_VENT_AMOUNT = 64;
+    /**
+     * 本类一批的上限：<b>16 个</b>，对齐原版溜槽（{@code ChuteBlockEntity.getExtractionAmount()} 也是 16）。
+     * 它同时是混装时取"最小堆叠数"的初值，所以 64 堆叠的物品在这里也只会一次吐 16 个。
+     */
+    protected static final int VENT_AMOUNT = 16;
+
+    /**
+     * 智能舱口（带数量滑块）才够得着的天花板：<b>64 个</b>，对齐智能溜槽
+     * （{@code SmartChuteBlockEntity.getExtractionAmount()} 在滑块未调时兜底 64）。
+     * 基类不带滑块，碰不到这个数。
+     */
+    protected static final int SMART_VENT_AMOUNT = 64;
 
     /** 侧面 4 个槽共用同一个过滤器，只有过滤通过的物品才会被吐出来；子类要用它读数量 */
     protected FilteringBehaviour filtering;
@@ -236,7 +247,7 @@ public class PressureReliefHatchBlockEntity extends SmartBlockEntity {
             return;
 
         int available = 0;
-        int groupSize = MAX_VENT_AMOUNT;
+        int groupSize = Integer.MAX_VALUE;
         for (int slot = 0; slot < source.getSlots(); slot++) {
             ItemStack stack = source.getStackInSlot(slot);
             if (stack.isEmpty() || !canVent(stack))
@@ -267,12 +278,13 @@ public class PressureReliefHatchBlockEntity extends SmartBlockEntity {
     }
 
     /**
-     * 这一批吐几个。本类不设数量控件，一批就是"一组"（{@code groupSize} = 待吐物品里最小的
-     * 那个堆叠数），也就是"有多少装得下就吐多少，但不超过一整组"。
+     * 这一批吐几个。本类不带数量滑块，所以是固定档：{@code min(VENT_AMOUNT, groupSize)} ——
+     * 也就是"最多 16 个，且不超过待吐物品里最小的那组"。16 堆叠的东西还是 16，
+     * 64 堆叠的东西也只吐 16（对齐原版溜槽那一档）。
      * 智能泄压舱口覆写它，改为"滑块上的数再被一组压一头"。
      */
     protected int batchSize(int groupSize) {
-        return groupSize;
+        return Math.min(VENT_AMOUNT, groupSize);
     }
 
     /** 是否要求"凑够一整批才吐"。只有带数量滑块的智能舱口会用到 "=" 那一档 */
