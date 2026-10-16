@@ -166,13 +166,16 @@ public class SmartTemperatureChamberBlock extends BaseEntityBlock {
      * 从 {@code origin} 出发，算出它属于哪一组。
      * <p>
      * <b>分组是记下来的，不是现算的</b>：每台温控室的方块实体里存着一个"组锚点"，
-     * 同一组各格记的值相同。放下时只有"自己并进去之后仍然是一个矩形"才并入某一组
-     * （见 {@link #assignGroupOnPlace}），所以已经形成的矩形不会被后来补的格子拆开——
-     * 新格子要么只是把某一块撑大，要么自成一格。
+     * 同一组各格记的值相同。放下时新格子只把自己<b>并进一块已经存在的矩形</b>
+     * （判据："加进这一格之后那一块仍然是矩形"，见 {@link #assignGroupOnPlace}），
+     * 已经连好的那几块因此谁也拆不开——新格子要么只是把某一块撑大，要么自成一格。
      * <p>
-     * 兜底：整片里只要有<b>一格</b>还没拿到锚点（老存档第一次进来、客户端这块还没同步到、
-     * 思索世界的方块实体不走 {@code onLoad}），就整片退回 {@link #canonicalGroup} 那套
-     * 纯函数切法（标准朝向 + 整行/整列长矩形），保证两端算出来的一样。
+     * 兜底：<b>这一格自己</b>还没拿到锚点时（老存档第一次进来、客户端这块还没同步到、
+     * 思索世界的方块实体不走 {@code onLoad}），退回 {@link #canonicalGroup} 那套纯函数切法
+     * （标准朝向 + 整行/整列长矩形），拿它当临时画面。
+     * <p>
+     * 反过来，自己锚点齐全、只是某个<b>邻居</b>的锚点还在路上时，绝不做整片重切——只把那几格
+     * 暂时当作谁都连不上。整片重切会把已经连好的几台重新切开，那是"新放一台抢走一格"的成因。
      * <p>
      * 之所以不要求"整片就是一个矩形"：3x3 缺一个角这种很常见的摆法，外接矩形没填满，
      * 一刀切判否会让八台一台都不共享；切出它里面那块矩形才是玩家期待的。
@@ -182,8 +185,7 @@ public class SmartTemperatureChamberBlock extends BaseEntityBlock {
      * <p>
      * <b>方块实体与客户端的连接材质共用这一个方法</b>，两边必须得出同样的结果——
      * 连接纹理只在共享容量的那几台之间才画，靠的就是"同一个判据"。判据就是上面那个锚点，
-     * 所以这里要读方块实体（{@link BlockGetter} 本来就带 {@code getBlockEntity}），
-     * 读不到就整片回退到纯函数切法。
+     * 所以这里要读方块实体（{@link BlockGetter} 本来就带 {@code getBlockEntity}）。
      */
     public static List<BlockPos> groupAt(BlockGetter level, BlockPos origin) {
         List<BlockPos> solo = List.of(origin);
@@ -197,14 +199,17 @@ public class SmartTemperatureChamberBlock extends BaseEntityBlock {
 
         BlockPos mine = anchorAt(level, origin);
         if (mine == null) {
+            // 只有"这一格自己还没拿到锚点"才回退纯函数切法——此时这片连通域在客户端等于还没分组，
+            // 拿纯函数切出来的形状当临时画面是对的。反过来（自己锚点齐全、只是邻居没到位）绝不回退。
             return canonicalGroup(component, origin);
         }
         List<BlockPos> group = new ArrayList<>();
         for (BlockPos member : component.members()) {
             BlockPos anchor = anchorAt(level, member);
             if (anchor == null) {
-                // 有一格还没拿到锚点：整片退回纯函数切法，保证两端算出来一样
-                return canonicalGroup(component, origin);
+                // 这一格的锚点还没送来（同步包在路上）：它暂时谁也不连，下一帧就会自己好。
+                // 绝不能在这里退回整片重切——那会把已经连好的几台重新切开，正是"新放一台抢走一格"的成因。
+                continue;
             }
             if (anchor.equals(mine)) {
                 group.add(member);
@@ -453,15 +458,25 @@ public class SmartTemperatureChamberBlock extends BaseEntityBlock {
     }
 
     /**
-     * 放下这一格时定它归哪一组：看四邻已经形成的矩形，
-     * <b>只有"把自己并进去之后仍然是一个矩形"才并入</b>（也就是某一条整边被填满）；
-     * 能同时并进两块（两条边一起补齐）就合成一块更大的；并不进任何一块就自成一格。
-     * <p>
-     * 这就是"不破坏已有矩形"的全部实现：新格子要么只是把某一块撑大，要么单独成组，
-     * 绝不会把已经连好的那一块切成两半。
+     * 放下这一格时定它归哪一组。两条规矩，都是为了<b>已经连好的那几块谁也拆不开</b>：
+     * <ol>
+     *   <li><b>不许吃别人内部的格子</b>：并进某一块之前先看这一格是不是<b>别的</b>块的"关键格"
+     *       （拿掉它就散成两块，见 {@link #isArticulation}）。是就整块跳过。这一条最隐蔽——
+     *       "新格子并进 A 块"看着只动了 A，但它落点若正好在 B 块内部，B 当场裂成两半；
+     *       两条 1x3 十字相交正是这种情形（中间那格属于竖的那条，横的那条想把它拉过去，
+     *       竖的那条就断成两截）。宁可自成一格，也不拆别人的。</li>
+     *   <li><b>只并"整块"，不并"半块"</b>：候选只有两种——并进四邻里的<b>某一块</b>，
+     *       或把四邻里那几块<b>整体</b>并进来。整体并进来要求并完之后正好是一个矩形，
+     *       也就是新形成的结构把已有的那几块完整包住了；这就是判据里"除非新形成的结构
+     *       包含了已有的连接"那半句。剔掉"并两块中的一部分"那种可能，才不会把原有归属改花。</li>
+     * </ol>
+     * 每个候选都还要过 {@link #isFullRectangle}（并完必须正好摆满一个矩形，没有缺角）。
+     * 通过的在其中取<b>最大</b>的那一个——于是"两块都能并"时优先接最长的那条；
+     * 都不通过就<b>自成一格</b>，已有分组一格不动。
      */
     private static void assignGroupOnPlace(Level level, BlockPos pos) {
         List<List<BlockPos>> neighbours = new ArrayList<>(4);
+        List<BlockPos> anchors = new ArrayList<>(4);
         for (Direction dir : Direction.Plane.HORIZONTAL) {
             BlockPos side = pos.relative(dir);
             BlockPos anchor = anchorAt(level, side);
@@ -478,20 +493,36 @@ public class SmartTemperatureChamberBlock extends BaseEntityBlock {
             }
             if (!known) {
                 neighbours.add(group);
+                anchors.add(anchor);
             }
         }
 
         List<BlockPos> best = null;
-        for (int mask = 1; mask < (1 << neighbours.size()); mask++) {
+        BlockPos bestAnchor = null;
+
+        // 候选一：并进四邻里单独某一块
+        for (int i = 0; i < neighbours.size(); i++) {
+            List<BlockPos> combined = new ArrayList<>(neighbours.get(i));
+            combined.add(pos);
+            if (isFullRectangle(combined) && (best == null || combined.size() > best.size())) {
+                best = combined;
+                bestAnchor = anchors.get(i);
+            }
+        }
+
+        // 候选二：把四邻里那几块整体并进来。只有"包住了它们"（并完是个满矩形）才成立，
+        // 这正是"新形成的结构包含了已有的连接"；四邻只有一块时与候选一重合，不必重复试
+        if (neighbours.size() > 1) {
             List<BlockPos> union = new ArrayList<>();
             union.add(pos);
-            for (int i = 0; i < neighbours.size(); i++) {
-                if ((mask & (1 << i)) != 0) {
-                    union.addAll(neighbours.get(i));
-                }
+            for (List<BlockPos> group : neighbours) {
+                union.addAll(group);
             }
-            if (isFullRectangle(union) && (best == null || union.size() > best.size())) {
-                best = union;
+            if (isFullRectangle(union) && !breaksNeighbourGroup(pos, neighbours)) {
+                if (best == null || union.size() > best.size()) {
+                    best = union;
+                    bestAnchor = anchors.get(0);
+                }
             }
         }
 
@@ -499,22 +530,59 @@ public class SmartTemperatureChamberBlock extends BaseEntityBlock {
             setAnchor(level, pos, pos);
             return;
         }
-        // 沿用被并进来的那一组的锚点：早放的那一组身份不变，只有新格子需要同步
-        BlockPos anchor = null;
         for (BlockPos cell : best) {
-            if (!cell.equals(pos)) {
-                anchor = anchorAt(level, cell);
-                if (anchor != null) {
-                    break;
-                }
+            setAnchor(level, cell, bestAnchor);
+        }
+    }
+
+    /**
+     * 这一格并进来会不会把四邻里某一块拆散。
+     * <p>
+     * 只看"这一格少掉之后那一块还连不连通"：一块里只要有一格被拿走之后就够不着同块的其余格子，
+     * 那就是把它切成两半。上面两条规矩共用这一个判据。
+     */
+    private static boolean breaksNeighbourGroup(BlockPos pos, List<List<BlockPos>> neighbours) {
+        for (List<BlockPos> group : neighbours) {
+            if (group.size() > 1 && group.contains(pos) && isArticulation(group, pos)) {
+                return true;
             }
         }
-        if (anchor == null) {
-            anchor = pos;
+        return false;
+    }
+
+    /**
+     * {@code cell} 是不是 {@code group} 里的"关键格"：把它拿掉之后，这一组会断成不止一块。
+     * <p>
+     * 从这一组里任意一个剩下的格子洪泛一遍，看能不能走到其余所有格子。一组本来就是一个矩形，
+     * 所以除了"从内部拿走一格"，其余任何一格拿掉都还是连通的（角、边都只是让矩形变小）。
+     */
+    private static boolean isArticulation(List<BlockPos> group, BlockPos cell) {
+        List<BlockPos> rest = new ArrayList<>(group.size());
+        for (BlockPos member : group) {
+            if (!member.equals(cell)) {
+                rest.add(member);
+            }
         }
-        for (BlockPos cell : best) {
-            setAnchor(level, cell, anchor);
+        if (rest.isEmpty()) {
+            return false;
         }
+        // 同一组必在同一个 Y 上（分组不看垂直方向），所以平面内的四向就够
+        Set<BlockPos> reachable = new HashSet<>();
+        Deque<BlockPos> queue = new ArrayDeque<>();
+        reachable.add(rest.get(0));
+        queue.add(rest.get(0));
+        while (!queue.isEmpty()) {
+            BlockPos current = queue.poll();
+            for (Direction dir : Direction.Plane.HORIZONTAL) {
+                BlockPos next = current.relative(dir);
+                // 只走本来就在这一组里的格子（用集合查，不看洪泛到没到过）
+                if (!rest.contains(next) || !reachable.add(next)) {
+                    continue;
+                }
+                queue.add(next);
+            }
+        }
+        return reachable.size() != rest.size();
     }
 
     /**
