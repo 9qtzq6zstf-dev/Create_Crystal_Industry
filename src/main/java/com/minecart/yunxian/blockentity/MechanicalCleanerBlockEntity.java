@@ -47,10 +47,12 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.shapes.CollisionContext;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.items.IItemHandler;
 import net.neoforged.neoforge.items.ItemHandlerHelper;
 import net.neoforged.neoforge.items.ItemStackHandler;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -696,37 +698,77 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
 
     /**
      * 分散网（喷嘴）兼容：吸尘器正前方挂有喷嘴时，
-     * 喷嘴把气流分散成以自身为中心的球形风场（半径 = 吸尘器气流长度）。
-     * 吸入模式下，该球体内、且有视线的掉落物直接收入容器。
+     * 喷嘴把气流分散成以自身为中心的<b>立方体</b>风场（边长半径 = 吸尘器气流长度，
+     * 与 {@code NozzleBlockEntity.calcRange()} 同源）。吸入模式下，该场内、且有视线的掉落物直接收入容器。
+     * <p>
+     * 形状用立方体而不是球：Create 自己挑实体时取的是
+     * {@code new AABB(center, center).inflate(range / 2f)}（{@code NozzleBlockEntity.lazyTick}），
+     * 而泄压舱口判"我这个舱口在不在场里"用的也是各轴差值的最大值
+     * （{@code PressureReliefHatchBlockEntity.cubeDistance}）。三处口径必须一致，
+     * 否则又会出现"舱口认为有风、吸尘器认为收不到"的裂缝。
      */
     private void collectItemsFromNozzle() {
-        if (airCurrent == null || getMaxDistance() <= 0)
+        AABB coverage = getNozzleCoverage();
+        if (coverage == null)
             return;
 
-        Direction facing = getBlockState().getValue(MechanicalCleanerBlock.FACING);
-        BlockPos nozzlePos = worldPosition.relative(facing);
-
-        // 正前方必须是喷嘴才走分散网逻辑
-        if (!(level.getBlockEntity(nozzlePos) instanceof NozzleBlockEntity))
-            return;
-
-        // 喷嘴覆盖范围：以喷嘴中心为球心，半径 = 吸尘器气流长度（与喷嘴 calcRange 一致）
+        BlockPos nozzlePos = getNozzlePos();
         Vec3 center = VecHelper.getCenterOf(nozzlePos);
         float radius = getMaxDistance();
-        AABB coverage = new AABB(center, center).inflate(radius);
 
         // 与喷嘴自身行为一致：超出半径或无视线的不吸（掉落物与包裹同一套条件）
         suckAllIn(coverage, entity ->
-                entity.position().distanceTo(center) <= radius && canSeeNozzle(entity, nozzlePos));
+                withinCube(entity.position(), center, radius)
+                        && lineOfSightToNozzle(entity.position(), CollisionContext.of(entity), nozzlePos));
     }
 
     /**
-     * 与 NozzleBlockEntity.canSee 相同：从物品位置到喷嘴中心做碰撞射线，
-     * 命中喷嘴自身才视为可见（风能真正覆盖到）。
+     * 两个点之间的"立方体距离"——各轴差值的最大值，即在这颗立方体风场里比的是最远的那条轴。
+     * 与 {@code NozzleBlockEntity} 的 {@code inflate(range)} 外接盒、以及泄压舱口的
+     * {@code cubeDistance} 逐字一致。
      */
-    private boolean canSeeNozzle(Entity entity, BlockPos nozzlePos) {
-        ClipContext context = new ClipContext(entity.position(), VecHelper.getCenterOf(nozzlePos),
-                ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, entity);
+    private static boolean withinCube(Vec3 from, Vec3 center, float radius) {
+        return Math.max(Math.abs(from.x - center.x),
+                Math.max(Math.abs(from.y - center.y), Math.abs(from.z - center.z))) <= radius;
+    }
+
+    /** 正前方（FACING 方向）那一格：分散网挂在这里，没有喷嘴时也是"面前容器"那一格 */
+    public BlockPos getNozzlePos() {
+        return worldPosition.relative(getBlockState().getValue(MechanicalCleanerBlock.FACING));
+    }
+
+    /**
+     * 分散网（喷嘴）覆盖的外接盒：正前方挂着喷嘴且气流长度 &gt; 0 时返回
+     * "以喷嘴为中心、半径 = {@link #getMaxDistance()} 的立方体"的外接 AABB，否则 {@code null}。
+     * <p>
+     * 只给"掉落物直接入库存"那条路做<b>粗筛</b>用（{@link #tryAbsorbDrop} 再自己补立方体距离与视线判定）；
+     * 按 tick 收实体那条路（{@link #collectItemsFromNozzle}）直接用同一份盒。
+     */
+    public AABB getNozzleCoverage() {
+        float radius = getMaxDistance();
+        if (airCurrent == null || radius <= 0)
+            return null;
+        BlockPos nozzlePos = getNozzlePos();
+        if (!(level.getBlockEntity(nozzlePos) instanceof NozzleBlockEntity))
+            return null;
+        Vec3 center = VecHelper.getCenterOf(nozzlePos);
+        return new AABB(center, center).inflate(radius);
+    }
+
+    /**
+     * 与 NozzleBlockEntity.canSee 相同：从给定位置到喷嘴中心做碰撞射线，
+     * 命中喷嘴自身才视为可见（风能真正覆盖到）。
+     * <p>
+     * 碰撞上下文由调用方给，而不是直接传 Entity：{@code ClipContext} 接 Entity 的那个构造器
+     * 内部会走 {@code CollisionContext.of(entity)}，而它<b>不接受 null</b>
+     * （{@code EntityCollisionContext} 构造器会立刻对 entity 解引用 → NPE 崩服务端）。
+     * 所以有实体的那条路传 {@link CollisionContext#of(Entity)}，
+     * 掉落物直接入库存那条路（{@link CleanerDropAbsorption}，物品实体还没进世界）传
+     * {@link CollisionContext#empty()}。
+     */
+    boolean lineOfSightToNozzle(Vec3 from, CollisionContext collisionContext, BlockPos nozzlePos) {
+        ClipContext context = new ClipContext(from, VecHelper.getCenterOf(nozzlePos),
+                ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, collisionContext);
         return nozzlePos.equals(level.clip(context).getBlockPos());
     }
 
@@ -989,26 +1031,51 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
      * 掉落物"直接入库存"：物品实体即将进入世界时由 {@link CleanerDropAbsorption} 调用，
      * 判定通过就把整份物品收进库存并返回 {@code true}（调用方会取消这次实体生成）。
      * <p>
-     * 只在"这一 tick 本来就会被 {@link #collectItemsInFlow} 收走"时才接管，逐条对齐：
+     * 只在"这一 tick 本来就会被收走"时才接管：
+     * <ol>
+     *   <li>这台机器此刻真在吸：{@code getSpeed() != 0}、{@code getMaxDistance() > 0} 且
+     *       {@link #isPulling()}。{@code getSpeed()} 那一条与 tick 里的
+     *       {@code hasPower && !locked && !stalled} 等价——无动力、红石锁与满仓停摆都汇报 0。
+     *       少了它，红石锁切换后风场边界还没重建的那几 tick 会把物品收进来，而那几 tick
+     *       吸尘器其实是不吸的；满仓时同理，接管的判定一旦漏掉，就会绕开 {@link #isStalled()}
+     *       把物品收进来。{@code getMaxDistance() == 0} 兜住的是"转速极低导致气流长度为 0"
+     *       的边缘（此时按 tick 收实体那几条路也都直接返回）。</li>
+     *   <li>物品确实落在 {@code radius} 这份覆盖里，与 tick 收实体用的两套范围逐条对上：
+     *       点在 {@code airCurrent.bounds} 内（{@link #collectItemsInFlow} 的范围），
+     *       或落进 {@link #getNozzleCoverage} 那个分散网立方体场内且有视线
+     *       （{@link #collectItemsFromNozzle} 的范围）。</li>
+     * </ol>
+     * 无动力的吸尘器走不到这里（{@code getSpeed() == 0} 直接返回），所以
+     * {@link #collectItemsPassive} 那条路保持原样：掉落物照常生成实体、下一 tick 再被收走。
+     *
+     * @param radius 调用方已经确认的那份覆盖半径，就是 {@link #getMaxDistance()}。
+     *               传进来只为省掉重复计算，判定语义以本方法为准。
+     *
+     * <h4>不接管的情况（掉落物照常生成，随后由 {@link #suckItem} 按实际空间收走）</h4>
      * <ul>
-     *   <li>{@code getSpeed() != 0}：与 tick 里的 {@code hasPower && !locked && !stalled} 等价
-     *       （无动力、红石锁与满仓停摆都汇报 0）。少了这一条，红石锁切换后风场边界还没重建的那几 tick
-     *       会把物品收进来，而那几 tick 吸尘器其实是不吸的；满仓时同理，接管的判定一旦漏掉，
-     *       就会绕开 {@link #isStalled()} 把物品收进来。</li>
-     *   <li>点在 {@code airCurrent.bounds} 内：这正是 {@link #collectItemsInFlow} 用的范围。</li>
      *   <li>该点所在的气流段没有加工催化剂（熔岩、营火等）：那一段气流会把物品洗涤、熔炼，
      *       接管就跳过了加工。留给实体流程，它被吸走时拿到的才是加工后的产物。</li>
-     *   <li>过滤通过、且库存放得下整份：放不下就整份不收，掉落物照常生成，
-     *       随后由 {@link #suckItem} 按实际空间收走——不吞物品。</li>
+     *   <li>过滤不通过、或库存放不下整份：放不下就整份不收——不吞物品。</li>
      * </ul>
      */
-    public boolean tryAbsorbDrop(Vec3 point, ItemStack stack) {
-        if (stack.isEmpty() || airCurrent == null || getSpeed() == 0 || !isPulling())
+    public boolean tryAbsorbDrop(Vec3 point, ItemStack stack, float radius) {
+        if (stack.isEmpty() || airCurrent == null || getSpeed() == 0 || radius <= 0 || !isPulling())
             return false;
-        if (!airCurrent.bounds.contains(point))
+
+        // 气流轴线范围 或 喷嘴分散网立方体场，命中任一即可
+        // 视线用 CollisionContext.empty()：这条路上物品实体还没进世界，没有实体可传
+        boolean inFlow = airCurrent.bounds.contains(point);
+        if (!inFlow) {
+            AABB coverage = getNozzleCoverage();
+            inFlow = coverage != null && coverage.contains(point)
+                    && withinCube(point, VecHelper.getCenterOf(getNozzlePos()), radius)
+                    && lineOfSightToNozzle(point, CollisionContext.empty(), getNozzlePos());
+        }
+        if (!inFlow)
             return false;
         if (hasFlowProcessing(point))
             return false;
+
         if (!canSuck(stack))
             return false;
         if (getMaxInsertable(stack) < stack.getCount())
