@@ -2,6 +2,7 @@
   "parent": "create_crystal_industry:block/pressure_relief_hatch/block",
   "render_type": "minecraft:cutout",
   "textures": {
-    "0": "create_crystal_industry:block/smart_pressure_relief_hatch/hatch"
+    "0": "create_crystal_industry:block/smart_pressure_relief_hatch/hatch",
+    "particle": "create_crystal_industry:block/smart_pressure_relief_hatch/hatch"
   }
 }
