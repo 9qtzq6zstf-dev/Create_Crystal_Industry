@@ -6,6 +6,7 @@ import com.minecart.yunxian.behaviour.MechanicalCleanerFilterBehaviour;
 import com.minecart.yunxian.menu.MechanicalCleanerMenu;
 import com.minecart.yunxian.behaviour.MechanicalCleanerValueBoxTransform;
 import com.minecart.yunxian.block.MechanicalCleanerBlock;
+import com.minecart.yunxian.integration.deployerlib.NonItemPackageCompat;
 import com.minecart.yunxian.integration.fluidlogistics.FluidPackageCompat;
 import com.minecart.yunxian.registry.ModBlockEntities;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
@@ -916,9 +917,10 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
      * 包装本身按 Create 的惯例直接吃掉（打包机拆完也不还纸板）；<b>空包裹也一并销毁</b>——
      * 里面没东西可留，而且空包裹本来是自动化运不走的死物。
      * <p>
-     * 唯一的例外是「流体包裹」那种<b>碰水不会自己拆开</b>的铜质包裹：它装的是流体，按物品读内容物读不出东西，
-     * 走"空包裹销毁"就等于把流体整包蒸发。这类包裹<b>照常吸得进来</b>，只是含水也不拆，
-     * 原样躺在槽里等玩家取走或切吹出吹回来（见 {@link FluidPackageCompat}）。
+     * 例外是两类<b>装的不是物品</b>的包裹，它们照常吸得进来，只是含水也不拆，原样躺在槽里：
+     * 一是「流体包裹」那种碰水不会自己拆开的铜质包裹（{@link FluidPackageCompat}），
+     * 二是 deployer 库那套非物品库存的包裹，例如 repackaged 的 {@code copper_bottle} / {@code brass_battery}
+     * （{@link NonItemPackageCompat}）。两者按物品读内容物都是空的，走"空包裹销毁"就等于把里面的流体/能量整包蒸发。
      * <p>
      * 有内容物时，只在"整个包裹都放得下"时才拆：放不下就整包留着，绝不拆到一半把塞不下的部分吞掉
      * （包裹的地址存在物品组件里，拆一半没法把剩下的重新包回去）。
@@ -933,9 +935,10 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
             ItemStack box = inventory.getStackInSlot(slot);
             if (!PackageItem.isPackage(box))
                 continue;
-            // 碰水不拆的包裹（「流体包裹」的铜质包裹）：里面装的是流体，按物品读内容物是空的，
-            // 走下面那条"空包裹直接销毁"就会把流体整包吞掉。吸照吸，只是不拆——原样留在槽里
-            if (FluidPackageCompat.survivesWater(box))
+            // 装的不是物品的包裹（「流体包裹」的铜质包裹、deployer 系的铜瓶/黄铜电池……）：
+            // 按物品读内容物是空的，走下面那条"空包裹直接销毁"会把里面的流体或能量整包吞掉。
+            // 吸照吸，只是不拆——原样留在槽里
+            if (FluidPackageCompat.survivesWater(box) || NonItemPackageCompat.isNonItemPackage(box))
                 continue;
 
             List<ItemStack> items = ItemHelper.getNonEmptyStacks(PackageItem.getContents(box));
