@@ -212,6 +212,38 @@ public final class ModConfig {
             return Math.max(1, ACCELERATOR_INTERVAL_TICKS.get());
         }
 
+        /**
+         * 催生器对邻格施加随机刻的名单模式。
+         * <p>
+         * 名字沿用机械动力「某种流体能不能无限」那套黑白名单口径：
+         * {@link #BLACKLIST} 读 {@code create_crystal_industry:accelerator_blacklist} 标签，
+         * 名单里的方块不被催生；{@link #WHITELIST} 读
+         * {@code create_crystal_industry:accelerator_whitelist} 标签，只有名单里的方块能被催生；
+         * {@link #UNLIMITED}（默认）两个标签都不看，邻格一律按原版随机刻判定。
+         */
+        public enum AcceleratorFilter {
+            /** 黑名单：{@code accelerator_blacklist} 标签里的方块不被催生 */
+            BLACKLIST,
+            /** 白名单：只有 {@code accelerator_whitelist} 标签里的方块能被催生 */
+            WHITELIST,
+            /** 不限：不看任何标签 */
+            UNLIMITED
+        }
+
+        public static final ModConfigSpec.EnumValue<AcceleratorFilter> ACCELERATOR_FILTER = BUILDER
+                .comment(
+                        "Which blocks the accelerators may give random ticks to.",
+                        "BLACKLIST: blocks in the create_crystal_industry:accelerator_blacklist block tag are skipped.",
+                        "WHITELIST: ONLY blocks in the create_crystal_industry:accelerator_whitelist block tag are accelerated.",
+                        "UNLIMITED (default): neither tag is consulted; every neighbour is treated as before.")
+                .translation(LANG_PREFIX + "acceleratorFilter")
+                .defineEnum("acceleratorFilter", AcceleratorFilter.UNLIMITED);
+
+        /** 催生器的黑白名单模式 */
+        public static AcceleratorFilter acceleratorFilter() {
+            return ACCELERATOR_FILTER.get();
+        }
+
         static {
             endSection(BUILDER);
         }

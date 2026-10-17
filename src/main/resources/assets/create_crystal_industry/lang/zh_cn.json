@@ -361,6 +361,8 @@
     "create_crystal_industry.configuration.soulSandGenerate.tooltip": "可燃冰母岩结构附近是否生成灵魂沙。\n灵魂沙会陷进海床形成小坑，并从坑底冒起上升气泡柱。",
     "create_crystal_industry.configuration.acceleratorIntervalTicks": "催生间隔（tick）",
     "create_crystal_industry.configuration.acceleratorIntervalTicks.tooltip": "两次催生之间相隔多少个 tick。\n1 = 每 tick 施加一次（默认），数值越大越慢。\n电力与动力催生器同比例缩放；电力催生器按「每次催生」结算能量消耗。\n护目镜显示的倍率也会跟着变。",
+    "create_crystal_industry.configuration.acceleratorFilter": "催生名单模式",
+    "create_crystal_industry.configuration.acceleratorFilter.tooltip": "催生器可以对哪些相邻方块施加随机刻。\n黑名单：命中方块标签 create_crystal_industry:accelerator_blacklist 的方块不被催生。\n白名单：只有命中方块标签 create_crystal_industry:accelerator_whitelist 的方块能被催生。\n不限（默认）：两个标签都不看，与之前的行为完全一致。\n白名单默认写的是 #c:budding_blocks（本模组全部母岩，脚本注册的母岩也在其中）、\n#minecraft:crops（小麦、胡萝卜、马铃薯、甜菜、瓜藤、火把花、瓶子草）与\n#minecraft:saplings（各种树苗、杜鹃）；想再放行别的方块就往 accelerator_whitelist 里加。\n名单只影响催生器；世界自己的随机刻照常落在所有方块上。",
     "create_crystal_industry.configuration.buddingInfection": "母岩可侵染周围方块",
     "create_crystal_industry.configuration.buddingInfection.tooltip": "母岩会不会侵染紧邻的方块——石头长成矿石、粗铁块变成新的母岩、回响母岩把周围变成幽匿，都算。\n关掉之后母岩什么都不再转化（也就不会自己变多）。",
     "create_crystal_industry.configuration.infectingBudding": "允许侵染的母岩名单",

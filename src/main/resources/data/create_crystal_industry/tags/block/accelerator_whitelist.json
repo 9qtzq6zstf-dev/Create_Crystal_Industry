@@ -1,0 +1,8 @@
+{
+  "replace": false,
+  "values": [
+    "#c:budding_blocks",
+    "#minecraft:crops",
+    "#minecraft:saplings"
+  ]
+}

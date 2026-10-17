@@ -5,15 +5,18 @@ import java.util.function.Predicate;
 import com.minecart.yunxian.Yunxian;
 import com.minecart.yunxian.block.budding.YunxianClusterBlock;
 import com.minecart.yunxian.budding.GrowthDefinition;
+import com.minecart.yunxian.config.ModConfig;
 
 import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.BlockTags;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -128,6 +131,34 @@ public final class YunxianAdvancements {
     }
 
     /**
+     * 黑名单标签：名单里的方块<b>不被</b>催生器施加随机刻（配置为 {@code BLACKLIST} 时生效）
+     */
+    public static final TagKey<Block> ACCELERATOR_BLACKLIST =
+            TagKey.create(Registries.BLOCK,
+                    ResourceLocation.fromNamespaceAndPath("create_crystal_industry", "accelerator_blacklist"));
+
+    /**
+     * 白名单标签：<b>只有</b>名单里的方块能被催生器施加随机刻（配置为 {@code WHITELIST} 时生效）
+     */
+    public static final TagKey<Block> ACCELERATOR_WHITELIST =
+            TagKey.create(Registries.BLOCK,
+                    ResourceLocation.fromNamespaceAndPath("create_crystal_industry", "accelerator_whitelist"));
+
+    /**
+     * 这个方块允不允许被催生器施加随机刻（配置驱动的黑白名单）。
+     * <p>
+     * {@code UNLIMITED} 是默认档：两个标签都不看，行为与分黑白名单之前一字不差。
+     * 黑白名单只筛"被催的对象"，与原版随机刻本身无关——名单外的方块照样吃世界自己的随机刻。
+     */
+    public static boolean canAccelerate(BlockState state) {
+        return switch (ModConfig.Common.acceleratorFilter()) {
+            case BLACKLIST -> !state.is(ACCELERATOR_BLACKLIST);
+            case WHITELIST -> state.is(ACCELERATOR_WHITELIST);
+            case UNLIMITED -> true;
+        };
+    }
+
+    /**
      * 代催生器对邻格施加一次随机刻，并标记"这次是被催出来的"。
      * <p>
      * 催生器只是重放 {@code randomTick}，被催的方块自己并不知道是谁在催——
@@ -138,6 +169,11 @@ public final class YunxianAdvancements {
      */
     public static void acceleratedRandomTick(ServerLevel level, BlockPos pos) {
         BlockState state = level.getBlockState(pos);
+
+        // 黑白名单先筛：配置说不许催的方块，连随机刻门槛都不必走
+        if (!canAccelerate(state)) {
+            return;
+        }
 
         // 与原版同一条门槛：{@code ServerLevel#tickChunk} 也是先判 isRandomlyTicking，再调 randomTick。
         // 少了这道判断，催生器就比原版"多给"了——最典型的是忘了写 Properties#randomTicks 的模组方块：
