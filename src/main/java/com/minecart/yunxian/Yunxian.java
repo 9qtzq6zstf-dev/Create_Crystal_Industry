@@ -68,7 +68,8 @@ public class Yunxian {
         NeoForge.EVENT_BUS.addListener(ScriptedMiningLevels::onHarvestCheck);
         // 玩家亲手挖掉一颗完整晶簇 → 「它真的会长」（按方块判，见 YunxianAdvancements.isCluster）
         NeoForge.EVENT_BUS.addListener(YunxianAdvancements::onBlockBroken);
-        // 风场内生成的掉落物直接进吸尘器库存，不生成实体（见 CleanerDropAbsorption 的类注释）
+        // 风场内生成的掉落物直接进吸尘器库存，不生成实体：轴线风场沿轴逐格找，
+        // 喷嘴场查 NozzleFieldIndex 登记表（见 CleanerDropAbsorption 的类注释）
         NeoForge.EVENT_BUS.addListener(CleanerDropAbsorption::onEntityJoinLevel);
         // 配方（重新）加载完了：母岩按配方缓存的侵染规则表要重建。这个事件由服务器在数据包加载
         // 结束后发出（含开机与 /reload），晚于 RecipeManager 自己 apply，所以读到的一定是新配方

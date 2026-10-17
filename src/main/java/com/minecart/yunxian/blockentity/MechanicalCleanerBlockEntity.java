@@ -194,9 +194,18 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
     /**
      * 气流长度 = min(GUI 目标值, 转速决定的最大距离)。
      * 与鼓风机一致：fanRotationArgmax=256 时距离因子=1，长度 = fanPushDistance/fanPullDistance（默认 20）。
+     * <p>
+     * 转速为 0（无动力 / 红石锁 / 满仓停摆）时一律返回 0：这台机器此刻不工作，就没有任何风场可言。
+     * <b>这一条不能省</b>——{@link IAirCurrentSource} 的默认量是
+     * {@code Mth.lerp(distanceFactor, 3, max)}，距离因子为 0 时仍会留下 3 格；轴线风场那边
+     * {@code AirCurrent.rebuild()} 自己会把 {@code maxDistance} 归零，可喷嘴场是拿<b>本方法</b>当半径的
+     * （见 {@link #getNozzleCoverage()}），不归零就会在满仓停摆后仍留一个半径 3 的立方体风场，
+     * 掉落物接管（{@link #tryAbsorbDrop}）、泄压舱口复查都会把这份"残余风场"当真。
      */
     @Override
     public float getMaxDistance() {
+        if (getSpeed() == 0)
+            return 0;
         float speed = Math.abs(getSpeed());
         CKinetics config = AllConfigs.server().kinetics;
         float distanceFactor = Math.min(speed / config.fanRotationArgmax.get(), 1);
@@ -561,6 +570,10 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
         if (updateAirFlow) {
             updateAirFlow = false;
             rebuildAirBounds();
+            if (server) {
+                // 气流刚重建过，顺手对一次喷嘴场登记表的账（见 NozzleFieldIndex）
+                syncNozzleFieldIndex();
+            }
             sendData();
         }
 
@@ -716,10 +729,48 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
         Vec3 center = VecHelper.getCenterOf(nozzlePos);
         float radius = getMaxDistance();
 
+        // 顺手登记给"掉落物直接入库存"反查（见 CleanerDropAbsorption / NozzleFieldIndex）：
+        // 这里本来就要算一遍覆盖，登记不额外多一次查询
+        NozzleFieldIndex.add(level, worldPosition, nozzlePos);
+
         // 与喷嘴自身行为一致：超出半径或无视线的不吸（掉落物与包裹同一套条件）
         suckAllIn(coverage, entity ->
                 withinCube(entity.position(), center, radius)
                         && lineOfSightToNozzle(entity.position(), CollisionContext.of(entity), nozzlePos));
+    }
+
+    /**
+     * 让 {@link NozzleFieldIndex} 与"这台机器现在到底有没有喷嘴场"保持一致。
+     * <p>
+     * 为什么还要在这里对账，而不是只靠 {@link #collectItemsFromNozzle} 里那句登记：那句话只在
+     * "有动力 + 在吸入 + 未锁未停摆"时才会执行，所以它管得住"登记"，管不住"注销"——
+     * 玩家拆掉分散网、把机器切成吹出模式、断掉动力，都不会再走到那句登记。
+     * 气流本来就每 {@code fanBlockCheckRate}(30) tick 重建一次，在那里对一次账最省。
+     * <p>
+     * 判的是"有没有场"（在吸入 + 有动力 + 正前方有喷嘴），不判"这一 tick 收不收得下"：
+     * 满仓停摆、红石锁、过滤不过都只是暂时收不下，下一 tick 可能就好了，
+     * 让登记表跟着这些状态抖动没有意义——那些条件 {@code tryAbsorbDrop} 收的时候自己会判。
+     * 所以这里问 {@link #hasNozzleField()} 而不是 {@link #getNozzleCoverage()}：后者的半径是
+     * {@link #getMaxDistance()}，转速归零时会变成 0，拿它判就会跟着停摆来回增删。
+     */
+    private void syncNozzleFieldIndex() {
+        if (hasNozzleField()) {
+            NozzleFieldIndex.add(level, worldPosition, getNozzlePos());
+        } else {
+            NozzleFieldIndex.remove(level, worldPosition);
+        }
+    }
+
+    /**
+     * 这台机器"结构上"有没有喷嘴场：有动力 + 在吸入 + 正前方那一格是分散网。
+     * <p>
+     * 刻意不看红石锁、满仓停摆与过滤——那些只是"这一 tick 收不下"，
+     * 真正的收与不收由 {@link #tryAbsorbDrop} 里的 {@code getSpeed()} 等条件把关。
+     */
+    private boolean hasNozzleField() {
+        if (getTrueSpeed() == 0 || !isPulling())
+            return false;
+        return level.getBlockEntity(getNozzlePos()) instanceof NozzleBlockEntity;
     }
 
     /**
@@ -743,6 +794,9 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
      * <p>
      * 只给"掉落物直接入库存"那条路做<b>粗筛</b>用（{@link #tryAbsorbDrop} 再自己补立方体距离与视线判定）；
      * 按 tick 收实体那条路（{@link #collectItemsFromNozzle}）直接用同一份盒。
+     * <p>
+     * 半径为 0（转速为 0：无动力 / 红石锁 / 满仓停摆）时返回 {@code null}——机器停了就没有风场，
+     * 这一步由 {@link #getMaxDistance()} 负责。
      */
     public AABB getNozzleCoverage() {
         float radius = getMaxDistance();
@@ -769,7 +823,16 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
     boolean lineOfSightToNozzle(Vec3 from, CollisionContext collisionContext, BlockPos nozzlePos) {
         ClipContext context = new ClipContext(from, VecHelper.getCenterOf(nozzlePos),
                 ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, collisionContext);
-        return nozzlePos.equals(level.clip(context).getBlockPos());
+        BlockPos hitPos = level.clip(context).getBlockPos();
+        if (nozzlePos.equals(hitPos))
+            return true;
+        // 起点所在的那一格不算遮挡（前提是它挡不住整格）：物品经常就落在这种"半格"方块里
+        // （泄压舱口把落点推到网罩碰撞箱外、仍留在本格内；栅栏、台阶同理），它的碰撞箱是
+        // "装物品的容器"，不是隔在两物之间的墙。从格内往外看，射线先撞到的必然是它自己，
+        // 按原判据会永远判成"看不见喷嘴"——那样掉落物接管与每 tick 收取会一致地漏掉这些物品。
+        // 整格实心的方块不在此列：物品真埋进墙里，本来就不该隔着墙被吸走。
+        BlockPos startPos = BlockPos.containing(from);
+        return startPos.equals(hitPos) && !level.getBlockState(hitPos).isCollisionShapeFullBlock(level, hitPos);
     }
 
     /**

@@ -2,9 +2,6 @@ package com.minecart.yunxian.blockentity;
 
 import com.minecart.yunxian.config.ModConfig;
 import com.minecart.yunxian.registry.ModBlocks;
-import com.simibubi.create.AllBlocks;
-import com.simibubi.create.content.kinetics.fan.NozzleBlock;
-import com.simibubi.create.content.kinetics.fan.NozzleBlockEntity;
 import com.simibubi.create.content.logistics.box.PackageEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -12,10 +9,11 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
-import org.jetbrains.annotations.Nullable;
+
+import java.util.Iterator;
+import java.util.Map;
 
 /**
  * 掉落物"直接入库存"：物品实体即将进入世界时，若它落在某台吸入中的吸尘器的吸取覆盖里，
@@ -30,26 +28,29 @@ import org.jetbrains.annotations.Nullable;
  * {@link com.minecart.yunxian.registry.ScriptedBlockDrops}、别的模组的机器各写各的），
  * 但终点都是"一个 ItemEntity 进入世界"，钩在这里一次覆盖全部，且不用改动任何一条掉落路径。
  * <p>
- * <b>怎么找到那台吸尘器</b>：这里认的覆盖必须和 {@link MechanicalCleanerBlockEntity} 按 tick
- * 收实体时用的那两套一一对上，否则就会出现"该直吸的没直吸、照常生成实体再被吸走"：
+ * <b>怎么找到那台吸尘器</b>：两条路，都只负责"把候选机器找出来"，收不收一律由
+ * {@link MechanicalCleanerBlockEntity#tryAbsorbDrop} 判定——它内部同时认轴线风场和喷嘴场
+ * （{@code getNozzleCoverage}）：
  * <ol>
- *   <li><b>轴线范围</b>——{@link #absorbByAxis}。没有喷嘴（或点不在喷嘴场里）时，风场边界
- *       （{@code airCurrent.bounds}）是一条从吸尘器出发、沿朝向的直线（见 {@code rebuildAirBounds}），
- *       所以掉落物沿六个轴向任意方向最多 20 格（{@link MechanicalCleanerBlockEntity#SUCK_RANGE_MAX}）
- *       必定能碰到那台吸尘器所在的方块。逐格查方块状态，只有命中吸尘器才取方块实体，
- *       最坏 6 × 20 次调色板查询、命中即返回。</li>
- *   <li><b>喷嘴（分散网）场</b>——{@link #absorbByNozzle}。正前方挂着喷嘴时，风场是以喷嘴为中心、
- *       半径 = 气流长度的<b>立方体</b>（Create 的 {@code NozzleBlockEntity.calcRange()} 给的边长），
- *       场内的点根本不在任何一条过吸尘器的轴线上，沿六轴外扫永远扫不到那台机器。所以反向找：
- *       以落点为中心扫一个半径 {@code SUCK_RANGE_MAX} 的立方体找喷嘴，沿着喷嘴朝向把背后那一格的
- *       机器点出来。喷嘴只能贴在气流出口面（{@code NozzleBlock.canSurvive}），所以它背后紧邻的
- *       一格必定是那台风源。</li>
+ *   <li>{@link #absorbByAxis}：沿六个轴逐格查方块状态，最多 6 × 20 次调色板查询。
+ *       没装分散网时风场就是一条沿朝向的直线，沿轴外扫必定碰到那台机器方块。</li>
+ *   <li>{@link #absorbByNozzle}：喷嘴（分散网）场里的点不在任何过吸尘器的轴线上，
+ *       改问 {@link NozzleFieldIndex}——一张由吸尘器自己在 tick 里维护的
+ *       "哪台机器前方挂着喷嘴、正在吸入"的小表。查表是 O(登记机器数)，而这张表通常
+ *       <b>是空的</b>（没装分散网就一台都不会登记），空表一次 {@code isEmpty()} 就返回。</li>
  * </ol>
+ * 早先第二条路用的是"以落点为中心扫半径 20 的立方体找喷嘴"（41³ = 68,921 格）。问题出在触发率上：
+ * 这个事件对<b>世界里每一个</b>物品实体入场都会跑，而第一条路对绝大多数落点都是落空的——矿洞里挖掉的
+ * 方块、怪物掉落、任何离吸尘器 20 格以外的物品。等于每次入场都付 6.9 万格，扫完多半还是"附近根本
+ * 没有喷嘴"。换成登记表后，"实体压根不生成"这个收益一点没丢，每次入场的代价降到一次空表判断。
+ * <p>
  * 已知不覆盖（保持原样：掉落物照常生成实体，随后由吸尘器收走，只是没省下这个实体）：
- * <b>无动力的吸尘器</b>——它没有风场，靠 {@link MechanicalCleanerBlockEntity#collectItemsPassive}
- * 只捡正前方紧贴的一格（{@link MechanicalCleanerBlockEntity#PASSIVE_SUCK_RANGE}）。
- * 那条路不收在这里，因为接管的前提是"这一 tick 本来就会被收走"，而无动力时
- * {@code getSpeed()} 恒为 0，连按 tick 收实体都要等到有动力才发生。
+ * <ul>
+ *   <li><b>无动力的吸尘器</b>——它没有风场，靠 {@link MechanicalCleanerBlockEntity#collectItemsPassive}
+ *       只捡正前方紧贴的一格（{@link MechanicalCleanerBlockEntity#PASSIVE_SUCK_RANGE}）。
+ *       那条路不收在这里，因为接管的前提是"这一 tick 本来就会被收走"，而无动力时
+ *       {@code getSpeed()} 恒为 0，连按 tick 收实体都要等到有动力才发生。</li>
+ * </ul>
  */
 public final class CleanerDropAbsorption {
 
@@ -90,17 +91,25 @@ public final class CleanerDropAbsorption {
         }
 
         if (absorbIntoSuction(level, itemEntity.position(), stack)) {
+            // 取消入场之前先把实体标成"已移除"。实体没进过世界，但 {@code isAlive()} 仍然
+            // 只看移除标志——Create 的漏斗在 {@code level.addFreshEntity} 之后会把刚建好的实体
+            // 存进一个 WeakReference，下一 tick 拿 {@code isAlive()} 判"上一份还堵着出口吗"：
+            // 不标移除，漏斗会一直以为出口被自己吐的那份挡着，再也不吐了。
+            // 顺手也替别的"吐完看一眼实体还在不在"的机器兜住。
+            itemEntity.discard();
             event.setCanceled(true);
         }
     }
 
     /**
-     * 从掉落物所在位置找出能收下它的那台吸尘器。先沿六个轴逐格找；走不通（点在喷嘴场里，
-     * 不在任何过吸尘器的轴线上）时再单独给周围的喷嘴一次机会，见 {@link #absorbByAxis}
-     * 与 {@link #absorbByNozzle}。
+     * 从掉落物所在位置找出能收下它的那台吸尘器：先沿六轴找（覆盖绝大多数落点），落空再问喷嘴场登记表。
+     * <p>
+     * 落点取整只取一次，两条路共用——{@code BlockPos.containing} 每次都要走一遍 Math.floor，而这里是
+     * "每次物品入场"的热路径。
      */
     private static boolean absorbIntoSuction(ServerLevel level, Vec3 point, ItemStack stack) {
-        return absorbByAxis(level, point, stack) || absorbByNozzle(level, point, stack);
+        BlockPos origin = BlockPos.containing(point);
+        return absorbByAxis(level, point, origin, stack) || absorbByNozzle(level, point, origin, stack);
     }
 
     /**
@@ -110,11 +119,14 @@ public final class CleanerDropAbsorption {
      * 直线（{@code airCurrent.bounds}），掉落物沿六轴任意方向外扫，最远 20 格
      * （{@link MechanicalCleanerBlockEntity#SUCK_RANGE_MAX}）内必定碰到那台吸尘器方块。
      * <p>
+     * 为什么这里不管喷嘴场：喷嘴场里的点不在任何过吸尘器的轴线上，这一条扫不到那台机器，
+     * 那部分交给 {@link #absorbByNozzle} 查登记表。换句话说，这里保持"廉价的、几乎必中的一种形状"，
+     * 而把"昂贵的、几乎必不中的形状"换成一次查表，不让绝大多数普通掉落物为喷嘴付账。
+     * <p>
      * 每个方向上遇到未加载的区块就停——风场不会跨过未加载的区块，方块实体也取不到。
      */
-    private static boolean absorbByAxis(ServerLevel level, Vec3 point, ItemStack stack) {
+    private static boolean absorbByAxis(ServerLevel level, Vec3 point, BlockPos origin, ItemStack stack) {
         Block block = ModBlocks.MECHANICAL_CLEANER.get();
-        BlockPos origin = BlockPos.containing(point);
         BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
 
         for (Direction direction : DIRECTIONS) {
@@ -139,65 +151,55 @@ public final class CleanerDropAbsorption {
     }
 
     /**
-     * 喷嘴（分散网）场里那一类落点：以掉落物为中心扫一个 {@code 2r+1} 见方的立方体找喷嘴
-     * （{@code r} = {@link MechanicalCleanerBlockEntity#SUCK_RANGE_MAX}），碰到就顺着喷嘴朝向
-     * 把背后那台机器点出来再问一次。
+     * 喷嘴（分散网）场里的落点：问 {@link NozzleFieldIndex} 有哪些机器前方挂着喷嘴，
+     * 逐个按"场是以喷嘴为中心、最长 {@link MechanicalCleanerBlockEntity#SUCK_RANGE_MAX} 格的立方体"
+     * 粗筛，命中再交给机器自己复判。
      * <p>
-     * 为什么非要有这一条：喷嘴把背后机器的一小段气流铺成一颗以它为中心的立方体场，
-     * 场里的点（尤其侧向那些舱口的落点）不在任何一条过吸尘器的轴线上，
-     * {@link #absorbByAxis} 逐格外扫永远碰不到那台机器——这正是"正前方的能拦、偏侧向的拦不住"的成因。
+     * 为什么按喷嘴而不是按机器算距离：场的中心是喷嘴，机器的气流长度就是从喷嘴往外的半径，
+     * 所以"落点到喷嘴的立方体距离 ≤ 上限"才是不漏的口径；按机器算会差一格。
      * <p>
-     * 为什么扫立方体而不是只查邻格：喷嘴贴的是气流出口面，离掉落物最远可以有 {@code r} 格
-     * （半径就是 {@code r}），邻格压根包不住，早期按"六邻格之一必是喷嘴"写的证明是错的。
-     * 半径直接取 {@code SUCK_RANGE_MAX}（20）而不是去问每台机器：它是风场半径的上限
-     * （滑块的 {@code SUCK_RANGE_MAX}），扫满才不漏；真在场里的点会由
-     * {@code tryAbsorbDrop} 用机器自己的半径复判一次，所以扫宽了只是多几次查询，不会误收。
+     * 粗筛只用整数比较，真正的边界（视线、过滤、容量）留给 {@code tryAbsorbDrop}——这里多放进来一格
+     * 没关系，那边会拦；少放就会漏收，所以半径取的是上限而不是当前真实半径。
      * <p>
-     * 代价：一格喷嘴都没有时要走满整颗立方体（最坏 6.9 万次方块状态查询），但这条只在轴线那条路
-     * 空手而归时才走——掉落物要么本来就落在轴线风场里（由 {@link #absorbByAxis} 提前返回），
-     * 要么确实孤零零地待在喷嘴场里，后者才是真正需要花这个钱的情况。
+     * 顺带把失效的登记项剔掉，两种：所在区块没加载了（里面的方块实体已经没了），
+     * 或者区块还在但那台机器已经不在了（被拆掉、换成别的方块）。不在这里剔，这张表会随
+     * "走过的地方越来越多"只长不缩——反查这一侧每几十 tick 才被调到一次，成本可以忽略。
      */
-    private static boolean absorbByNozzle(ServerLevel level, Vec3 point, ItemStack stack) {
-        BlockPos origin = BlockPos.containing(point);
-        BlockPos nozzlePos = findNearbyNozzle(level, origin);
-        if (nozzlePos == null) {
+    private static boolean absorbByNozzle(ServerLevel level, Vec3 point, BlockPos origin, ItemStack stack) {
+        Map<BlockPos, BlockPos> fields = NozzleFieldIndex.of(level);
+        if (fields.isEmpty()) {
             return false;
         }
-        BlockState state = level.getBlockState(nozzlePos);
-        Direction awayFromFan = state.getValue(NozzleBlock.FACING);
-        BlockPos cleanerPos = nozzlePos.relative(awayFromFan.getOpposite());
-        if (!(level.getBlockEntity(cleanerPos) instanceof MechanicalCleanerBlockEntity cleaner)) {
-            return false;
-        }
-        return cleaner.tryAbsorbDrop(point, stack, cleaner.getMaxDistance());
-    }
-
-    /**
-     * 在以 {@code origin} 为中心、半径 {@link MechanicalCleanerBlockEntity#SUCK_RANGE_MAX} 的立方体里
-     * 找一格喷嘴，没有就返回 {@code null}（未加载的区块直接跳过，取不到方块实体）。
-     * <p>
-     * 取哪一格都行：落点是否真在场里、有没有视线，都由 {@link MechanicalCleanerBlockEntity#tryAbsorbDrop}
-     * 用<b>那台机器自己的</b>半径复判一次，所以这里只要把场上挂着的喷嘴点出来就够了，不必求最近。
-     * <p>
-     * 写成"整颗立方体一趟走完"而不是由内向外逐层扫：两者效果一样，而这一趟的方块状态查询来自
-     * 区块的调色板缓存、{@code isLoaded} 也只是查已加载表，6.9 万次在"轴线那条路已经空手而归"
-     * 的少数落点上完全付得起；分层写法在本仓库实测更容易写错（棱上的格子会被重复访问）。
-     */
-    @Nullable
-    private static BlockPos findNearbyNozzle(ServerLevel level, BlockPos origin) {
-        int r = MechanicalCleanerBlockEntity.SUCK_RANGE_MAX;
-        for (int dx = -r; dx <= r; dx++) {
-            for (int dy = -r; dy <= r; dy++) {
-                for (int dz = -r; dz <= r; dz++) {
-                    BlockPos cursor = origin.offset(dx, dy, dz);
-                    // 先比方块状态（调色板查询，很便宜），确认是喷嘴才值得去取方块实体
-                    if (level.isLoaded(cursor) && level.getBlockState(cursor).is(AllBlocks.NOZZLE.get())
-                            && level.getBlockEntity(cursor) instanceof NozzleBlockEntity) {
-                        return cursor;
-                    }
-                }
+        int radius = MechanicalCleanerBlockEntity.SUCK_RANGE_MAX;
+        Iterator<Map.Entry<BlockPos, BlockPos>> cursor = fields.entrySet().iterator();
+        while (cursor.hasNext()) {
+            Map.Entry<BlockPos, BlockPos> entry = cursor.next();
+            BlockPos nozzlePos = entry.getValue();
+            if (!level.isLoaded(nozzlePos)) {
+                cursor.remove();
+                continue;
+            }
+            if (cubeDistance(origin, nozzlePos) > radius) {
+                continue;
+            }
+            if (!(level.getBlockEntity(entry.getKey()) instanceof MechanicalCleanerBlockEntity cleaner)) {
+                // 机器已经没了（被拆掉、换成别的方块）：上面那句 isLoaded 只拦得住"区块没加载"，
+                // 拦不住"区块还在但机器不在了"，所以这里顺手把登记项剔掉
+                cursor.remove();
+                continue;
+            }
+            if (cleaner.tryAbsorbDrop(point, stack, cleaner.getMaxDistance())) {
+                return true;
             }
         }
-        return null;
+        return false;
+    }
+
+    /** 立方体距离（各轴差值的最大值）：与机器那边判风场边界的口径一致 */
+    private static int cubeDistance(BlockPos a, BlockPos b) {
+        int dx = Math.abs(a.getX() - b.getX());
+        int dy = Math.abs(a.getY() - b.getY());
+        int dz = Math.abs(a.getZ() - b.getZ());
+        return Math.max(dx, Math.max(dy, dz));
     }
 }
