@@ -380,6 +380,10 @@ public final class ModBlocks {
      * 只把"料子"那几条换成金属的：金属色与金属音效、{@code strength(3, 6)} 的薄铁件手感，
      * 并且不要原版那档亮度（晶簇自带 5 级光，舱口不该发光）。
      * <p>
+     * 音效用 {@code SoundType.NETHERITE_BLOCK}，与机械动力自己的物品舱口（{@code item_hatch}）一致——
+     * 那边在 {@code AllBlocks.ITEM_HATCH} 里从 {@code softMetal}（金块）复制完属性后也把音效盖成了这一档。
+     * 放置、破坏、踩踏、敲击全走这一份 {@code SoundType}，不用另外补 {@code getSoundType()}。
+     * <p>
      * {@code forceSolidOn} 与 {@code noOcclusion} 必须留着——碰撞箱是收窄的，
      * 少了 {@code noOcclusion} 会让侧面的面被邻居剔掉、出现镂空。
      * <p>
@@ -397,7 +401,7 @@ public final class ModBlocks {
                 .mapColor(MapColor.METAL)
                 .forceSolidOn()
                 .noOcclusion()
-                .sound(SoundType.METAL)
+                .sound(SoundType.NETHERITE_BLOCK)
                 .strength(3.0F, 6.0F)
                 .pushReaction(PushReaction.DESTROY);
     }

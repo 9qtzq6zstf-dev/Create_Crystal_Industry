@@ -1,7 +1,9 @@
 package com.minecart.yunxian.behaviour;
 
 import com.minecart.yunxian.block.SmartDrillBlock;
+import com.mojang.blaze3d.vertex.PoseStack;
 import com.simibubi.create.foundation.blockEntity.behaviour.ValueBoxTransform;
+import dev.engine_room.flywheel.lib.transform.TransformStack;
 import net.createmod.catnip.math.VecHelper;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -54,7 +56,30 @@ public class SmartDrillValueBoxTransform extends ValueBoxTransform.Sided {
         return side.getAxis() != state.getValue(SmartDrillBlock.FACING).getAxis();
     }
 
-    // 物品朝向：默认 Sided.rotate 用 getSide()（世界面）旋转，槽位就在该面上，朝外即可，无需覆写
+    /**
+     * 槽里物品的朝向。四面竖墙交给基类（{@code Sided.rotate} 让物品朝外贴在该面上）就够；
+     * 但方块横放（水平朝向）时，顶面和底面也会被激活，基类只会把物品平铺在面上、
+     * 不理会方块自己的 Y 朝向，于是物品方向跟钻头方向脱钩。
+     * <p>
+     * 这里补上和动力吸尘器 {@code MechanicalCleanerValueBoxTransform#rotate} 完全一致的修正：
+     * 按模型那套「先 x 后 y」转回来，再在最外层加一个 Y 轴 180°，
+     * 让物品的正面（而不是背面）对着钻头的正面。
+     */
+    @Override
+    public void rotate(LevelAccessor level, BlockPos pos, BlockState state, PoseStack ms) {
+        Direction side = getSide();
+        Direction facing = state.getValue(SmartDrillBlock.FACING);
+
+        if ((side == Direction.UP || side == Direction.DOWN) && facing.getAxis().isHorizontal()) {
+            float[] rot = rotationFor(facing);
+            TransformStack.of(ms)
+                    .rotateYDegrees(180)
+                    .rotateYDegrees(-rot[1])
+                    .rotateXDegrees(rot[0]);
+        } else {
+            super.rotate(level, pos, state, ms);
+        }
+    }
 
     private static Vec3 rotatePoint(Vec3 p, float[] rot) {
         Vec3 c = p.subtract(0.5, 0.5, 0.5);
