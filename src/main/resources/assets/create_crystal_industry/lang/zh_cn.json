@@ -265,6 +265,22 @@
     "create_crystal_industry.ponder.cleaner_config.text_1": "过滤条件与传输数量由侧面的配置槽设置。",
     "create_crystal_industry.ponder.cleaner_config.text_2": "气流方向则在吸尘器的界面里切换，物品的流向随之改变。",
 
+    "create_crystal_industry.ponder.relief_hatch_venting.header": "泄压舱口",
+    "create_crystal_industry.ponder.relief_hatch_venting.text_1": "有气流时，泄压舱口会把所连接的容器中的物品释放出来",
+    "create_crystal_industry.ponder.relief_hatch_venting.text_2": "气流从侧面流过网罩即可将其打开",
+    "create_crystal_industry.ponder.relief_hatch_venting.text_3": "每批最多释放 16 个物品",
+    "create_crystal_industry.ponder.relief_hatch_venting.text_4": "可以在侧面配置槽中设置过滤",
+
+    "create_crystal_industry.ponder.relief_hatch_nozzle.header": "被分散网罩住",
+    "create_crystal_industry.ponder.relief_hatch_nozzle.text_1": "分散网会把气流铺成一片范围",
+    "create_crystal_industry.ponder.relief_hatch_nozzle.text_2": "范围内的泄压舱口都会被打开，与风源的轴线无关",
+
+    "create_crystal_industry.ponder.smart_relief_hatch.header": "智能泄压舱口",
+    "create_crystal_industry.ponder.smart_relief_hatch.text_1": "智能泄压舱口能一次性输出一组物品",
+    "create_crystal_industry.ponder.smart_relief_hatch.text_2": "可以在侧面配置槽中设置每批数量，最多 64 个",
+    "create_crystal_industry.ponder.smart_relief_hatch.text_3": "「=」模式需要凑满一批才会释放",
+    "create_crystal_industry.ponder.smart_relief_hatch.text_4": "红石信号会暂停释放",
+
     "create_crystal_industry.ponder.resonance_table.header": "共振台",
     "create_crystal_industry.ponder.resonance_table.text_1": "共振台只能容纳一种物品。",
     "create_crystal_industry.ponder.resonance_table.text_2": "右击将物品放到共振台上，再次右击取回。",

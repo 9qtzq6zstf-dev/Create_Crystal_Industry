@@ -65,7 +65,9 @@ public class AllYunxianPonderTags {
                 .add(ModBlocks.SMART_DRILL.get())
                 .add(ModBlocks.MECHANICAL_CLEANER.get())
                 .add(ModBlocks.RESONANCE_TABLE.get())
-                .add(ModBlocks.SMART_TEMPERATURE_CHAMBER.get());
+                .add(ModBlocks.SMART_TEMPERATURE_CHAMBER.get())
+                .add(ModBlocks.PRESSURE_RELIEF_HATCH.get())
+                .add(ModBlocks.SMART_PRESSURE_RELIEF_HATCH.get());
 
         // 共振过滤器是物品，走物品视角的那份 helper 进同一个标签
         helper.withKeyFunction(BuiltInRegistries.ITEM::getKey)

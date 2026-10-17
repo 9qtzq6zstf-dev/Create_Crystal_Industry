@@ -7,6 +7,7 @@ import com.minecart.yunxian.budding.BuddingFamilies;
 import com.minecart.yunxian.budding.BuddingFamilies.RegisteredFamily;
 import com.minecart.yunxian.ponder.scenes.CrystalScenes;
 import com.minecart.yunxian.ponder.scenes.MechanicalCleanerScenes;
+import com.minecart.yunxian.ponder.scenes.PressureReliefHatchScenes;
 import com.minecart.yunxian.ponder.scenes.ResonanceScenes;
 import com.minecart.yunxian.ponder.scenes.SmartDrillScenes;
 import com.minecart.yunxian.ponder.scenes.TemperatureChamberScenes;
@@ -97,7 +98,22 @@ public class AllYunxianPonderScenes {
                 .addStoryBoard("temperature_chamber/boiler", TemperatureChamberScenes::chamberBoiler,
                         AllYunxianPonderTags.MACHINES);
 
-        // 8) 共振过滤器：与共振台挂同一整套分镜，鼠标停在物品上也能直接看全部
+        // 8) 泄压舱口：侧风吐货 / 分散网盖住的范围 / 智能版的数量与红石锁
+        //    智能版额外索引普通版的两条，免得拿到智能版时看不到基础用法
+        blocks.forComponents(ModBlocks.PRESSURE_RELIEF_HATCH.get())
+                .addStoryBoard("pressure_relief_hatch/relief_hatch",
+                        PressureReliefHatchScenes::reliefHatchVenting, AllYunxianPonderTags.MACHINES)
+                .addStoryBoard("pressure_relief_hatch/relief_hatch_nozzle",
+                        PressureReliefHatchScenes::reliefHatchNozzle, AllYunxianPonderTags.MACHINES);
+        blocks.forComponents(ModBlocks.SMART_PRESSURE_RELIEF_HATCH.get())
+                .addStoryBoard("pressure_relief_hatch/relief_hatch",
+                        PressureReliefHatchScenes::reliefHatchVenting, AllYunxianPonderTags.MACHINES)
+                .addStoryBoard("pressure_relief_hatch/relief_hatch_nozzle",
+                        PressureReliefHatchScenes::reliefHatchNozzle, AllYunxianPonderTags.MACHINES)
+                .addStoryBoard("pressure_relief_hatch/smart_relief_hatch",
+                        PressureReliefHatchScenes::smartReliefHatch, AllYunxianPonderTags.MACHINES);
+
+        // 9) 共振过滤器：与共振台挂同一整套分镜，鼠标停在物品上也能直接看全部
         helper.withKeyFunction(BuiltInRegistries.ITEM::getKey)
                 .forComponents(ModItems.RESONANCE_FILTER.get())
                 .addStoryBoard("resonance_table/resonance_table", ResonanceScenes::resonanceTable,

@@ -265,6 +265,22 @@
     "create_crystal_industry.ponder.cleaner_config.text_1": "Filters and transfer amounts are set on its side slot.",
     "create_crystal_industry.ponder.cleaner_config.text_2": "The airflow direction is switched in its interface, and the Cleaner starts moving items the other way.",
 
+    "create_crystal_industry.ponder.relief_hatch_venting.header": "Pressure Relief Hatch",
+    "create_crystal_industry.ponder.relief_hatch_venting.text_1": "While in an airstream, Pressure Relief Hatches vent items out of the attached container",
+    "create_crystal_industry.ponder.relief_hatch_venting.text_2": "Air currents flowing past the grille will open the hatch",
+    "create_crystal_industry.ponder.relief_hatch_venting.text_3": "A single batch consists of up to 16 items",
+    "create_crystal_industry.ponder.relief_hatch_venting.text_4": "Filters can be set in the side configuration slot",
+
+    "create_crystal_industry.ponder.relief_hatch_nozzle.header": "Covered by a Nozzle",
+    "create_crystal_industry.ponder.relief_hatch_nozzle.text_1": "A Nozzle spreads an airstream into a wide field",
+    "create_crystal_industry.ponder.relief_hatch_nozzle.text_2": "Hatches within this field are opened regardless of the Fan's axis",
+
+    "create_crystal_industry.ponder.smart_relief_hatch.header": "The Smart Pressure Relief Hatch",
+    "create_crystal_industry.ponder.smart_relief_hatch.text_1": "The Smart Pressure Relief Hatch can output a full stack at once",
+    "create_crystal_industry.ponder.smart_relief_hatch.text_2": "The batch size can be set in the side configuration slot, up to 64 items",
+    "create_crystal_industry.ponder.smart_relief_hatch.text_3": "'=' mode requires a full batch before venting",
+    "create_crystal_industry.ponder.smart_relief_hatch.text_4": "Redstone signals pause the venting",
+
     "create_crystal_industry.ponder.resonance_table.header": "The Resonance Table",
     "create_crystal_industry.ponder.resonance_table.text_1": "A Resonance Table can only ever hold one kind of item.",
     "create_crystal_industry.ponder.resonance_table.text_2": "Right-Click to place an item on a Resonance Table, and Right-Click again to take it back.",
