@@ -16,47 +16,29 @@ section at the top.
 
 ### Added
 
-- A new block, the Pressure Relief Hatch: mount it on a block that holds items and an air current
-  sweeping over it vents what it stores into the flow — 16 per batch, further capped by the items'
-  own stack size, with the side slot acting as a filter that lets only approved items through.
-  - The wind does not have to blow straight at it: a sideways sweep, or a flow leading out along its
-    facing, opens it too; only a head-on flow into its face pins it shut.
-  - It does not block the wind: the hatch is in the air-passthrough tag, so whatever sits downstream
-    still gets its air, and skylight passes through it across its whole opening, waterlogged or not.
-- A new block, the Smart Pressure Relief Hatch: a Pressure Relief Hatch with two extras — an amount
-  slider on its side slot that reaches 64 per batch, and a redstone lock that stops it venting when
-  any of its six sides is powered, with a powered look to match.
-- The Mechanical Cleaner now picks up Packages lying on the ground, not just dropped items. While
-  waterlogged it opens the Packages it holds on the spot: the contents go into its inventory and the
-  packaging and any empty Package are gone with it; a Package whose contents do not all fit is left
-  whole rather than half-eaten.
-- With a Nozzle in front of the Mechanical Cleaner, the cubic field the Nozzle spreads now counts:
-  drops and Packages landing in it go straight into the inventory instead of falling out first.
-  Points at the edge of the field, or off the Cleaner's axis, are caught as well.
-- The Resonance Filter gained a right-click screen: name the network it sits on, and the name is
-  stored in the world save so every filter and Resonance Table on that network sees the same one
-  (the filtering rules still come from the tables). Resonance Tables also float that name above
-  themselves, visible within 64 blocks and left out while the network is unnamed.
-- Smart Temperature Chambers built as one block share their capacity, and the grouping now records
-  the order they were placed in: a rectangle placed earlier keeps its shape, a chamber added later
-  no longer splits an existing group, and two strips crossing no longer steal each other's middle
-  block.
-- Accelerators gained an Acceleration Filter Mode: `Whitelist` accelerates only the blocks on the
-  list, `Blacklist` skips them, and the default `Unlimited` behaves exactly as before. The whitelist
-  ships with budding blocks, crops and saplings; the lists only affect the accelerators — the
-  world's own random ticks still land on every block.
+- A new block, the Pressure Relief Hatch: mounted on a container, it hands the container's items to an air current passing by in batches of 16, further capped by each item's stack size, with the side slot available as a filter.
+  - A sideways sweep, a flow leading out along its facing, and the cubic field a Nozzle spreads all open it, and only a head-on flow into its face closes it.
+  - The hatch blocks neither air nor skylight: whatever sits downstream still receives its air, and skylight passes through its whole opening.
+- A new block, the Smart Pressure Relief Hatch: it adds an amount slider to the side slot (up to 64 per batch) and stops working whenever any of its six sides is powered, switching to a powered look.
+- The Mechanical Cleaner now picks up Packages lying on the ground, not just dropped items; while waterlogged it opens a Package on the spot, moving the contents into its inventory and consuming the packaging together with any empty Package, and leaves a Package whole when its contents do not all fit.
+- With a Nozzle in front of the Mechanical Cleaner, the cubic field the Nozzle spreads is recognised as well, and drops and Packages landing in it go straight into the inventory, including points at the edge of the field or off the Cleaner's axis.
+- The Resonance Filter gained a right-click screen that names the network it sits on and stores the name in the world save, shared by every filter and Resonance Table on that network (the filtering rules still come from the tables); Resonance Tables also float that name above themselves, visible within 64 blocks and left out while the network is unnamed.
+- Smart Temperature Chambers placed next to each other share their capacity, and the grouping records placement order in the block: a rectangle placed earlier keeps its shape, a chamber added later leaves a connected part intact, and two crossing strips do not take each other's middle block.
+- Accelerators gained an Acceleration Filter Mode: `Whitelist` accelerates only the blocks on the list, `Blacklist` skips them, and the default `Unlimited` behaves as before; the whitelist ships with budding blocks, crops and saplings, the lists affect only the accelerators, and the world's own random ticks still land on every block.
+- Ponder scenes for the Pressure Relief Hatch and the Smart Pressure Relief Hatch, covering venting on a sideways current, the reach of a Nozzle's field, and the smart hatch's amount slider and redstone lock.
 
 ### Changed
 
-- The Pressure Relief Hatch vents a fixed 16 per batch; only the Smart Pressure Relief Hatch's
-  amount slider reaches 64.
-- The Mechanical Cleaner hides its amount slider while sucking in the open (with no container in
-  front), leaving only the filter.
-- Smart Temperature Chamber shared capacity now reaches 16x16: a full 16x16 block still forms one
-  group, and its connected textures still merge into a single surface.
-- Feeding Flammable Ice to the Blaze Burner no longer stops after the second piece: it now tops up
-  piece by piece like coal, up to the same cap as any ordinary fuel. It still drives the burner
-  superheated — only how much can be stockpiled has changed.
+- The Pressure Relief Hatch hands over a fixed 16 per batch; only the Smart Pressure Relief Hatch's amount slider reaches 64.
+- The Mechanical Cleaner hides its amount slider while sucking in the open (with no container in front), leaving only the filter.
+- Smart Temperature Chamber shared capacity now reaches 16x16: a full 16x16 block still forms one group, and its connected textures still merge into one surface.
+- Flammable Ice fed to the Blaze Burner no longer stops after two pieces but tops up piece by piece like coal, up to the same cap as any ordinary fuel; it still drives the burner superheated, and only how much can be stockpiled has changed.
+- A waterlogged Mechanical Cleaner no longer opens Packages whose contents are not items: copper fluid Packages, and copper bottles or brass batteries carrying fluid or energy, can still be picked up but stay whole in the inventory.
+
+### Fixed
+
+- A Smart Drill placed horizontally now renders the filter items on its top and bottom slots turned with the block.
+- A Funnel no longer stops working after its ejected item is taken straight into the Mechanical Cleaner's inventory.
 
 ## 1.0.7 · 2026-10-06 ~ 2026-10-08
 
