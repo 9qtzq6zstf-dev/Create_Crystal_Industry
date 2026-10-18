@@ -3,9 +3,7 @@
 	"credit": "Made with Blockbench",
 	"parent": "create:block/mechanical_drill/item",
 	"textures": {
-		"0": "create:block/axis_top",
-		"1": "create:block/axis",
-		"2": "block/anvil",
+
 		"8": "create_crystal_industry:block/smart_drill/mechanical_drill_top",
 		"10": "create_crystal_industry:block/smart_drill/brass_casing_very_short",
 		"particle": "create_crystal_industry:block/smart_drill/brass_casing_very_short",
