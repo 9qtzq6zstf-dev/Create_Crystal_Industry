@@ -3,9 +3,9 @@
 	"credit": "Made with Blockbench",
 	"parent": "block/block",
 	"textures": {
-		"2": "create_crystal_industry:block/smart_drill/anvil",
+		"2": "block/anvil",
 		"10": "create_crystal_industry:block/smart_drill/brass_casing_very_short",
-		"particle": "create_crystal_industry:block/smart_drill/anvil"
+		"particle": "block/anvil"
 	},
 	"elements": [
 		{

@@ -7,8 +7,8 @@
 		"1": "create_crystal_industry:block/mechanical_accelerator/accelerator_side_powered",
 		"2": "create_crystal_industry:block/common/brass_frame",
 		"3": "create_crystal_industry:block/common/railway_gearbox",
-		"4": "create_crystal_industry:block/common/axis_top",
-		"5": "create_crystal_industry:block/common/axis",
+		"4": "create:block/axis_top",
+		"5": "create:block/axis",
 		"particle": "create_crystal_industry:block/mechanical_accelerator/accelerator_top_powered"
 	},
 	"elements": [
