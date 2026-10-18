@@ -1,5 +1,5 @@
 {
-    "parent": "block/cube_all",
+    "parent": "create_crystal_industry:block/accelerator/accelerator",
     "textures": {
         "all": "create_crystal_industry:block/accelerator/accelerator_powered"
     }
