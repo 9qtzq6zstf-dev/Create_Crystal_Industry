@@ -39,6 +39,7 @@ section at the top.
 
 - A Smart Drill placed horizontally now renders the filter items on its top and bottom slots turned with the block.
 - A Funnel no longer stops working after its ejected item is taken straight into the Mechanical Cleaner's inventory.
+- Smart Temperature Chambers placed in a row now join their connected textures right away instead of waiting for a block update.
 
 ## 1.0.7 · 2026-10-06 ~ 2026-10-08
 
