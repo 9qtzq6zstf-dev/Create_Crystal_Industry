@@ -3,8 +3,8 @@
 	"credit": "Made with Blockbench",
 	"parent": "block/block",
 	"textures": {
-		"4": "create_crystal_industry:block/common/axis_top",
-		"5": "create_crystal_industry:block/common/axis"
+		"4": "create:block/axis_top",
+		"5": "create:block/axis"
 	},
 	"elements": [
 		{

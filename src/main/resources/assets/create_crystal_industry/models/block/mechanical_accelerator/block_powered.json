@@ -3,7 +3,6 @@
     "render_type": "cutout",
     "textures": {
         "0": "create_crystal_industry:block/mechanical_accelerator/accelerator_top_powered",
-        "1": "create_crystal_industry:block/mechanical_accelerator/accelerator_side_powered",
-        "particle": "create_crystal_industry:block/mechanical_accelerator/accelerator_top_powered"
+        "1": "create_crystal_industry:block/mechanical_accelerator/accelerator_side_powered"
     }
 }

@@ -4,9 +4,9 @@
 	"parent": "block/block",
 	"render_type": "cutout",
 	"textures": {
-		"3": "create_crystal_industry:block/mechanical_cleaner/fan_blades",
-		"4": "create_crystal_industry:block/common/axis_top",
-		"5": "create_crystal_industry:block/common/axis"
+		"3": "create:block/fan_blades",
+		"4": "create:block/axis_top",
+		"5": "create:block/axis"
 	},
 	"elements": [
 		{

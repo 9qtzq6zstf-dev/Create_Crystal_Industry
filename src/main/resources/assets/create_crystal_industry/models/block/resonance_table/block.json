@@ -5,9 +5,9 @@
 	"textures": {
 		"1": "create_crystal_industry:block/resonance_table/depot_side",
 		"2": "create_crystal_industry:block/resonance_table/depot_top",
-		"3": "create_crystal_industry:block/common/brass_casing",
-		"4": "create_crystal_industry:block/resonance_table/depot_inner",
-		"particle": "create_crystal_industry:block/common/brass_casing"
+		"3": "create:block/brass_casing",
+		"4": "block/stripped_dark_oak_log_top",
+		"particle": "create:block/brass_casing"
 	},
 	"elements": [
 		{
