@@ -95,11 +95,4 @@ public class SmartDrillRenderer extends KineticBlockEntityRenderer<SmartDrillBlo
         shaft.renderInto(ms, vc);
     }
 
-    /** 动态结构专用：头部 + 传动杆合并模型（整体旋转） */
-    public static final PartialModel HEAD_FULL =
-            PartialModel.of(ResourceLocation.parse(
-                    "create_crystal_industry:block/smart_drill/head_full"
-            ));
-
-
 }

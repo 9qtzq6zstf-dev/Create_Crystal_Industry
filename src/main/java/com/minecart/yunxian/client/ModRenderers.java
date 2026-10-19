@@ -4,6 +4,8 @@ import com.minecart.yunxian.registry.ModBlockEntities;
 import com.minecart.yunxian.registry.ModBlocks;
 import com.minecart.yunxian.registry.ModItems;
 import com.minecart.yunxian.Yunxian;
+import com.minecart.yunxian.block.MechanicalAcceleratorBlock;
+import com.minecart.yunxian.blockentity.MechanicalAcceleratorBlockEntity;
 import com.minecart.yunxian.client.battery.CrystalBatteryModel;
 import com.minecart.yunxian.client.deco.FlammableIceLayeredModel;
 import com.minecart.yunxian.client.deco.FlammableIcePillarModel;
@@ -27,6 +29,7 @@ import com.minecart.yunxian.client.sundae.FlammableSundaeFrameRenderer;
 import net.minecraft.client.resources.language.I18n;
 
 import com.minecart.yunxian.integration.curios.CuriosClientIntegration;
+import dev.engine_room.flywheel.lib.model.Models;
 import dev.engine_room.flywheel.lib.model.baked.PartialModel;
 import dev.engine_room.flywheel.lib.visualization.SimpleBlockEntityVisualizer;
 
@@ -35,6 +38,7 @@ import net.minecraft.client.renderer.item.ItemProperties;
 import net.minecraft.client.resources.PlayerSkin;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelResourceLocation;
+import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 
 import net.neoforged.bus.api.IEventBus;
@@ -86,7 +90,6 @@ public class ModRenderers {
         // 登记进本次烘焙，保证冷启动首次烘焙就包含这些 partial（替代手动 F3+T）。
         registerPartial(event, SmartDrillRenderer.HEAD);
         registerPartial(event, SmartDrillRenderer.SHAFT);
-        registerPartial(event, SmartDrillRenderer.HEAD_FULL);
         registerPartial(event, MechanicalAcceleratorRenderer.SHAFT);
         registerPartial(event, MechanicalCleanerRenderer.SHAFT);
         registerPartial(event, MechanicalCleanerRenderer.PROPELLER);
@@ -128,9 +131,15 @@ public class ModRenderers {
                     .skipVanillaRender(be -> false)
                     .apply();
 
+            // 动力催生器：传动杆要贴在应力输入那一面，也就是 FACING 的背面。
+            // OrientedRotatingVisual.of 只会把模型的 +Z 转到 FACING，而这里用的 Create 半截传动杆
+            // 本身就是朝 +Z 伸出的，所以必须自己给工厂、把它转到 FACING.getOpposite()。
             SimpleBlockEntityVisualizer
                     .builder(ModBlockEntities.MECHANICAL_ACCELERATOR.get())
-                    .factory(OrientedRotatingVisual.of(MechanicalAcceleratorRenderer.SHAFT))
+                    .factory((context, be, partialTick) -> new OrientedRotatingVisual<MechanicalAcceleratorBlockEntity>(
+                            context, be, partialTick, Direction.SOUTH,
+                            be.getBlockState().getValue(MechanicalAcceleratorBlock.FACING).getOpposite(),
+                            Models.partial(MechanicalAcceleratorRenderer.SHAFT)))
                     .skipVanillaRender(be -> true)
                     .apply();
 

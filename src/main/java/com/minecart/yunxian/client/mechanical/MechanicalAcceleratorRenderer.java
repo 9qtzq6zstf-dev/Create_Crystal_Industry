@@ -1,6 +1,8 @@
 package com.minecart.yunxian.client.mechanical;
 
+import com.minecart.yunxian.block.MechanicalAcceleratorBlock;
 import com.minecart.yunxian.blockentity.MechanicalAcceleratorBlockEntity;
+import com.simibubi.create.AllPartialModels;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntityRenderer;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -20,18 +22,25 @@ import net.minecraft.world.level.block.state.BlockState;
 
 public class MechanicalAcceleratorRenderer extends KineticBlockEntityRenderer<MechanicalAcceleratorBlockEntity> {
 
-    /** 传动杆 partial：随应力旋转 */
-    public static final PartialModel SHAFT =
-            PartialModel.of(ResourceLocation.parse(
-                    "create_crystal_industry:block/mechanical_accelerator/shaft"));
+    /** 传动杆 partial：随应力旋转，直接用机动力的半截传动杆模型 */
+    public static final PartialModel SHAFT = AllPartialModels.SHAFT_HALF;
 
     public MechanicalAcceleratorRenderer(BlockEntityRendererProvider.Context context) {
         super(context);
     }
 
+    /**
+     * 半截传动杆模型朝 +Z 伸出，而本方块只在 FACING 的背面接应力，
+     * 所以定向要用 {@code FACING.getOpposite()}，否则杆会跑到工作面上。
+     */
+    private static SuperByteBuffer shaft(BlockState state) {
+        return CachedBuffers.partialFacing(SHAFT, state,
+                state.getValue(MechanicalAcceleratorBlock.FACING).getOpposite());
+    }
+
     @Override
     protected SuperByteBuffer getRotatedModel(MechanicalAcceleratorBlockEntity be, BlockState state) {
-        return CachedBuffers.partialFacing(SHAFT, state);
+        return shaft(state);
     }
 
     @Override
@@ -48,7 +57,7 @@ public class MechanicalAcceleratorRenderer extends KineticBlockEntityRenderer<Me
 
         SuperByteBuffer shaft;
         try {
-            shaft = CachedBuffers.partialFacing(SHAFT, state);
+            shaft = shaft(state);
         } catch (Exception e) {
             return;
         }
