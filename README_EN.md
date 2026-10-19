@@ -691,6 +691,12 @@ The "whole End / whole Nether" cases go through the biome tags `#minecraft:is_en
 
 ---
 
+## Development Notes
+
+A fair share of this mod's code and documentation was written with AI assistance; the models and textures are hand-made. Design, code review and in-game testing are the maintainer's job, and nothing is merged before it runs in game; where something falls short, that is on us rather than on the tooling. Issues are welcome as usual.
+
+---
+
 ## License
 
 **This mod is licensed All Rights Reserved, but modpacks may include it without asking for permission.**

@@ -696,6 +696,12 @@ BuddingGrowthEngine.tryGrow(serverLevel, pos, random, definition, gate);
 
 ---
 
+## 关于开发
+
+本模组的代码与文档有相当一部分是在 AI 辅助下完成的，模型与贴图均为手工制作。设计方向、代码审查和实机测试由维护者负责，所有改动都要在游戏里跑通才会合入；若有疏漏，那是我们的责任，不是工具的。欢迎照常报 issue。
+
+---
+
 ## 授权
 
 **本模组以 All Rights Reserved 授权，但整合包可直接收录，无需另行申请。**
