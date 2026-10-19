@@ -12,6 +12,17 @@ section at the top.
 
 ---
 
+## 1.0.9 · 2026-10-18 ~ 2026-10-19
+
+### Changed
+
+- The Mechanical Accelerator's shaft now uses Create's half-shaft model.
+- A powered Mechanical Cleaner now looks the same as an unpowered one, with only the textures swapped.
+
+### Fixed
+
+- Smart Temperature Chambers placed in a row now join their connected textures right away instead of waiting for a block update.
+
 ## 1.0.8 · 2026-10-09 ~ 2026-10-17
 
 ### Added
@@ -39,7 +50,6 @@ section at the top.
 
 - A Smart Drill placed horizontally now renders the filter items on its top and bottom slots turned with the block.
 - A Funnel no longer stops working after its ejected item is taken straight into the Mechanical Cleaner's inventory.
-- Smart Temperature Chambers placed in a row now join their connected textures right away instead of waiting for a block update.
 
 ## 1.0.7 · 2026-10-06 ~ 2026-10-08
 
