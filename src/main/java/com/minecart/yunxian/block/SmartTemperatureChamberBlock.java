@@ -430,23 +430,20 @@ public class SmartTemperatureChamberBlock extends BaseEntityBlock {
     }
 
     /**
-     * 定完组之后，把这一格与四邻里那几台的渲染各刷一次。
+     * 把整组的渲染各刷一次。
      * <p>
-     * 连接材质是拿"邻居的组锚点"现算的，所以某一格并入/拆出之后，<b>它自己和四邻</b>的模型数据
-     * 都过期了。方块状态没变（变的只是方块实体里的锚点），光靠方块实体那条同步路不一定让客户端
-     * 重建网格，所以这里对每一格都喊一次 {@code sendBlockUpdated}——客户端收到会重新取一次模型数据
-     * （见方块实体的 {@code loadAdditional} 里那句 {@code requestModelDataUpdate}）。
-     * 少了这一步，刚放下的这台跟旁边那台的边框可能不连。
+     * 连接材质拿"同组各格的组锚点"现算，所以任何一格并入或拆出，<b>同组每一台</b>的模型数据都过期了。
+     * 只刷紧挨着的那几台是不够的：三台并排时，中间那台能收到两边的更新，最边上那台什么都收不到，
+     * 它的边框会停在"这一组到这里就结束"的旧样子——截图里第二、三台之间的那道缝就是这么来的。
+     * <p>
+     * 方块状态没变（变的只是方块实体里的锚点），光靠方块实体那条同步路不会让客户端重建网格，
+     * 所以这里逐格喊一次 {@code sendBlockUpdated}；客户端收到后会重新取一次模型数据、并把所在区块段
+     * 标脏重画（见方块实体的 {@code loadAdditional} 与 {@code ClientModelRefresh}）。
      */
-    private static void refreshConnections(Level level, BlockPos pos) {
-        // 拆掉那一格自己已经变成空气了，刷的是它四邻；放下时四邻和它自己都要刷
-        if (isChamber(level, pos)) {
-            updateForRender(level, pos);
-        }
-        for (Direction dir : Direction.Plane.HORIZONTAL) {
-            BlockPos side = pos.relative(dir);
-            if (isChamber(level, side)) {
-                updateForRender(level, side);
+    private static void refreshRender(Level level, List<BlockPos> members) {
+        for (BlockPos member : members) {
+            if (isChamber(level, member)) {
+                updateForRender(level, member);
             }
         }
     }
@@ -591,8 +588,11 @@ public class SmartTemperatureChamberBlock extends BaseEntityBlock {
      * <p>
      * 残余是从四邻找出来的：邻居里同锚点的那些格，就是这一组去掉 {@code pos} 之后剩下的
      * ——方块这时已经被拆掉了，扫连通域不会再包含它。
+     * <p>
+     * 返回重切过的那些格（也就是还活着的那一组），调用方拿它去刷渲染：重定锚点之后，
+     * 每一片的连接材质都变了。
      */
-    private static void regroupAfterRemoval(Level level, BlockPos pos) {
+    private static List<BlockPos> regroupAfterRemoval(Level level, BlockPos pos) {
         List<BlockPos> survivors = new ArrayList<>();
         Set<BlockPos> seen = new HashSet<>();
         // 拆掉的那一格自己要排掉：方块实体可能还留着（取决于 onRemove 与方块实体移除的先后），
@@ -611,7 +611,7 @@ public class SmartTemperatureChamberBlock extends BaseEntityBlock {
             }
         }
         if (survivors.isEmpty()) {
-            return;
+            return List.of();
         }
         for (List<BlockPos> piece : canonicalPieces(componentOf(survivors))) {
             BlockPos anchor = anchorOf(piece);
@@ -619,6 +619,7 @@ public class SmartTemperatureChamberBlock extends BaseEntityBlock {
                 setAnchor(level, cell, anchor);
             }
         }
+        return survivors;
     }
 
     /**
@@ -821,7 +822,7 @@ public class SmartTemperatureChamberBlock extends BaseEntityBlock {
             return;
         }
         assignGroupOnPlace(level, pos);
-        refreshConnections(level, pos);
+        refreshRender(level, groupAt(level, pos));
         notifyBasinAbove(level, pos);
     }
 
@@ -836,8 +837,7 @@ public class SmartTemperatureChamberBlock extends BaseEntityBlock {
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
         if (!state.is(newState.getBlock()) && !level.isClientSide) {
-            regroupAfterRemoval(level, pos);
-            refreshConnections(level, pos);
+            refreshRender(level, regroupAfterRemoval(level, pos));
             notifyBasinAbove(level, pos);
         }
         super.onRemove(state, level, pos, newState, isMoving);

@@ -6,6 +6,7 @@ import java.util.Objects;
 import java.util.function.Predicate;
 
 import com.minecart.yunxian.block.SmartTemperatureChamberBlock;
+import com.minecart.yunxian.client.ClientModelRefresh;
 import com.minecart.yunxian.registry.ModBlockEntities;
 import com.minecart.yunxian.registry.ModFluids;
 import com.simibubi.create.api.equipment.goggles.IHaveGoggleInformation;
@@ -465,13 +466,17 @@ public class SmartTemperatureChamberBlockEntity extends BlockEntity implements I
         // 客户端要靠这两个数画护目镜；服务端下一 tick 就会自己重算覆盖掉
         sharedFuel = tag.getInt("SharedFuel");
         sharedCapacity = tag.contains("SharedCapacity") ? tag.getInt("SharedCapacity") : CAPACITY;
+        BlockPos previousAnchor = groupAnchor;
         groupAnchor = tag.contains("GroupAnchor")
                 ? NbtUtils.readBlockPos(tag, "GroupAnchor").orElse(null)
                 : null;
-        // 锚点这东西是连接材质要拿的模型数据，读完得让客户端重新取一次；不喊这一声，
-        // 新放下的那台跟旁边那台的边框可能就不连（网格是缓存的，方块状态又没变过）。
-        // 服务端调它会被自己挡住（只在客户端生效），所以不用分端判断。
+        // 锚点这东西是连接材质要拿的模型数据，读完得让客户端重新取一次，且必须真的重画：
+        // 只 requestModelDataUpdate 是把这一格挂进"下次重算"的名单，网格不会自己重建，而方块状态
+        // 又没变过（同状态的方块更新，原版当无事发生），于是画面一直用旧锚点，直到玩家碰一下旁边的方块。
         requestModelDataUpdate();
+        if (level != null && level.isClientSide && !Objects.equals(previousAnchor, groupAnchor)) {
+            ClientModelRefresh.markSectionDirty(level, worldPosition);
+        }
     }
 
     /** 方块实体包带上整罐流体：护目镜浮窗在客户端读它（罐只有一桶，整份发不心疼） */
