@@ -9,7 +9,6 @@ import net.createmod.ponder.api.scene.SceneBuildingUtil;
 import net.createmod.ponder.api.scene.Selection;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
@@ -63,7 +62,7 @@ public class PressureReliefHatchScenes {
 
         scene.overlay().showText(85)
                 .attachKeyFrame()
-                .text("While in an airstream, Pressure Relief Hatches vent items out of the attached container")
+                .text("In an airstream, hatches release items from the container")
                 .placeNearTarget()
                 .pointAt(util.vector().centerOf(chest));
         scene.idle(85 + TEXT_GAP);
@@ -76,15 +75,13 @@ public class PressureReliefHatchScenes {
 
         scene.overlay().showText(95)
                 .attachKeyFrame()
-                .text("Air currents flowing past the grille will open the hatch")
+                .text("Air flowing past the grille opens the hatch")
                 .placeNearTarget()
                 .pointAt(util.vector().centerOf(hatch));
-        scene.idle(8);
-        emitAir(scene, util.vector().centerOf(fan), new Vec3(0.11, 0.02, 0));
-        scene.idle(12);
+        scene.idle(20);
         ventItems(scene, ventAt, new Vec3(0.05, 0.24, 0), roseQuartz(), 3, 8);
         scene.effects().indicateSuccess(hatch);
-        // 8 + 12 + 24 已经是 44，补到 95 + 10
+        // 20 + 24 是 44，补到 95 + 10
         scene.idle(61);
 
         // 提速：同样的风场转得更快，吐得更密（只说"一批最多 16 个"，节奏靠动画演）
@@ -93,7 +90,7 @@ public class PressureReliefHatchScenes {
         scene.world().setKineticSpeed(util.select().position(fan), -128f);
         scene.overlay().showText(85)
                 .attachKeyFrame()
-                .text("A single batch consists of up to 16 items")
+                .text("One batch holds up to 16 items")
                 .placeNearTarget()
                 .pointAt(util.vector().centerOf(hatch));
         scene.idle(8);
@@ -104,7 +101,7 @@ public class PressureReliefHatchScenes {
         // 过滤：侧面配置槽里设定的过滤只放匹配的物品出去
         scene.overlay().showText(95)
                 .attachKeyFrame()
-                .text("Filters can be set in the side configuration slot")
+                .text("Filters are set in its side slot")
                 .placeNearTarget()
                 .pointAt(util.vector().centerOf(hatch));
         scene.idle(10);
@@ -148,11 +145,10 @@ public class PressureReliefHatchScenes {
 
         scene.overlay().showText(95)
                 .attachKeyFrame()
-                .text("A Nozzle spreads an airstream into a wide field")
+                .text("A Nozzle spreads the airstream into a wide field")
                 .placeNearTarget()
                 .pointAt(util.vector().centerOf(nozzle));
         scene.idle(8);
-        emitAir(scene, util.vector().centerOf(nozzle), new Vec3(0.10, 0.05, 0.05));
         // 8 已用，补到 95 + 10
         scene.idle(97);
 
@@ -161,7 +157,7 @@ public class PressureReliefHatchScenes {
 
         scene.overlay().showText(105)
                 .attachKeyFrame()
-                .text("Hatches within this field are opened regardless of the Fan's axis")
+                .text("Hatches in that field ignore the Fan's axis")
                 .placeNearTarget()
                 .pointAt(util.vector().centerOf(hatch));
         scene.idle(8);
@@ -208,7 +204,7 @@ public class PressureReliefHatchScenes {
         // 一组就是 64 个：先演一次整批释放
         scene.overlay().showText(95)
                 .attachKeyFrame()
-                .text("The Smart Pressure Relief Hatch can output a full stack at once")
+                .text("It can release a full stack at once")
                 .placeNearTarget()
                 .pointAt(util.vector().centerOf(chest));
         scene.idle(95 + TEXT_GAP);
@@ -218,7 +214,7 @@ public class PressureReliefHatchScenes {
         // 数量滑块
         scene.overlay().showText(95)
                 .attachKeyFrame()
-                .text("The batch size can be set in the side configuration slot")
+                .text("The batch size is set in the side slot")
                 .placeNearTarget()
                 .pointAt(util.vector().centerOf(hatch));
         scene.overlay().showCenteredScrollInput(hatch, Direction.EAST, 85);
@@ -227,7 +223,7 @@ public class PressureReliefHatchScenes {
         // 「=」模式：凑满一批才吐
         scene.overlay().showText(95)
                 .attachKeyFrame()
-                .text("'=' mode requires a full batch before venting")
+                .text("'=' mode waits for a full batch")
                 .placeNearTarget()
                 .pointAt(util.vector().centerOf(hatch));
         scene.overlay().showCenteredScrollInput(hatch, Direction.EAST, 85);
@@ -240,7 +236,7 @@ public class PressureReliefHatchScenes {
                 state -> state.setValue(SmartPressureReliefHatchBlock.POWERED, true), false);
         scene.overlay().showText(95)
                 .attachKeyFrame()
-                .text("Redstone signals pause the venting")
+                .text("Redstone signals pause the release")
                 .placeNearTarget()
                 .pointAt(util.vector().centerOf(redstone));
         scene.idle(95 + TEXT_GAP);
@@ -260,11 +256,6 @@ public class PressureReliefHatchScenes {
         scene.world().setKineticSpeed(fan, -32f);
         scene.effects().indicateSuccess(machine);
         scene.idle(15);
-    }
-
-    private static void emitAir(CreateSceneBuilder scene, Vec3 origin, Vec3 motion) {
-        scene.effects().emitParticles(origin,
-                scene.effects().particleEmitterWithinBlockSpace(ParticleTypes.CLOUD, motion), 2, 45);
     }
 
     /** 从网罩里吐出几件物品：斜着往上飞出去，再落到台面上（真实掉落由方块实体负责，这里只是演） */

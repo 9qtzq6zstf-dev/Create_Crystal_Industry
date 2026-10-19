@@ -1,5 +1,6 @@
 package com.minecart.yunxian.ponder.scenes;
 
+import com.minecart.yunxian.block.SmartDrillBlock;
 import com.minecart.yunxian.blockentity.SmartDrillBlockEntity;
 import com.minecart.yunxian.budding.BuddingFamilies;
 import com.simibubi.create.foundation.ponder.CreateSceneBuilder;
@@ -29,8 +30,8 @@ import net.minecraft.world.phys.Vec3;
  * </ul>
  * 四条分镜讲同一台机器，靠不同的演示物（石头 / 母岩 / 红石块）与镜头错开构图。
  * 挖掘、模式切换、掉落一律脚本演绎；碎裂用 destroyBlock + 一簇 BLOCK 粒子代替裂纹动画。
- * 红石那一条额外摆两块红石块演示「锁」与「前方例外」，红石锁本身由
- * {@code toggleRedstonePower} 直接翻转方块自己的 {@code POWERED}（与 Create 的思索同款写法）。
+ * 红石那一条额外摆两块红石块演示「锁」与「前方例外」，红石锁本身靠
+ * {@code modifyBlock} 直接写死方块状态里的 {@code POWERED}。
  */
 public class SmartDrillScenes {
 
@@ -66,7 +67,7 @@ public class SmartDrillScenes {
 
         scene.overlay().showText(90)
                 .attachKeyFrame()
-                .text("The Smart Drill is a Mechanical Drill with two harvesting modes. This scene covers Normal Harvesting.")
+                .text("The Smart Drill has two harvesting modes")
                 .placeNearTarget()
                 .pointAt(util.vector().centerOf(smart));
         scene.idle(20);
@@ -83,7 +84,7 @@ public class SmartDrillScenes {
 
         scene.overlay().showText(95)
                 .attachKeyFrame()
-                .text("In Normal Harvesting the Smart Drill mines twice as fast as a regular Mechanical Drill.")
+                .text("Normal Harvesting mines twice as fast as a Mechanical Drill")
                 .placeNearTarget()
                 .pointAt(util.vector().topOf(spotSmart));
         scene.idle(15);
@@ -125,7 +126,7 @@ public class SmartDrillScenes {
 
         scene.overlay().showText(85)
                 .attachKeyFrame()
-                .text("The setting slot on its side switches harvesting modes.")
+                .text("The setting slot on its side switches modes")
                 .placeNearTarget()
                 .pointAt(slot);
         scene.overlay().showFilterSlotInput(slot, 55);
@@ -146,7 +147,7 @@ public class SmartDrillScenes {
 
         scene.overlay().showText(95)
                 .attachKeyFrame()
-                .text("Silk Touch Harvesting mines at the speed of a regular drill: both drills break the block at the same moment.")
+                .text("Silk Touch Harvesting keeps the speed of a Mechanical Drill")
                 .placeNearTarget()
                 .pointAt(util.vector().topOf(spotSmart));
         scene.idle(15);
@@ -189,7 +190,7 @@ public class SmartDrillScenes {
 
         scene.overlay().showText(100)
                 .attachKeyFrame()
-                .text("Budding Blocks are a special case: a regular drill shatters them, and the block itself cannot be collected.")
+                .text("A Mechanical Drill only shatters Budding Blocks")
                 .placeNearTarget()
                 .pointAt(util.vector().centerOf(spotVanilla));
         scene.idle(20);
@@ -205,7 +206,7 @@ public class SmartDrillScenes {
 
         scene.overlay().showText(100)
                 .attachKeyFrame()
-                .text("In Silk Touch Harvesting the Smart Drill collects the Budding Block itself.")
+                .text("In Silk Touch Harvesting, the Smart Drill collects the block itself")
                 .placeNearTarget()
                 .pointAt(util.vector().centerOf(spotSmart));
         scene.idle(15);
@@ -254,7 +255,7 @@ public class SmartDrillScenes {
 
         scene.overlay().showText(80)
                 .attachKeyFrame()
-                .text("Redstone Power locks the Smart Drill: it stops spinning and stops harvesting, and the block in front of it is left untouched.")
+                .text("Redstone Power halts the Smart Drill")
                 .placeNearTarget()
                 .pointAt(util.vector().centerOf(smart));
         // 文字展示期间正前方摆上石头：锁定期间它一动不动
@@ -268,7 +269,7 @@ public class SmartDrillScenes {
         scene.idle(5);
         scene.overlay().showText(80)
                 .attachKeyFrame()
-                .text("Remove the signal and the drill picks up right where it left off.")
+                .text("Without the signal, mining picks up again")
                 .placeNearTarget()
                 .pointAt(util.vector().topOf(spotSmart));
         destroyWithDebris(scene, util, spotSmart, Blocks.STONE.defaultBlockState());
@@ -280,7 +281,7 @@ public class SmartDrillScenes {
         scene.idle(5);
         scene.overlay().showText(95)
                 .attachKeyFrame()
-                .text("The face it points at is the one exception: redstone placed in front does not lock it, and the drill keeps working.")
+                .text("A signal from the face it points at has no effect")
                 .placeNearTarget()
                 .pointAt(util.vector().centerOf(spotSmart));
         // 让这块红石块多停一会儿再被挖掉：它只活了一瞬的话观众根本来不及看清
@@ -294,9 +295,12 @@ public class SmartDrillScenes {
     /**
      * 把智能钻头切到「被红石锁住 / 解锁」。两半都要动，只做一半钻头不会停转：
      * <ul>
-     *   <li>{@code toggleRedstonePower} 换的是方块状态 {@code POWERED}——模型因此切成
-     *       {@code block_powered} 那一款，这是观众看得见的外观变化；</li>
-     *   <li><b>但光有它不够</b>：{@code BlockEntity#getBlockState()} 返回的是方块实体里
+     *   <li>方块状态 {@code POWERED} 决定模型：{@code true} 换成 {@code block_powered}
+     *       那一款，这是观众看得见的外观变化。这里不能用 {@code toggleRedstonePower}：
+     *       它只认原版的 {@code BlockStateProperties.POWERED}，而本模组这个属性是
+     *       {@code BooleanProperty.create("powered")} 另造出来的实例，名字相同但不相等，
+     *       {@code hasProperty} 判否，状态永远翻不过去；</li>
+     *   <li><b>光有它不够</b>：{@code BlockEntity#getBlockState()} 返回的是方块实体里
      *       <b>缓存</b>的那份状态，而 ponder 的 {@code SchematicLevel#setBlock} 只更新自己的方块表、
      *       从不调用 {@code BlockEntity#setBlockState}（原版是 {@code LevelChunk} 那条路在同步它）。
      *       于是 {@code SmartDrillBlockEntity#isRedstoneLocked()} 读到的还是放置时的
@@ -307,7 +311,8 @@ public class SmartDrillScenes {
      * </ul>
      */
     private static void setLocked(CreateSceneBuilder scene, SceneBuildingUtil util, BlockPos smart, boolean locked) {
-        scene.world().toggleRedstonePower(util.select().position(smart));
+        scene.world().modifyBlocks(util.select().position(smart),
+                state -> state.setValue(SmartDrillBlock.POWERED, locked), false);
         scene.world().modifyBlockEntityNBT(util.select().position(smart), SmartDrillBlockEntity.class,
                 nbt -> nbt.putBoolean("SyncedBlocked", locked));
     }

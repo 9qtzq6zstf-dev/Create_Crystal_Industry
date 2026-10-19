@@ -13,7 +13,6 @@ import net.createmod.ponder.api.scene.SceneBuildingUtil;
 import net.createmod.ponder.api.scene.Selection;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
@@ -56,20 +55,15 @@ public class MechanicalCleanerScenes {
 
         scene.overlay().showText(95)
                 .attachKeyFrame()
-                .text("The Mechanical Cleaner drives the same airstream as an Encased Fan.")
+                .text("The Mechanical Cleaner drives the same airstream as an Encased Fan")
                 .placeNearTarget()
                 .pointAt(util.vector().centerOf(cleaner));
-        scene.idle(20);
-
-        // 气流粒子（纯视觉，可换粒子类型/数量）
-        scene.effects().emitParticles(util.vector().centerOf(2, 1, 1),
-                scene.effects().particleEmitterWithinBlockSpace(ParticleTypes.CLOUD, new Vec3(0, 0.01, 0.12)),
-                2, 45);
-        scene.idle(85);
+        // 气流本身由原版的风场粒子表现，这里不再叠一层白雾
+        scene.idle(105);
 
         scene.overlay().showText(100)
                 .attachKeyFrame()
-                .text("Items caught in its stream, or simply lying in front of it, are sucked in and stored in its built-in inventory.")
+                .text("Items caught in it are drawn into its inventory")
                 .placeNearTarget()
                 .pointAt(util.vector().centerOf(2, 1, 2));
         scene.idle(20);
@@ -115,14 +109,14 @@ public class MechanicalCleanerScenes {
 
         scene.overlay().showText(100)
                 .attachKeyFrame()
-                .text("A container placed directly in front is handled specially: the Cleaner moves items in and out of it directly, without dropping anything into the world.")
+                .text("The Cleaner handles a container in front directly")
                 .placeNearTarget()
                 .pointAt(util.vector().centerOf(2, 1, 2));
         scene.idle(110);
 
         scene.overlay().showText(90)
                 .attachKeyFrame()
-                .text("While collecting, it reaches into that container and pulls matching items into its own inventory.")
+                .text("While collecting, matching items are taken from it")
                 .placeNearTarget()
                 .pointAt(util.vector().centerOf(2, 1, 2));
         scene.idle(15);
@@ -135,7 +129,7 @@ public class MechanicalCleanerScenes {
 
         scene.overlay().showText(90)
                 .attachKeyFrame()
-                .text("While blowing, stored items are fed back into the container in front.")
+                .text("While blowing, stored items are returned to it")
                 .placeNearTarget()
                 .pointAt(util.vector().centerOf(2, 1, 2));
         scene.idle(15);
@@ -169,7 +163,7 @@ public class MechanicalCleanerScenes {
 
         scene.overlay().showText(95)
                 .attachKeyFrame()
-                .text("Filters and transfer amounts are set on its side slot.")
+                .text("Filters and amounts sit in its side slot")
                 .placeNearTarget()
                 .pointAt(util.vector().centerOf(cleaner));
         scene.overlay().showCenteredScrollInput(cleaner, Direction.WEST, 80);
@@ -178,7 +172,7 @@ public class MechanicalCleanerScenes {
         // 气流方向不在侧槽上：给一个打开界面的手势，方向是在那里面切的
         scene.overlay().showText(95)
                 .attachKeyFrame()
-                .text("The airflow direction is switched in its interface, and the Cleaner starts moving items the other way.")
+                .text("The airstream direction is switched in its interface")
                 .placeNearTarget()
                 .pointAt(util.vector().centerOf(cleaner));
         scene.overlay().showControls(util.vector().centerOf(cleaner), Pointing.DOWN, 50)

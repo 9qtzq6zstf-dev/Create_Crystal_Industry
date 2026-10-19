@@ -70,7 +70,7 @@ public class TemperatureChamberScenes {
         scene.idle(15);
         scene.overlay().showText(70)
                 .attachKeyFrame()
-                .text("The Smart Temperature Chamber sets the Basin to the temperature its recipe asks for, heating or cooling as needed.")
+                .text("The Chamber sets the Basin to the heat its recipe asks for")
                 .placeNearTarget()
                 .pointAt(util.vector().centerOf(chamber));
         scene.idle(80);
@@ -82,7 +82,7 @@ public class TemperatureChamberScenes {
         scene.idle(20);
         scene.overlay().showText(85)
                 .attachKeyFrame()
-                .text("It runs on Flammable Ice Slurry, poured in by bucket or fed by pipe.")
+                .text("It burns Flammable Ice Slurry")
                 .placeNearTarget()
                 .pointAt(util.vector().topOf(chamber));
         scene.idle(95);
@@ -102,7 +102,7 @@ public class TemperatureChamberScenes {
 
         scene.overlay().showText(90)
                 .attachKeyFrame()
-                .text("While it burns, the Basin ignores what heat a recipe asks for and simply runs it.")
+                .text("While burning, heat requirements no longer matter")
                 .placeNearTarget()
                 .pointAt(util.vector().blockSurface(basin, Direction.WEST));
         scene.idle(35);
@@ -123,7 +123,7 @@ public class TemperatureChamberScenes {
         setBurning(scene, chamber, false);
         scene.overlay().showText(80)
                 .attachKeyFrame()
-                .text("Once the Slurry runs out, the Chamber cools down and the Basin stops.")
+                .text("Once the fuel is spent, the Chamber goes out")
                 .placeNearTarget()
                 .pointAt(util.vector().centerOf(chamber));
         scene.idle(90);
@@ -146,7 +146,7 @@ public class TemperatureChamberScenes {
 
         scene.overlay().showText(85)
                 .attachKeyFrame()
-                .text("Chambers placed together share one capacity, and it grows with the size of the group.")
+                .text("Chambers placed together share one capacity")
                 .placeNearTarget()
                 .pointAt(util.vector().centerOf(front));
         scene.idle(95);
@@ -161,7 +161,7 @@ public class TemperatureChamberScenes {
 
         scene.overlay().showText(85)
                 .attachKeyFrame()
-                .text("Fuel poured into any one of them feeds the whole group, and they light together.")
+                .text("Fuel in any one of them lights the whole group")
                 .placeNearTarget()
                 .pointAt(util.vector().centerOf(util.grid().at(1, 1, 2)));
         scene.idle(15);
@@ -176,7 +176,7 @@ public class TemperatureChamberScenes {
         // 指这四台的**交角**：边框消失这件事正是发生在它们彼此相接的那两条缝上
         scene.overlay().showText(85)
                 .attachKeyFrame()
-                .text("The frames between them fall away, so a block of Chambers reads as a single machine.")
+                .text("The frames between them fall away")
                 .placeNearTarget()
                 .pointAt(util.vector().centerOf(front).add(0.5, 0.5, 0.5));
         scene.idle(95);
@@ -227,7 +227,7 @@ public class TemperatureChamberScenes {
 
         scene.overlay().showText(75)
                 .attachKeyFrame()
-                .text("The Smart Temperature Chamber can also serve as a Steam Boiler's heat source.")
+                .text("The Chamber can also heat a Steam Boiler")
                 .placeNearTarget()
                 .pointAt(chamberGroupCentre);
         scene.idle(85);

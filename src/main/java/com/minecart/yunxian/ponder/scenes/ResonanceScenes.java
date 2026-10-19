@@ -75,7 +75,7 @@ public class ResonanceScenes {
 
         scene.overlay().showText(85)
                 .attachKeyFrame()
-                .text("A Resonance Table can only ever hold one kind of item.")
+                .text("A Resonance Table holds a single kind of item")
                 .placeNearTarget()
                 .pointAt(util.vector().centerOf(table));
         scene.idle(15);
@@ -88,7 +88,7 @@ public class ResonanceScenes {
 
         scene.overlay().showText(85)
                 .attachKeyFrame()
-                .text("Right-Click to place an item on a Resonance Table, and Right-Click again to take it back.")
+                .text("Right-Click to place an item, again to take it back")
                 .placeNearTarget()
                 .pointAt(util.vector().topOf(table));
         scene.idle(20);
@@ -100,7 +100,7 @@ public class ResonanceScenes {
 
         scene.overlay().showText(90)
                 .attachKeyFrame()
-                .text("The sliders on its sides set how many items a Resonance Table may hold, just like the Weighted Ejector.")
+                .text("Side sliders set how many it may hold")
                 .placeNearTarget()
                 .pointAt(util.vector().centerOf(table));
         scene.overlay().showCenteredScrollInput(table, Direction.WEST, 70);
@@ -135,7 +135,7 @@ public class ResonanceScenes {
 
         scene.overlay().showText(100)
                 .attachKeyFrame()
-                .text("A Resonance Filter holds no rules of its own: it reads the Resonance Tables of the network it is linked to.")
+                .text("A Resonance Filter holds no rules of its own")
                 .placeNearTarget()
                 .pointAt(util.vector().centerOf(funnel));
         scene.idle(15);
@@ -150,7 +150,7 @@ public class ResonanceScenes {
 
         scene.overlay().showText(90)
                 .attachKeyFrame()
-                .text("Only what the network allows will pass.")
+                .text("It reads the tables of the network it belongs to")
                 .placeNearTarget()
                 .pointAt(util.vector().centerOf(funnel));
         scene.idle(10);
@@ -168,7 +168,7 @@ public class ResonanceScenes {
 
         scene.overlay().showText(90)
                 .attachKeyFrame()
-                .text("Change the item on the Resonance Table, and the filter follows at once.")
+                .text("Only what the network allows will pass")
                 .placeNearTarget()
                 .pointAt(util.vector().topOf(table));
         scene.idle(10);
@@ -211,7 +211,7 @@ public class ResonanceScenes {
 
         scene.overlay().showText(100)
                 .attachKeyFrame()
-                .text("Sneak-Using a Resonance Table copies its network onto the held item.")
+                .text("Sneak-Using a table copies its network onto the item")
                 .placeNearTarget()
                 .pointAt(util.vector().centerOf(table));
         scene.idle(20);
@@ -234,7 +234,7 @@ public class ResonanceScenes {
 
         scene.overlay().showText(90)
                 .attachKeyFrame()
-                .text("Every table placed from that item joins the same network, and they filter together.")
+                .text("Tables placed from that item join the same network")
                 .placeNearTarget()
                 .pointAt(util.vector().topOf(second));
         scene.idle(15);
@@ -250,7 +250,7 @@ public class ResonanceScenes {
         // 半空：拿走第二张台子上的金锭，金锭随之被挡下，铁锭照过
         scene.overlay().showText(100)
                 .attachKeyFrame()
-                .text("A table holding nothing is simply left out of the filter.")
+                .text("An empty table is left out of the filter")
                 .placeNearTarget()
                 .pointAt(util.vector().topOf(second));
         scene.idle(15);
@@ -267,7 +267,7 @@ public class ResonanceScenes {
         // 全空：两张台子都空着，过滤器不再限制任何物品
         scene.overlay().showText(100)
                 .attachKeyFrame()
-                .text("Only when every table of the network is empty does it pass everything.")
+                .text("While every table is empty, nothing is filtered")
                 .placeNearTarget()
                 .pointAt(util.vector().topOf(table));
         scene.idle(15);
@@ -311,7 +311,7 @@ public class ResonanceScenes {
 
         scene.overlay().showText(95)
                 .attachKeyFrame()
-                .text("A Resonance Table also accepts a List Filter, and passes every item that filter holds.")
+                .text("A Resonance Table also takes a List Filter")
                 .placeNearTarget()
                 .pointAt(util.vector().topOf(table));
         scene.idle(15);
@@ -329,7 +329,7 @@ public class ResonanceScenes {
 
         scene.overlay().showText(95)
                 .attachKeyFrame()
-                .text("An Attribute Filter on a table is read the same way, and passes whatever its attributes match.")
+                .text("Attribute Filters are read the same way")
                 .placeNearTarget()
                 .pointAt(util.vector().topOf(table));
         scene.idle(15);
@@ -374,7 +374,7 @@ public class ResonanceScenes {
 
         scene.overlay().showText(95)
                 .attachKeyFrame()
-                .text("Supplying Redstone Power to a Resonance Table freezes its filter.")
+                .text("Redstone Power freezes the filter")
                 .placeNearTarget()
                 .pointAt(util.vector().centerOf(table));
         // 红石块是给观众看的「电源」，充能时才出现
@@ -390,7 +390,7 @@ public class ResonanceScenes {
 
         scene.overlay().showText(100)
                 .attachKeyFrame()
-                .text("The network keeps filtering by a copy of the item that sat there when it was powered.")
+                .text("The network keeps a copy of the item from that moment")
                 .placeNearTarget()
                 .pointAt(util.vector().topOf(table));
         scene.idle(10);
@@ -404,7 +404,7 @@ public class ResonanceScenes {
         // 撤掉信号，规则立刻回到台面上
         scene.overlay().showText(90)
                 .attachKeyFrame()
-                .text("Remove the signal and the filter follows the Resonance Table again.")
+                .text("Without the signal, it follows the table again")
                 .placeNearTarget()
                 .pointAt(util.vector().centerOf(table));
         scene.world().hideSection(util.select().position(power), Direction.DOWN);
@@ -447,7 +447,7 @@ public class ResonanceScenes {
 
         scene.overlay().showText(95)
                 .attachKeyFrame()
-                .text("A Display Link attached to a Resonance Table reads the filter of its entire network.")
+                .text("A Display Link reads the filter of the whole network")
                 .placeNearTarget()
                 .pointAt(util.vector().centerOf(link));
         scene.idle(30);
@@ -471,7 +471,7 @@ public class ResonanceScenes {
 
         scene.overlay().showText(95)
                 .attachKeyFrame()
-                .text("The link sends that list to the Flap Display it points at, one item per line.")
+                .text("It sends the list to the Flap Display it points at")
                 .placeNearTarget()
                 .pointAt(util.vector().centerOf(board));
         scene.idle(20);
@@ -490,7 +490,7 @@ public class ResonanceScenes {
 
         scene.overlay().showText(95)
                 .attachKeyFrame()
-                .text("The list covers every Resonance Table of the network, so a second Resonance Table adds a second line.")
+                .text("Every table of the network takes a line")
                 .placeNearTarget()
                 .pointAt(util.vector().centerOf(board));
         scene.idle(105);
