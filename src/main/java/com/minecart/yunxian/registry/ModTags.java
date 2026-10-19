@@ -79,7 +79,16 @@ public final class ModTags {
     public static final TagKey<Block> FAN_TRANSPARENT = TagKey.create(Registries.BLOCK,
             ResourceLocation.fromNamespaceAndPath("create", "fan_transparent"));
 
-    // 新增：标记"免疫鼓风机/喷头风力"的盔甲
+    /**
+     * 标记「免疫鼓风机 / 分散网风力」的盔甲（<b>物品</b>标签），数据包路径
+     * {@code data/create_crystal_industry/tags/item/fan_immune.json}。
+     * <p>
+     * 判定是<b>任意一件</b>即免疫（见 {@code util/FanImmunityHelper}）；同一条判定还管风弹的击退
+     * （见 {@code util/WindKnockbackGuard}）。
+     * <p>
+     * 与「气流抵抗」附魔（{@code ModEnchantments.AIRFLOW_RESISTANCE}）<b>完全等价</b>：两者任取其一即可，
+     * 标签给不想刷附魔的存档用，附魔给愿意在附魔台上赌一把的玩家用。
+     */
     public static final TagKey<Item> FAN_IMMUNE = TagKey.create(Registries.ITEM,
             ResourceLocation.fromNamespaceAndPath(Yunxian.MODID, "fan_immune"));
 

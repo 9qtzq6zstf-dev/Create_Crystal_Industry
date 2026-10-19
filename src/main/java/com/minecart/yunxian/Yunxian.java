@@ -21,6 +21,7 @@ import com.minecart.yunxian.compat.YunxianJeiPlugin;
 import com.minecart.yunxian.datagen.YunxianDataGen;
 import com.minecart.yunxian.registry.*;
 import com.minecart.yunxian.util.NightVisionWearHelper;
+import com.minecart.yunxian.util.WindKnockbackGuard;
 import com.simibubi.create.api.behaviour.movement.MovementBehaviour;
 import com.simibubi.create.api.boiler.BoilerHeater;
 import com.simibubi.create.api.stress.BlockStressValues;
@@ -90,6 +91,10 @@ public class Yunxian {
         // 带「火焰吐息」时按住潜行就喷火：潜行状态本来就同步到服务端，所以判定整条都在服务端，
         // 不需要客户端配合（见 FlameBreath 的类注释）
         NeoForge.EVENT_BUS.addListener(FlameBreath::onPlayerTick);
+        // 风弹不许吹动穿「气流抵抗」盔甲（或 fan_immune 标签盔甲）的玩家：风弹的击退是
+        // Explosion 直接往 deltaMovement 里加的速度，NeoForge 在那句之前留了爆炸击退事件
+        // （见 WindKnockbackGuard 的类注释）
+        NeoForge.EVENT_BUS.addListener(WindKnockbackGuard::onExplosionKnockback);
         // 潜行右键换晶体：只能挂在物品层（原版潜行时会跳过方块的 useItemOn），且手持的是任意晶体方块，
         // 所以走 UseItemOnBlockEvent 这个对任何物品都生效的钩子，见该类注释
         NeoForge.EVENT_BUS.addListener(CrystalBatteryInteractions::onUseItemOnBlock);

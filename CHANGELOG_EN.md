@@ -14,6 +14,10 @@ section at the top.
 
 ## 1.0.9 · 2026-10-18 ~ 2026-10-19
 
+### Added
+
+- New enchantment "Airflow Resistance": any single piece of armor with it makes the wearer immune to the push of Encased Fans and Nozzles, and to Wind Charge knockback.
+
 ### Changed
 
 - The Mechanical Accelerator's shaft now uses Create's half-shaft model.
