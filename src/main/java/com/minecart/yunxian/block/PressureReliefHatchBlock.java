@@ -1,10 +1,13 @@
 package com.minecart.yunxian.block;
 
 import com.minecart.yunxian.blockentity.PressureReliefHatchBlockEntity;
+import com.simibubi.create.content.equipment.wrench.IWrenchable;
 
 import net.createmod.catnip.math.VoxelShaper;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelReader;
@@ -46,8 +49,18 @@ import javax.annotation.Nullable;
  * <p>
  * 想看朝向对不对，进游戏放一面墙、地板、天花板各一个即可：安装板应当贴着方块面，
  * 网罩朝外悬空；若网罩埋进方块里，就是 blockstate 的旋转表整体差了一格 180 度。
+ * <p>
+ * <b>扳手</b>（{@link IWrenchable}）：只认<b>潜行</b>右键的快捷拆除，掉落物直接进背包并播放
+ * 机械动力的拆卸音效；走的是 {@code IWrenchable} 默认实现（{@code Block.getDrops} +
+ * {@code destroyBlock}），同时会发 {@code BlockEvent.BreakEvent}，领地保护照常生效。
+ * <p>
+ * <b>不提供扳手转向</b>（覆写成 {@link InteractionResult#PASS}）：舱口不需要像机器那样换面，
+ * 而且转向链路里 {@code onWrenched} 会先 {@code updateFromNeighbourShapes} 再落盘，
+ * 新朝向背后没支撑时 {@code AmethystClusterBlock#updateShape} 直接把状态判成空气——误触一次
+ * 就等于把舱口拧掉。换朝向请拆下来重放。
+ * 智能泄压舱口继承本类，行为一致。
  */
-public class PressureReliefHatchBlock extends AmethystClusterBlock implements EntityBlock {
+public class PressureReliefHatchBlock extends AmethystClusterBlock implements IWrenchable, EntityBlock {
 
     /**
      * 碰撞箱：基状态（FACING=UP）的两个盒子，逐像素对齐模型的两团实体。
@@ -73,6 +86,19 @@ public class PressureReliefHatchBlock extends AmethystClusterBlock implements En
     @Override
     protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         return SHAPE.get(state.getValue(FACING));
+    }
+
+    /**
+     * 扳手右键不作为，只放行潜行拆除（{@code IWrenchable#onSneakWrenched}）。
+     * <p>
+     * 默认实现会绕点击面的轴转 {@code FACING}，转完先 {@code updateFromNeighbourShapes}：
+     * 新朝向背后没有支撑时，{@code AmethystClusterBlock#updateShape} 判不过 {@code canSurvive}
+     * 就把状态换成空气，玩家等于拧一下把舱口拧没了。舱口也不靠扳手换面（拆下来重放即可），
+     * 所以这里直接 PASS，把点击还给原版流程。
+     */
+    @Override
+    public InteractionResult onWrenched(BlockState state, UseOnContext context) {
+        return InteractionResult.PASS;
     }
 
     /**
