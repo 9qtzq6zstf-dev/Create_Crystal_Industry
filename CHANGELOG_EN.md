@@ -22,10 +22,14 @@ section at the top.
 
 - The Mechanical Accelerator's shaft now uses Create's half-shaft model.
 - A powered Mechanical Cleaner now looks the same as an unpowered one, with only the textures swapped.
+- Pressure Relief Hatches and Smart Pressure Relief Hatches can be dismantled by sneak-using a Wrench.
+- Flammable Ice Slurry Bottles now stand upright on Depots and Belts.
+- Flammable Ice Slurry Bottles no longer grant Frost Walker, and the Flammable Sundae's Frost Walker now lasts 60 seconds.
 
 ### Fixed
 
 - Smart Temperature Chambers placed in a row now join their connected textures right away instead of waiting for a block update.
+- A Pressure Relief Hatch now vents a single kind of item per batch instead of mixing several kinds into one batch.
 
 ## 1.0.8 · 2026-10-09 ~ 2026-10-17
 
