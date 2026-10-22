@@ -65,7 +65,7 @@ public final class ModEffects {
             MOB_EFFECTS.register("flame_breath", FlameBreathEffect::new);
 
     /**
-     * 「冰霜行者」：脚下这片水面被踩成冰，可燃冰沙瓶与可燃冰圣代都发它。
+     * 「冰霜行者」：脚下这片水面被踩成冰，只有可燃冰圣代发它（60 秒）。
      * <p>
      * 与「冰封 / 灼寒」是两回事：那两颗冻的是<b>人</b>（顶实体的冻结值，见 {@link FrozenEffect}），
      * 这颗冻的是<b>水</b>——人身上不挂霜花，只是走过的地方留下一条冰路。

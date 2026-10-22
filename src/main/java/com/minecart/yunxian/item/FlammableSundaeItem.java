@@ -35,8 +35,8 @@ import com.minecart.yunxian.registry.ModEffects;
  *       那笔冻伤由那边拦掉；同时又持续着火，所谓「冻着的冰在烧」。
  *       这就是顶上那撮熔岩点缀下肚的代价——<b>不再另给抗火了</b>，抗火会把这份灼烧
  *       整个免疫掉，那就等于白加点缀；</li>
- *   <li>「冰霜行者」（{@link ModEffects#FROST_WALKER}，10 秒）：脚下那片水面被踩成冰，
- *       与灼寒同长——一边冻着水、一边烧着人，十秒后一起结束；</li>
+ *   <li>「冰霜行者」（{@link ModEffects#FROST_WALKER}，60 秒）：脚下那片水面被踩成冰。
+ *       可燃冰沙瓶不给这个效果，只有圣代有，而且比灼寒那 10 秒长得多；</li>
  *   <li>「火焰吐息」（{@link ModEffects#FLAME_BREATH}，60 秒）：能喷火的许可证。</li>
  * </ul>
  */
@@ -61,12 +61,13 @@ public class FlammableSundaeItem extends BlockItem {
     private static final int FLAME_BREATH_TICKS = 1200;
 
     /**
-     * 「冰霜行者」的持续时间：与「灼寒」同为 10 秒。
+     * 「冰霜行者」的持续时间：60 秒。
      * <p>
-     * 这一口冻的是脚下那片水——喝完这十秒里，河面能踩着冰走过去；灼寒那笔代价也是十秒，
-     * 两件事一起开始、一起结束。要单独调就动这一个数（可燃冰沙瓶那边有各自的一份）。
+     * 比「灼寒」那 10 秒长得多，是刻意的：踩水成冰是圣代独有的好处（可燃冰沙瓶不给它），
+     * 喝完这一分钟里河面都能踩着冰走过去，代价则只有开头那 10 秒的灼寒。
+     * 与「火焰吐息」同为 60 秒，两个「甜头」一起结束。
      */
-    private static final int FROST_WALKER_TICKS = 200;
+    private static final int FROST_WALKER_TICKS = 1200;
 
     public FlammableSundaeItem(Block block, Properties properties) {
         super(block, properties
