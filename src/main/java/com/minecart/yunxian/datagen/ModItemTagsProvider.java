@@ -11,11 +11,14 @@ import com.minecart.yunxian.registry.ModItems;
 import com.minecart.yunxian.registry.ModTags;
 
 import net.minecraft.core.HolderLookup;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.data.PackOutput;
 import net.minecraft.data.tags.IntrinsicHolderTagsProvider.IntrinsicTagAppender;
 import net.minecraft.data.tags.TagsProvider.TagLookup;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.ItemTags;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SlabBlock;
@@ -73,6 +76,11 @@ public class ModItemTagsProvider extends net.minecraft.data.tags.ItemTagsProvide
 
         // 通用桶标签 c:buckets：别的模组按「这是不是桶」筛物品时读它（见 ModTags#BUCKETS）
         tag(ModTags.BUCKETS).add(ModItems.FLAMMABLE_ICE_SLURRY_BUCKET.get());
+
+        // 可燃冰沙瓶在置物台与传送带上竖直摆放：机械动力用 create:upright_on_belt 决定这件事
+        // （BeltHelper#isItemUpright，命中即不躺平），玻璃瓶、药水都在这个标签里。
+        tag(TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath("create", "upright_on_belt")))
+                .add(ModItems.FLAMMABLE_ICE_SLURRY_BOTTLE.get());
 
         // 可燃冰的石材类型标签：整套装饰方块里除台阶外全部登记（判定规则与理由见
         // ModTags#FLAMMABLE_ICE_STONE_TYPE）。直接遍历唯一清单派生，以后加变体不用动这里。
