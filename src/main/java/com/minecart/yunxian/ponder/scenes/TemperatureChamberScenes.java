@@ -151,6 +151,16 @@ public class TemperatureChamberScenes {
                 .pointAt(util.vector().centerOf(front));
         scene.idle(95);
 
+        
+        // 指这四台的**交角**：边框消失这件事正是发生在它们彼此相接的那两条缝上
+        scene.overlay().showText(85)
+                .attachKeyFrame()
+                .text("The frames between them fall away")
+                .placeNearTarget()
+                .pointAt(util.vector().centerOf(front).add(0.5, 0.5, 0.5));
+        scene.idle(95);
+        
+        
         // 只往一台里倒
         scene.overlay().showControls(util.vector().topOf(front), Pointing.DOWN, 40)
                 .rightClick()
@@ -173,13 +183,7 @@ public class TemperatureChamberScenes {
         }
         scene.idle(95);
 
-        // 指这四台的**交角**：边框消失这件事正是发生在它们彼此相接的那两条缝上
-        scene.overlay().showText(85)
-                .attachKeyFrame()
-                .text("The frames between them fall away")
-                .placeNearTarget()
-                .pointAt(util.vector().centerOf(front).add(0.5, 0.5, 0.5));
-        scene.idle(95);
+        
     }
 
     /*
