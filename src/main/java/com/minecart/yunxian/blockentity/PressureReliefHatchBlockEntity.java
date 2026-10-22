@@ -9,6 +9,7 @@ import com.simibubi.create.content.kinetics.fan.NozzleBlock;
 import com.simibubi.create.foundation.blockEntity.SmartBlockEntity;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
 import com.simibubi.create.foundation.blockEntity.behaviour.filtering.FilteringBehaviour;
+import com.simibubi.create.foundation.item.ItemHelper;
 import com.simibubi.create.infrastructure.config.AllConfigs;
 import net.createmod.catnip.math.VecHelper;
 import net.minecraft.core.BlockPos;
@@ -28,6 +29,7 @@ import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.items.IItemHandler;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -60,8 +62,12 @@ import java.util.List;
  * 顺带一提：泄压舱口自己的碰撞箱在垂直于朝向的方向上是"有洞的"（网罩那圈中间是空的），
  * Create 的 `findMaxDepth` 判定有洞就整格放行，所以侧风是真的穿过本格，不是吹到脸上。
  * <p>
- * <b>吐多少。</b>一批最多 {@link #VENT_AMOUNT} 个（<b>16</b>，对齐原版溜槽），再受"一组"压一头：
- * 按待吐物品里最小的那个堆叠数走（16 堆叠的东西一次最多 16 个，混装时取最严的上限）。
+ * <b>吐多少、吐哪样。</b>一批只吐<b>一种</b>物品，数量最多 {@link #VENT_AMOUNT} 个（<b>16</b>，
+ * 对齐原版溜槽），再受这一样物品自己的堆叠数压一头（16 堆叠的东西一次最多 16 个）。
+ * 容器里混装时按槽位顺序挑第一种能吐的，这一批就只吐它；下一批才轮到别的，与溜槽一致。
+ * 取货走 Create 的 {@code ItemHelper.extract}（溜槽 / 智能溜槽用的同一个函数），
+ * 它只会把同种同组件、且加起来不超过一组的堆叠并进手里，所以不会出现"一次吐 n 个、
+ * 而这 n 个不是一种物品"。
  * 侧面那个槽<b>只做过滤</b>，没有数量控件 —— 要调"每次吐几个"、并且能把上限抬到
  * {@link #SMART_VENT_AMOUNT}（64）的是子类
  * {@code SmartPressureReliefHatchBlockEntity}（智能泄压舱口），它把数量滑块加回来，
@@ -591,55 +597,59 @@ public class PressureReliefHatchBlockEntity extends SmartBlockEntity {
     // ==================== 吐货 ====================
 
     /**
-     * 从依附容器里取走一批"过滤通过"的物品，在舱口所在方块的正中心丢出去。
-     * 一批几个 = 侧面槽上的数量（{@link #ventAmount}），但还要再受<b>物品自己的堆叠数</b>压一头：
-     * 一批就是"一组"，16 堆叠的东西不该一次吐 64 个出来。节奏由 {@link #ventInterval} 控制。
+     * 从依附容器里取走<b>一样</b>物品，在舱口所在方块的正中心丢出去。
      * <p>
-     * 先扫一遍容器：算出能吐的总数，以及这几样物品里最小的堆叠数（混装时取最严的那个上限，
-     * 保证这批不会超过任何一样物品的"一组"）。数量不够跨槽接着取，所以散装容器也凑得齐；
-     * 取出来的每一段各生成一个掉落物实体（不同槽的物品本来就叠不到一起）。
+     * <b>一批只有一种物品</b>：混装容器里按槽位顺序找第一种过滤能过的物品，试成功就吐它、
+     * 这一批到此为止，下一批再轮到别的（与溜槽 / 智能溜槽一致）。
+     * <p>
+     * 取货用 Create 的 {@link ItemHelper#extract}，模式跟溜槽同一套：
+     * <ul>
+     *   <li>"≤"（{@link #requiresFullBatch()} 为 false）：能取多少吐多少；</li>
+     *   <li>"="（智能舱口的整批档）：这一样物品凑不满一批就整批不吐，换下一种物品再试
+     *       （{@code EXACTLY} 模式凑不够直接返回空，于是外层循环继续往后找）。</li>
+     * </ul>
+     * 批量 = {@link #batchSize(int)} 传<b>这一样物品的堆叠数</b>进去，所以 16 堆叠的东西
+     * 一批最多 16 个；{@code ItemHelper} 自己也只并"同种同组件、加起来不超一组"的堆叠，
+     * 不会凑出超堆叠。
      */
     private void vent() {
         IItemHandler source = getAttachedContainer();
         if (source == null)
             return;
 
-        int available = 0;
-        int groupSize = Integer.MAX_VALUE;
+        // 试过的物品类型：同种同组件只试一次，避免同一批反复取同一样
+        List<ItemStack> tried = new ArrayList<>();
         for (int slot = 0; slot < source.getSlots(); slot++) {
-            ItemStack stack = source.getStackInSlot(slot);
-            if (stack.isEmpty() || !canVent(stack))
+            ItemStack candidate = source.getStackInSlot(slot);
+            if (candidate.isEmpty() || !canVent(candidate))
                 continue;
-            available += stack.getCount();
-            groupSize = Math.min(groupSize, stack.getMaxStackSize());
-        }
-        if (available <= 0)
-            return;
+            if (tried.stream().anyMatch(stack -> ItemStack.isSameItemSameComponents(stack, candidate)))
+                continue;
+            tried.add(candidate.copy());
 
-        int budget = batchSize(groupSize);
-        // 智能舱口那边 "=" 那一档：容器里凑不够这一批就一个都不吐（整批走）
-        if (requiresFullBatch() && available < budget)
-            return;
-
-        for (int slot = 0; slot < source.getSlots() && budget > 0; slot++) {
-            ItemStack stack = source.getStackInSlot(slot);
-            if (stack.isEmpty() || !canVent(stack))
+            int budget = batchSize(candidate.getMaxStackSize());
+            if (budget <= 0)
                 continue;
 
-            ItemStack extracted = source.extractItem(slot, budget, false);
-            if (extracted.isEmpty())
-                continue;
-
-            budget -= extracted.getCount();
-            dropItem(extracted);
+            ItemStack extracted = ItemHelper.extract(source,
+                    stack -> ItemStack.isSameItemSameComponents(stack, candidate),
+                    requiresFullBatch() ? ItemHelper.ExtractionCountMode.EXACTLY
+                            : ItemHelper.ExtractionCountMode.UPTO,
+                    budget, false);
+            if (!extracted.isEmpty()) {
+                dropItem(extracted);
+                return;
+            }
         }
     }
 
     /**
-     * 这一批吐几个。本类不带数量滑块，所以是固定档：{@code min(VENT_AMOUNT, groupSize)} ——
-     * 也就是"最多 16 个，且不超过待吐物品里最小的那组"。16 堆叠的东西还是 16，
+     * 这一批最多取几个。本类不带数量滑块，所以是固定档：{@code min(VENT_AMOUNT, groupSize)} ——
+     * 也就是"最多 16 个，且不超过这一样物品的一组"。16 堆叠的东西还是 16，
      * 64 堆叠的东西也只吐 16（对齐原版溜槽那一档）。
      * 智能泄压舱口覆写它，改为"滑块上的数再被一组压一头"。
+     *
+     * @param groupSize 本批那一样物品的堆叠上限（{@code ItemStack#getMaxStackSize()}）
      */
     protected int batchSize(int groupSize) {
         return Math.min(VENT_AMOUNT, groupSize);
