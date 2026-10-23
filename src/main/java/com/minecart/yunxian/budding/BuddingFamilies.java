@@ -221,6 +221,17 @@ public final class BuddingFamilies {
     }
 
     /**
+     * 半成品家族：方块与物品照常注册（{@code /give} 拿得到、存档与脚本引用都不会坏），
+     * 但不进创造物品栏，也不进 JEI 的母岩信息页、物品列表与催化剂——玩家在正常游戏里见不到它。
+     * <p>
+     * 目前只有弧光石那条链（母岩 / 三档芽 / 晶簇 / 弧光石 / 失活母岩，以及配套的电流浆与桶）。
+     * 做完之后删掉这里的判断，这几处会一起把它放出来。
+     */
+    public static boolean isHidden(RegisteredFamily family) {
+        return family == ARCLIGHT;
+    }
+
+    /**
      * 强制本类初始化。方块注册表事件之前必须调用一次
      * （{@code Yunxian} 的构造器里调用），否则家族方块会注册过晚而整体缺失。
      */

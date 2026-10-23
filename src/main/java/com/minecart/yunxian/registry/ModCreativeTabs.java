@@ -36,10 +36,10 @@ public final class ModCreativeTabs {
                         // 母岩家族：顺序与物品栏一致，AE2 联动的家族排在工具之后
                         for (RegisteredFamily family : BuddingFamilies.ALL) {
                             if (family.isRegistered() && !family.spec().ae2Gated()) {
-                                // 弧光石那条链（母岩 / 三档芽 / 晶簇，外加上面 tabExtras 里的弧光石
-                                // 与失活母岩）还是半成品，暂时不上物品栏——方块与物品仍在注册表里，
-                                // /give 能拿到；做完之后把这一判去掉即可
-                                if (family == BuddingFamilies.ARCLIGHT) {
+                                // 半成品家族（弧光石那条链：母岩 / 三档芽 / 晶簇，外加上面
+                                // tabExtras 里的弧光石与失活母岩）暂时不上物品栏——方块与物品仍在
+                                // 注册表里，/give 能拿到；判定与 JEI 共用 BuddingFamilies.isHidden
+                                if (BuddingFamilies.isHidden(family)) {
                                     continue;
                                 }
                                 acceptFamily(output, family);

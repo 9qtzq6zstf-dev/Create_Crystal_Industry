@@ -13,6 +13,8 @@ import com.minecart.yunxian.compat.jei.BuddingInfoCollector;
 import com.minecart.yunxian.item.EchoSpyglassItem;
 import com.minecart.yunxian.network.SetFilterPayload;
 import com.minecart.yunxian.recipe.BuddingConversionRecipe;
+import com.minecart.yunxian.registry.ModFluids;
+import com.minecart.yunxian.registry.ModItems;
 import com.minecart.yunxian.registry.ModRecipes;
 import com.mojang.logging.LogUtils;
 import mezz.jei.api.IModPlugin;
@@ -21,12 +23,14 @@ import mezz.jei.api.constants.VanillaTypes;
 import mezz.jei.api.gui.handlers.IGhostIngredientHandler;
 import mezz.jei.api.helpers.IGuiHelper;
 import mezz.jei.api.ingredients.ITypedIngredient;
+import mezz.jei.api.neoforge.NeoForgeTypes;
 import mezz.jei.api.registration.IGuiHandlerRegistration;
 import mezz.jei.api.registration.IRecipeCatalystRegistration;
-import mezz.jei.api.recipe.IRecipeManager;
 import mezz.jei.api.registration.IRecipeCategoryRegistration;
 import mezz.jei.api.registration.IRecipeRegistration;
+import mezz.jei.api.recipe.IRecipeManager;
 import mezz.jei.api.runtime.IJeiRuntime;
+import mezz.jei.api.runtime.IIngredientManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.core.Holder;
@@ -40,6 +44,7 @@ import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -125,11 +130,55 @@ public class YunxianJeiPlugin implements IModPlugin {
     public void onRuntimeAvailable(IJeiRuntime jeiRuntime) {
         this.runtime = jeiRuntime;
         applyConversionVisibility();
+        hideUnfinishedIngredients(jeiRuntime);
     }
 
     @Override
     public void onRuntimeUnavailable() {
         this.runtime = null;
+    }
+
+    /**
+     * 把半成品内容从 JEI 的物品与流体列表里摘掉（{@link BuddingFamilies#isHidden} 指的那条链）。
+     * <p>
+     * JEI 的物品列表是扫注册表建的，创造栏里不放并不会让它消失，只能在运行时到手之后主动移除。
+     * 移除只影响 JEI 的显示：方块、物品与流体本身照旧存在，{@code /give} 与命令都还认得它们。
+     * <p>
+     * 每次 JEI 重载都会重新调到这里，所以不需要自己记「摘过没有」。
+     */
+    private static void hideUnfinishedIngredients(IJeiRuntime runtime) {
+        List<ItemStack> items = new ArrayList<>();
+        for (RegisteredFamily family : BuddingFamilies.ALL) {
+            if (!family.isRegistered() || !BuddingFamilies.isHidden(family)) {
+                continue;
+            }
+            for (var block : family.blocks()) {
+                addCatalyst(items, block.get());
+            }
+            // 家族追加的物品（弧光石本体、失活母岩）不在 blocks() 里，单独收
+            for (var extra : family.spec().appearance().tabExtras()) {
+                Item item = extra.get().asItem();
+                if (item != Items.AIR) {
+                    items.add(item.getDefaultInstance());
+                }
+            }
+        }
+        items.add(ModItems.CURRENT_SLURRY_BUCKET.get().getDefaultInstance());
+
+        // 移除失败不该把整个 JEI 拖垮：这几个东西本来就只是「别让玩家看见」，
+        // 万一 JEI 换了内部的匹配规则而抛异常，宁可让它们继续显示，也别炸在进世界这一步
+        try {
+            IIngredientManager manager = runtime.getIngredientManager();
+            if (!items.isEmpty()) {
+                manager.removeIngredientsAtRuntime(VanillaTypes.ITEM_STACK, items);
+            }
+            // 流体按类型匹配，数量只是占位；流动变体单独列一条，免得它换个 id 还留在列表里
+            manager.removeIngredientsAtRuntime(NeoForgeTypes.FLUID_STACK, List.of(
+                    new FluidStack(ModFluids.CURRENT_SLURRY.get(), 1000),
+                    new FluidStack(ModFluids.FLOWING_CURRENT_SLURRY.get(), 1000)));
+        } catch (RuntimeException e) {
+            LOGGER.warn("[Yunxian] 从 JEI 列表里移除半成品内容失败，这些物品仍会显示", e);
+        }
     }
 
     /**
@@ -253,7 +302,7 @@ public class YunxianJeiPlugin implements IModPlugin {
     public void registerRecipeCatalysts(IRecipeCatalystRegistration registration) {
         List<ItemStack> catalysts = new ArrayList<>();
         for (RegisteredFamily family : BuddingFamilies.ALL) {
-            if (!family.isRegistered()) {
+            if (!family.isRegistered() || BuddingFamilies.isHidden(family)) {
                 continue;
             }
             addCatalyst(catalysts, family.budding().get());

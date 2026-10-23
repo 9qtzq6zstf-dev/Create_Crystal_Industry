@@ -91,8 +91,12 @@ public final class BuddingInfoCollector {
                 continue;   // AE2 缺席时福鲁伊克斯整条家族都不存在
             }
             Block block = family.budding().get();
+            // 半成品家族（见 BuddingFamilies.isHidden）先占位、不上页面：占位是为了让下面的
+            // 注册表扫描别再把它当「别的模组的母岩」收回来
             seen.add(block);
-            blocks.add(block);
+            if (!BuddingFamilies.isHidden(family)) {
+                blocks.add(block);
+            }
         }
 
         if (seen.add(Blocks.BUDDING_AMETHYST)) {

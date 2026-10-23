@@ -29,7 +29,6 @@ A budding block rolls for growth independently on each of its six faces. An empt
 | Redstone | — | Redstone | Redstone Ore / Deepslate Redstone Ore |
 | Quartz | Full speed only in the Nether; elsewhere a successful roll has a further 1-in-2 chance to fail | Nether Quartz | Netherrack → Nether Quartz Ore |
 | Ancient Debris | Full speed only in the Nether, as above, and every growth costs 250 mB of lava (the block is its own 1 B lava tank, see below) | Netherite Scrap ×1–3 | — (reproduction only, see below) |
-| Arclight | Every growth costs 10,000 FE (the block holds 1,000,000 FE internally, receive-only, see below) | Arclight | — |
 | Glowstone | Full speed only in the Nether, as above | Glowstone Dust | — |
 | Echo | Growth space must be at light level 0 | Echo Shard | Any of 12 blocks within a radius of 2 (dirt, sand, stone, tuff, …) → Sculk, 1-in-4 |
 | Flammable Ice | Target space must be a water source block | Flammable Ice | — |
@@ -39,9 +38,9 @@ Drop rules:
 
 | Block | Normal Break | Silk Touch |
 | --- | --- | --- |
-| Cluster | The item in the "Cluster Output" column above, with Fortune applied (**except the Arclight Cluster**, see below) | The cluster block itself |
+| Cluster | The item in the "Cluster Output" column above, with Fortune applied | The cluster block itself |
 | Bud | Nothing | The bud block itself |
-| Budding Block | The block one tier below it (Budding Raw Iron drops a Block of Raw Iron, Budding Diamond drops a Block of Diamond; Budding Ancient Debris and Budding Arclight have no tier below them and drop 1 of their own item) | The same; Silk Touch does not change this |
+| Budding Block | The block one tier below it (Budding Raw Iron drops a Block of Raw Iron, Budding Diamond drops a Block of Diamond; Budding Ancient Debris has no tier below it and drops 1 Ancient Debris) | The same; Silk Touch does not change this |
 
 The budding block itself cannot be collected with ordinary tools. The Smart Drill's Silk Touch mode is the only way to obtain it, described in section 3.
 
@@ -59,32 +58,21 @@ Scripted budding blocks use the very same tank, see "Fluid Consumption" and "Mod
 
 The lava travels with the block but not with the item. Breaking the block loses it, and schematics always paste an empty tank.
 
-### Arclight and Current Slurry
+### Quenching Lava into Deepslate
 
-Budding Arclight is the only budding block that runs on FE. It holds 1,000,000 FE internally and spends 10,000 FE per successful growth, and with less than that stored nothing grows. It is receive-only, a converter that turns power into matter rather than a battery. Use the Crystal Battery if you want to store FE.
+With soul soil below the lava and a Flammable Ice Block beside it, that lava cell turns into deepslate. It is vanilla's basalt recipe with a single block swapped:
 
-- **Powering it**: any FE source works, on all six faces, up to 10,000 FE per tick.
-- **Output**: the cluster drops 1 Arclight and Fortune does not apply. Arclight is an item only, it has no block form.
-- **Pressing**: put one Arclight in a Basin under a Mechanical Press, superheated, to get 500 mB of Current Slurry.
-- **Current Slurry**: the mod's first fluid, shipped with a Current Slurry Bucket that can fill, pour and scoop. A poured pool has a light level of 15, so it doubles as a light source. The fluid block itself is not meant to be mined, its reason to exist is that a bucket needs something to pour. How to turn the slurry back into FE is not decided yet.
-- **Shock**: anything living standing in Current Slurry keeps taking shock damage, 20 per hit, ignoring armour. It works on contact, like lava, and does not require being fully submerged.
-- **Sparks**: sparks fly up off the surface of poured slurry, and arclight blocks emit the occasional spark above their top face.
-- **Quenching**: with soul soil below the lava and a Flammable Ice Block beside it, that lava cell turns into deepslate. It is vanilla's basalt recipe with a single block swapped:
+| Vanilla basalt | This mod |
+| --- | --- |
+| Soul soil **below** the lava | **Still soul soil** below the lava |
+| Blue ice **beside** the lava | A **Flammable Ice Block** beside it |
+| Lava → basalt | Lava → **deepslate** |
 
-  | Vanilla basalt | This mod |
-  | --- | --- |
-  | Soul soil **below** the lava | **Still soul soil** below the lava |
-  | Blue ice **beside** the lava | A **Flammable Ice Block** beside it |
-  | Lava → basalt | Lava → **deepslate** |
+It sits after vanilla's "lava + water → obsidian / cobblestone" entry, so if water touches the lava at all that earlier rule wins. This is a global rule, it applies to any such combination in the world, not just to anything this mod places.
 
-  It sits after vanilla's "lava + water → obsidian / cobblestone" entry, so if water touches the lava at all that earlier rule wins. This is a global rule, it applies to any such combination in the world, not just to anything this mod places.
-- **Electrified**: a living entity within 3 blocks of an arclight block or of Current Slurry gains the "Electrified" effect, which fades about 3 seconds after leaving. Only slurry actually poured into the world counts, what sits in tanks and pipes does not.
-- **Discharge**: when an electrified entity takes damage it discharges, taking another 4 points of lightning damage and arcing to the closest electrified creature within 5 blocks, with a line of sparks drawn between the two. The creature it reaches discharges in turn, so the chain travels down a row, and each one it reaches takes two hits for 8 points. The chain only travels one way, no creature is hit twice, it is capped at 16 creatures and fires at most once per second. Those 4 points ignore armour and bypass invulnerability frames.
-- **Death messages**: "%1$s was electrocuted" with no kill credit, "%1$s was struck by lightning caused by %2$s" when the victim still carries kill credit.
-- **Shock immunity**: the item tag `create_crystal_industry:shock_immune`. With all four armour slots holding tagged items you are immune to the slurry's shock, to the discharge, and to vanilla's real lightning bolts. The tag lists the four chainmail pieces, the four netherite pieces and Create's three netherite diving items. The check only looks at slot and tag, the four pieces do not have to match.
-- **Inactive Budding Arclight**: only a lightning strike turns it into the real thing. Either a bolt lands on it directly, or the block directly above it is a lightning rod and that rod gets struck. The budding block it turns into comes out with a full FE buffer and immediately sprouts a few buds. On its own it is pure decoration: no FE, no growth, no sparks, no block entity.
+### Shock Immunity
 
-Budding Arclight currently neither generates naturally nor has a crafting recipe, it is creative-only for now.
+The item tag `create_crystal_industry:shock_immune`. With all four armour slots holding tagged items you are immune to vanilla's real lightning bolts. The tag lists the four chainmail pieces, the four netherite pieces and Create's three netherite diving items. The check only looks at slot and tag, the four pieces do not have to match.
 
 ### Budding Block Reproduction (Infection)
 
@@ -225,7 +213,6 @@ Each budding block generates at the depth of its corresponding ore, usually embe
 | Echo | Overworld | −64 – 0 | Deep Dark, generated inside Sculk |
 | Flammable Ice | Overworld | Below the deep-ocean seafloor | Structure, 1-in-256 per chunk (`worldgen.flammableIceChance`), with soul sand scattered around it (`worldgen.soulSandGenerate`) |
 | Rose Quartz | — | — | Does not generate naturally |
-| Arclight | — | — | Does not generate naturally (how to obtain it is undecided; creative-only for now) |
 | Fluix | — | — | Does not generate naturally |
 
 Each one can be toggled individually in the config file (`worldgen.generate_<budding id>`). The Flammable Ice structure and Budding Glowstone have their own additional chance settings.
@@ -343,7 +330,7 @@ What matters:
 - **The water tank and the water-source rule are separate**: the latter is the family's own rule, the former is this new gate; both must be satisfied.
 - **Reload the chunk** (or place a fresh block) to pick up the new parameters: the tank is built from the definition when the block entity is created. If a tank switched fluids still holds the old one (say lava on a block a script turned into water), the Goggles say "wrong fluid in the tank" — pull it out with a pipe or a bucket.
 - **Verify**: with an empty tank it does not grow even while sitting in water → fill one bucket of water and it starts growing; below light 12 it does not grow; JEI and the Goggles show the retuned chance, light floor and level.
-- Budding blocks that run on AE (Fluix) or FE (Arclight) **cannot take a fluid tank** — their block entity has to hold a grid node / an FE buffer, and a script that tries throws on the spot (adding one would silently skip their power cost).
+- Budding blocks that run on AE (Fluix) or FE **cannot take a fluid tank** — their block entity has to hold a grid node / an FE buffer, and a script that tries throws on the spot (adding one would silently skip their power cost).
 
 ### Tutorial 3 · Deployment and Troubleshooting Cheatsheet
 
