@@ -3,6 +3,7 @@ package com.minecart.yunxian.block;
 import com.minecart.yunxian.blockentity.SmartTemperatureChamberBlockEntity;
 import com.minecart.yunxian.registry.ModBlockEntities;
 import com.mojang.serialization.MapCodec;
+import com.simibubi.create.content.equipment.wrench.IWrenchable;
 import com.simibubi.create.content.processing.basin.BasinBlockEntity;
 import com.simibubi.create.content.processing.burner.BlazeBurnerBlock;
 import com.simibubi.create.content.processing.burner.BlazeBurnerBlock.HeatLevel;
@@ -20,9 +21,11 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseEntityBlock;
@@ -82,8 +85,15 @@ import org.jetbrains.annotations.Nullable;
  * 方块状态是<b>推导出来的</b>：方块实体看着罐里的液体改写它，方块自己不存任何数据，
  * 所以永远不会有「状态说有燃料、罐里其实是空的」这种两面不一致。
  * 液体本身、消耗节奏都在 {@link SmartTemperatureChamberBlockEntity}。
+ * <p>
+ * <b>扳手</b>（{@link IWrenchable}）：只认<b>潜行</b>右键的快捷拆除，掉落物直接进背包并播放
+ * 机械动力的拆卸音效；走的是 {@code IWrenchable} 默认实现（{@code Block.getDrops} +
+ * {@code destroyBlock}），同时会发 {@code BlockEvent.BreakEvent}，领地保护照常生效。
+ * <p>
+ * <b>不提供扳手转向</b>（覆写成 {@link InteractionResult#PASS}）：温控室没有朝向属性，
+ * 默认实现转完还是同一个状态，只会白吃掉一次点击再播一遍拧动的音效。
  */
-public class SmartTemperatureChamberBlock extends BaseEntityBlock {
+public class SmartTemperatureChamberBlock extends BaseEntityBlock implements IWrenchable {
 
     public static final MapCodec<SmartTemperatureChamberBlock> CODEC =
             simpleCodec(SmartTemperatureChamberBlock::new);
@@ -98,6 +108,17 @@ public class SmartTemperatureChamberBlock extends BaseEntityBlock {
     public SmartTemperatureChamberBlock(Properties properties) {
         super(properties);
         registerDefaultState(defaultBlockState().setValue(HEAT_LEVEL, HeatLevel.NONE));
+    }
+
+    /**
+     * 扳手右键不作为，只放行潜行拆除（{@code IWrenchable#onSneakWrenched}）。
+     * <p>
+     * 默认实现会绕点击面转朝向；温控室没有朝向属性，转完仍是同一状态。这里直接 PASS，
+     * 把点击还给原版流程，免得玩家拧一下以为没反应、实际白白转了一圈。
+     */
+    @Override
+    public InteractionResult onWrenched(BlockState state, UseOnContext context) {
+        return InteractionResult.PASS;
     }
 
     @Override

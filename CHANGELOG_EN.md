@@ -22,7 +22,7 @@ section at the top.
 
 - The Mechanical Accelerator's shaft now uses Create's half-shaft model.
 - A powered Mechanical Cleaner now looks the same as an unpowered one, with only the textures swapped.
-- Pressure Relief Hatches and Smart Pressure Relief Hatches can be dismantled by sneak-using a Wrench.
+- Pressure Relief Hatches, Smart Pressure Relief Hatches and Smart Temperature Chambers can be dismantled by sneak-using a Wrench.
 - Flammable Ice Slurry Bottles now stand upright on Depots and Belts.
 - Flammable Ice Slurry Bottles no longer grant Frost Walker, and the Flammable Sundae's Frost Walker now lasts 60 seconds.
 
