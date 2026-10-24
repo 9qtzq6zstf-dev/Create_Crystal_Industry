@@ -22,6 +22,11 @@ import net.neoforged.neoforge.registries.DeferredRegister;
  * {@code effect.<命名空间>.<注册名>}，所以语言文件里的键是
  * {@code effect.create_crystal_industry.electrified}。
  * <p>
+ * <b>分类</b>（{@code MobEffectCategory}）的约定：会让玩家吃亏的三颗——「感电」「冰封」「灼寒」
+ * 记为 {@code HARMFUL}，白给好处的两颗——「火焰吐息」「冰霜行者」记为 {@code BENEFICIAL}。
+ * 分类只影响提示框文字颜色（正面蓝、负面红）与第三方模组按分类做的判定（"只清负面"之类），
+ * 不含任何玩法逻辑，改它不会动效果本身的行为。
+ * <p>
  * 图标走 <b>atlas</b>，光把 PNG 放进 {@code textures/mob_effect/} 是不够的：
  * 还得有 {@code assets/create_crystal_industry/atlases/mob_effects.json} 把这个目录
  * 加进 {@code mob_effects} 图集，否则游戏里画不出来（写法见该文件，参照 JEI 的

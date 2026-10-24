@@ -8,7 +8,7 @@ import net.minecraft.world.entity.LivingEntity;
  * 又持续被灼烧。
  * <p>
  * 冻结那一半整个继承 {@link FrozenEffect}（霜花、冰心、发抖、免掉那份冻伤，全是它那套），
- * 本类只多做一件事：让它在烧。
+ * 本类只多做一件事：让它在烧。分类也一并继承（负面 {@code HARMFUL}）——比父类只多不少，更坏。
  * <p>
  * <b>「在烧」只立那个同步标志，不碰 {@code remainingFireTicks}。</b>这是踩过坑才定的：
  * <ul>

@@ -57,7 +57,9 @@ public class FrozenEffect extends MobEffect {
     protected static final int HOLD_ABOVE_FREEZE_LINE = 2;
 
     public FrozenEffect() {
-        super(MobEffectCategory.NEUTRAL, COLOR, ParticleTypes.SNOWFLAKE);
+        // 分类取「负面」——玩家看到的是"被冻住、动不了"，好事一点没份，提示框该是红字。
+        // 子类「灼寒」用的是同一个分类（它就继承这个构造函数），那边只多一层灼烧，只能是更坏。
+        super(MobEffectCategory.HARMFUL, COLOR, ParticleTypes.SNOWFLAKE);
     }
 
     /**

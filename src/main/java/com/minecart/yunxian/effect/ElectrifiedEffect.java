@@ -11,8 +11,11 @@ import net.minecraft.world.effect.MobEffectCategory;
  * 效果本身没有 {@code applyEffectTick} 之类的每刻行为：它是「挨打时才会响」的，挂在受伤事件上，
  * 不是挂在状态自己的 tick 上（那条路每刻都要跑，且判不出"刚被打"）。
  * <p>
- * 分类取「中性」：它既不是纯增益也不是纯减益——挨打会多掉血（减益），
- * 但也能把电传给旁边的敌人（增益）。等哪天要给它加属性修正再考虑改分类。
+ * 分类取「负面」：多掉的那几滴血是实打实落在自己身上的，传给旁边敌人的那点附带收益
+ * 抵不回来，玩家的感受就是"中了感电得躲着别挨打"，所以算坏事——提示框里显示成红字。
+ * <p>
+ * 分类只影响提示框文字颜色与第三方模组按分类做的判定（比如"只清负面/只留正面"这类），
+ * 不含任何玩法逻辑：放电本身在 {@link ElectrifiedZap}，与分类无关。
  */
 public class ElectrifiedEffect extends MobEffect {
 
@@ -20,6 +23,6 @@ public class ElectrifiedEffect extends MobEffect {
     public static final int COLOR = 0x7FE9FF;
 
     public ElectrifiedEffect() {
-        super(MobEffectCategory.NEUTRAL, COLOR);
+        super(MobEffectCategory.HARMFUL, COLOR);
     }
 }

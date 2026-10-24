@@ -54,8 +54,10 @@ public class FlameBreathEffect extends MobEffect {
     private static final double PARTICLE_SPEED = 0.0;
 
     public FlameBreathEffect() {
+        // 分类取「正面」：这是圣代给的那份甜头（能喷火），与 10 秒「灼寒」的代价分开记账，
+        // 所以两者分类也不该一样——一个是坏事，一个是好事。
         // 三参，把默认那颗药水漩涡换成火（挑 LAVA 的理由见类注释：它会丢掉传进来的速度）
-        super(MobEffectCategory.NEUTRAL, COLOR, ParticleTypes.LAVA);
+        super(MobEffectCategory.BENEFICIAL, COLOR, ParticleTypes.LAVA);
     }
 
     /**

@@ -25,10 +25,12 @@ section at the top.
 - Pressure Relief Hatches, Smart Pressure Relief Hatches and Smart Temperature Chambers can be dismantled by sneak-using a Wrench.
 - Flammable Ice Slurry Bottles now stand upright on Depots and Belts.
 - Flammable Ice Slurry Bottles no longer grant Frost Walker, and the Flammable Sundae's Frost Walker now lasts 60 seconds.
+- Status effects are now classed by sign: Electrified, Frozen and Scorching Cold read as harmful, Flame Breath and Frost Walker as beneficial, with their tooltips shown in red or blue.
 
 ### Fixed
 
 - Smart Temperature Chambers now join their connected textures as soon as they are placed, removed or loaded, instead of waiting for a block update.
+- Smart Temperature Chambers only draw their connected textures between chambers that actually share capacity, so two pieces left side by side after one is removed no longer join up.
 - A Pressure Relief Hatch now vents a single kind of item per batch instead of mixing several kinds into one batch.
 
 ## 1.0.8 · 2026-10-09 ~ 2026-10-17
