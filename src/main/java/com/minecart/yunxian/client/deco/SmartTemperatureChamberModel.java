@@ -1,6 +1,7 @@
 package com.minecart.yunxian.client.deco;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -111,10 +112,17 @@ public class SmartTemperatureChamberModel extends BakedModelWrapperWithData {
     @Override
     protected ModelData.Builder gatherModelData(ModelData.Builder builder, BlockAndTintGetter world, BlockPos pos,
                                                 BlockState state, ModelData blockEntityData) {
-        // 一次全组扫描，四个方向共用；行为对象只活这一次调用，成员表就挂在它身上。
+        // 连接关系读方块状态里的那六位（见 SmartTemperatureChamberBlock#CONNECTIONS），
+        // 拼网格这一步因此不再碰方块实体：状态是随方块更新一起到的，不会出现
+        // "模型先画、数据后到"这种要靠再碰一下方块才补上的时间差。
+        // 行为对象只活这一次调用，成员表就挂在它身上
         // （模型是单例、被所有坐标共用，所以不能把这种"这一次的位置相关"状态存成字段）
-        ConnectedTextureBehaviour context = new GroupAwareBehaviour(
-                Set.copyOf(SmartTemperatureChamberBlock.groupAt(world, pos)));
+        int mask = state.getValue(SmartTemperatureChamberBlock.CONNECTIONS);
+        // 连接位为 0 有两种来历：这一格本来就孤立，或者（老存档、思索场景）还没被服务端补过。
+        // 后一种退回按世界现算，画面不至于在补上之前整片断开。
+        ConnectedTextureBehaviour context = mask == 0
+                ? new GroupAwareBehaviour(Set.copyOf(SmartTemperatureChamberBlock.groupAt(world, pos)))
+                : new GroupAwareBehaviour(membersOf(pos, mask));
 
         int packed = 0;
         for (Direction face : Direction.values()) {
@@ -137,12 +145,25 @@ public class SmartTemperatureChamberModel extends BakedModelWrapperWithData {
     }
 
     /**
-     * 只认<b>同一组</b>的邻居：共享容量的那几台之间才连成一片，拿它当"这几台确实算一组"的视觉凭证。
+     * 把状态里的连接位翻成"这一格 + 连着的邻居"。CT 只会问一个方块之内的直边邻居，
+     * 所以这里只需要六条直边，不用担心组的另一头在哪。
+     */
+    private static Set<BlockPos> membersOf(BlockPos pos, int mask) {
+        Set<BlockPos> members = new HashSet<>();
+        members.add(pos);
+        for (Direction dir : Direction.values()) {
+            if ((mask & 1 << dir.get3DDataValue()) != 0) {
+                members.add(pos.relative(dir));
+            }
+        }
+        return members;
+    }
+
+    /**
+     * 只认同组邻居：共享容量的那几台之间才连成一片，拿它当"这几台确实算一组"的视觉凭证。
      * <p>
-     * 判据与方块实体<b>共用</b> {@link SmartTemperatureChamberBlock#groupAt}——两边必须得出同样的结果，
-     * 否则会出现"连着却不共享"或"共享却断开"。
-     * <p>
-     * 成员表在构造时按当前位置算好（一次扫描），所以下面那些邻居询问不再各扫一遍。
+     * 成员表来自方块状态里的连接位（{@link SmartTemperatureChamberBlock#CONNECTIONS}），
+     * 由服务端在结构变化时整组重写；渲染这一步已与方块实体无关。
      * 其余判定（是不是同一种方块、有没有被挡住）仍旧交给父类，那是 Create 那套的既有行为。
      */
     private static class GroupAwareBehaviour extends HorizontalCTBehaviour {

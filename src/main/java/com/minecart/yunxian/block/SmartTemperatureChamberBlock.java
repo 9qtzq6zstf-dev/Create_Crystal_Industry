@@ -37,6 +37,7 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
+import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
@@ -105,9 +106,21 @@ public class SmartTemperatureChamberBlock extends BaseEntityBlock implements IWr
      */
     public static final EnumProperty<HeatLevel> HEAT_LEVEL = BlazeBurnerBlock.HEAT_LEVEL;
 
+    /**
+     * 六条直边各连不连（bit = {@link Direction#get3DDataValue()}，见 {@link #connectionMask}）。
+     * <p>
+     * 连接材质只读它，不再在拼网格时去扫方块实体。原先那套是"组锚点写进方块实体、渲染时现算组"：
+     * 模型数据只在区块段重建时才重取，而"锚点变了"本身不改变方块状态，方块实体包也不会让客户端
+     * 重画网格，于是得靠额外的方块更新去催——整合包里那一下没赶上，就出现"要先碰一下旁边的方块
+     * 才连上"。写进方块状态后，状态一变客户端必然重建该格，少一条要碰运气的同步路。
+     */
+    public static final IntegerProperty CONNECTIONS = IntegerProperty.create("connections", 0, 63);
+
     public SmartTemperatureChamberBlock(Properties properties) {
         super(properties);
-        registerDefaultState(defaultBlockState().setValue(HEAT_LEVEL, HeatLevel.NONE));
+        registerDefaultState(defaultBlockState()
+                .setValue(HEAT_LEVEL, HeatLevel.NONE)
+                .setValue(CONNECTIONS, 0));
     }
 
     /**
@@ -129,7 +142,7 @@ public class SmartTemperatureChamberBlock extends BaseEntityBlock implements IWr
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         super.createBlockStateDefinition(builder);
-        builder.add(HEAT_LEVEL);
+        builder.add(HEAT_LEVEL, CONNECTIONS);
     }
 
     /**
@@ -440,39 +453,61 @@ public class SmartTemperatureChamberBlock extends BaseEntityBlock implements IWr
         return true;
     }
 
-    /** 把某一格的组锚点写进方块实体，并让客户端跟着知道（连接材质要拿它跟邻居比） */
+    /**
+     * 把某一格的组锚点写进方块实体。它就活在服务端：分组、燃料合计、存盘都要它，
+     * 渲染不看它（连接材质读的是方块状态里的 {@link #CONNECTIONS}）。
+     */
     private static void setAnchor(Level level, BlockPos pos, BlockPos anchor) {
         if (level.getBlockEntity(pos) instanceof SmartTemperatureChamberBlockEntity chamber) {
             chamber.setGroupAnchor(anchor);
             chamber.dropGroupCache();
-            BlockState state = level.getBlockState(pos);
-            level.sendBlockUpdated(pos, state, state, Block.UPDATE_CLIENTS);
         }
     }
 
     /**
-     * 把整组的渲染各刷一次。
+     * 把整组的连接位重算一遍、写进各自的方块状态。
      * <p>
-     * 连接材质拿"同组各格的组锚点"现算，所以任何一格并入或拆出，<b>同组每一台</b>的模型数据都过期了。
-     * 只刷紧挨着的那几台是不够的：三台并排时，中间那台能收到两边的更新，最边上那台什么都收不到，
-     * 它的边框会停在"这一组到这里就结束"的旧样子——截图里第二、三台之间的那道缝就是这么来的。
+     * 任何一格并入或拆出，同组每一台的连法都可能变，所以整组都过一遍——只刷紧挨着的那几台不够：
+     * 三台并排时中间那台能收到两边的更新，最边上那台什么都收不到，边框会停在
+     * "这一组到这里就结束"的旧样子。
      * <p>
-     * 方块状态没变（变的只是方块实体里的锚点），光靠方块实体那条同步路不会让客户端重建网格，
-     * 所以这里逐格喊一次 {@code sendBlockUpdated}；客户端收到后会重新取一次模型数据、并把所在区块段
-     * 标脏重画（见方块实体的 {@code loadAdditional} 与 {@code ClientModelRefresh}）。
+     * 写的是方块状态：客户端状态一变就必然重建该格网格，不必再额外发方块更新去催。
+     * 逐格 {@code setBlock} 会再进一次 {@link #onPlace}，那里"自己换成自己"的守卫会把它挡掉，
+     * 不会绕回来。
      */
-    private static void refreshRender(Level level, List<BlockPos> members) {
+    private static void applyConnections(Level level, List<BlockPos> members) {
+        Set<BlockPos> group = new HashSet<>(members);
         for (BlockPos member : members) {
-            if (isChamber(level, member)) {
-                updateForRender(level, member);
+            BlockState state = level.getBlockState(member);
+            if (!(state.getBlock() instanceof SmartTemperatureChamberBlock)) {
+                continue;
+            }
+            int mask = connectionMask(group, member);
+            if (state.getValue(CONNECTIONS) != mask) {
+                level.setBlock(member, state.setValue(CONNECTIONS, mask), Block.UPDATE_ALL);
             }
         }
     }
 
-    /** 状态不变也发一次方块更新：客户端借这一下重新取模型数据 */
-    private static void updateForRender(Level level, BlockPos pos) {
-        BlockState state = level.getBlockState(pos);
-        level.sendBlockUpdated(pos, state, state, Block.UPDATE_CLIENTS);
+    /** 六条直边里哪几条通向同一组（bit = {@link Direction#get3DDataValue()}） */
+    private static int connectionMask(Set<BlockPos> group, BlockPos pos) {
+        int mask = 0;
+        for (Direction dir : Direction.values()) {
+            if (group.contains(pos.relative(dir))) {
+                mask |= 1 << dir.get3DDataValue();
+            }
+        }
+        return mask;
+    }
+
+    /**
+     * 补一次连接位。老存档里这一位是这次才加上的，载入时取默认值 0，看起来像"哪都不连"。
+     * 由方块实体在载入后的第一 tick 调一次（那时邻居都已就绪）。
+     */
+    public static void syncConnections(Level level, BlockPos pos) {
+        if (!level.isClientSide) {
+            applyConnections(level, groupAt(level, pos));
+        }
     }
 
     /**
@@ -839,11 +874,11 @@ public class SmartTemperatureChamberBlock extends BaseEntityBlock implements IWr
     @Override
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean movedByPiston) {
         super.onPlace(state, level, pos, oldState, movedByPiston);
-        if (level.isClientSide) {
+        if (level.isClientSide || oldState.is(state.getBlock())) {
             return;
         }
         assignGroupOnPlace(level, pos);
-        refreshRender(level, groupAt(level, pos));
+        applyConnections(level, groupAt(level, pos));
         notifyBasinAbove(level, pos);
     }
 
@@ -858,7 +893,7 @@ public class SmartTemperatureChamberBlock extends BaseEntityBlock implements IWr
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
         if (!state.is(newState.getBlock()) && !level.isClientSide) {
-            refreshRender(level, regroupAfterRemoval(level, pos));
+            applyConnections(level, regroupAfterRemoval(level, pos));
             notifyBasinAbove(level, pos);
         }
         super.onRemove(state, level, pos, newState, isMoving);

@@ -28,7 +28,7 @@ section at the top.
 
 ### Fixed
 
-- Smart Temperature Chambers placed in a row now join their connected textures right away instead of waiting for a block update.
+- Smart Temperature Chambers now join their connected textures as soon as they are placed, removed or loaded, instead of waiting for a block update.
 - A Pressure Relief Hatch now vents a single kind of item per batch instead of mixing several kinds into one batch.
 
 ## 1.0.8 · 2026-10-09 ~ 2026-10-17

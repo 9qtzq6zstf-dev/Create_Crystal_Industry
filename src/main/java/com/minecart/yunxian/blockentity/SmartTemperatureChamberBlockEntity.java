@@ -6,7 +6,6 @@ import java.util.Objects;
 import java.util.function.Predicate;
 
 import com.minecart.yunxian.block.SmartTemperatureChamberBlock;
-import com.minecart.yunxian.client.ClientModelRefresh;
 import com.minecart.yunxian.registry.ModBlockEntities;
 import com.minecart.yunxian.registry.ModFluids;
 import com.simibubi.create.api.equipment.goggles.IHaveGoggleInformation;
@@ -107,11 +106,15 @@ public class SmartTemperatureChamberBlockEntity extends BlockEntity implements I
      * 现在改成记下来：放下时只有"自己并进去之后仍然是一个矩形"才并入
      * （见 {@code SmartTemperatureChamberBlock#assignGroupOnPlace}），已形成的矩形因此拆不开。
      * <p>
-     * 它跟罐一起存盘、一起同步（客户端画连接材质时要拿它跟邻居比）。老存档第一次载入时
-     * 这个字段还是空的，由 {@link #onLoad} 按纯函数切法补一份，两端算出来一致。
+     * 它跟罐一起存盘，服务端分组与燃料合计都用它；渲染<b>不</b>用它——连接材质读的是
+     * 方块状态里的 {@code CONNECTIONS}。老存档第一次载入时这个字段还是空的，
+     * 由 {@link #onLoad} 按纯函数切法补一份。
      */
     @Nullable
     private BlockPos groupAnchor;
+
+    /** 老存档补连接位只做一次，见 {@link SmartTemperatureChamberBlock#syncConnections} */
+    private boolean connectionsChecked;
 
     /** 本格的组锚点；还没定过（老存档刚载入、或这一格刚放下还没算）时为 {@code null} */
     @Nullable
@@ -178,10 +181,7 @@ public class SmartTemperatureChamberBlockEntity extends BlockEntity implements I
             updateHeatState(isFueled());
         }
         // 老存档第一次载入时组锚点还是空的：按纯函数切法补一份当初始分组，之后按"放下时并入"的规矩走。
-        // <b>只服务端补</b>：服务端那份记的是"最先放下的那一格"，客户端自己算的话算的是"最小角那一格"，
-        // 两种摆法（自东向西、自南向北）下这两个格子不是同一个，客户端就会按自己那份分组画连接材质，
-        // 边框当场断开。客户端空着反而对：{@code groupAt} 见到有格子没锚点会整片退回纯函数切法，
-        // 两端算出来一致；等同步包到了再切回锚点那套。
+        // <b>只服务端补</b>：客户端不参与分组，它画连接材质只看同步过去的那一位状态。
         if (level != null && !level.isClientSide && groupAnchor == null) {
             setGroupAnchor(SmartTemperatureChamberBlock.anchorOf(
                     SmartTemperatureChamberBlock.canonicalGroup(level, worldPosition)));
@@ -208,6 +208,14 @@ public class SmartTemperatureChamberBlockEntity extends BlockEntity implements I
     public void serverTick() {
         if (level == null || level.isClientSide) {
             return;
+        }
+        if (!connectionsChecked) {
+            connectionsChecked = true;
+            // 老存档第一次载入：连接位是这次才加上的，默认 0 看起来像"哪都不连"。
+            // 只服务端补一次，客户端等方块状态同步过来即可（那时网格一定会重建）。
+            if (getBlockState().getValue(SmartTemperatureChamberBlock.CONNECTIONS) == 0) {
+                SmartTemperatureChamberBlock.syncConnections(level, worldPosition);
+            }
         }
         if (groupCacheTtl > 0) {
             groupCacheTtl--;
@@ -466,17 +474,9 @@ public class SmartTemperatureChamberBlockEntity extends BlockEntity implements I
         // 客户端要靠这两个数画护目镜；服务端下一 tick 就会自己重算覆盖掉
         sharedFuel = tag.getInt("SharedFuel");
         sharedCapacity = tag.contains("SharedCapacity") ? tag.getInt("SharedCapacity") : CAPACITY;
-        BlockPos previousAnchor = groupAnchor;
         groupAnchor = tag.contains("GroupAnchor")
                 ? NbtUtils.readBlockPos(tag, "GroupAnchor").orElse(null)
                 : null;
-        // 锚点这东西是连接材质要拿的模型数据，读完得让客户端重新取一次，且必须真的重画：
-        // 只 requestModelDataUpdate 是把这一格挂进"下次重算"的名单，网格不会自己重建，而方块状态
-        // 又没变过（同状态的方块更新，原版当无事发生），于是画面一直用旧锚点，直到玩家碰一下旁边的方块。
-        requestModelDataUpdate();
-        if (level != null && level.isClientSide && !Objects.equals(previousAnchor, groupAnchor)) {
-            ClientModelRefresh.markSectionDirty(level, worldPosition);
-        }
     }
 
     /** 方块实体包带上整罐流体：护目镜浮窗在客户端读它（罐只有一桶，整份发不心疼） */
