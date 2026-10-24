@@ -32,18 +32,28 @@ import net.minecraft.resources.ResourceLocation;
  */
 public class FlammableIcePillarModel extends CTModel {
 
-    /** 柱身：4×4 图集 */
-    private static final CTSpriteShiftEntry PILLAR_SHIFT =
-            ctShift("pillar", AllCTTypes.RECTANGLE);
-
-    /** 两端的盖子：8×8 图集 */
-    private static final CTSpriteShiftEntry CAP_SHIFT =
-            ctShift("cap", AllCTTypes.OMNIDIRECTIONAL);
-
-    /** 在客户端初始化时挂到 Create 的模型替换器上，让本方块用这个模型而不是普通烘培模型 */
+    /**
+     * 在首次烘焙之前挂到 Create 的模型替换器上（调用点见 {@code ModRenderers#registerConnectedModelSwaps}）。
+     * 这里只登记工厂、不解析贴图——Create 那边 {@code CreateRegistrate#registerCTBehviour} 也是
+     * {@code model -> new CTModel(model, behaviour.get())}，行为对象留到真正建模型时才取。
+     */
     public static void register() {
         CreateClient.MODEL_SWAPPER.getCustomBlockModels()
-                .register(ModBlocks.FLAMMABLE_ICE_PILLAR.getId(), FlammableIcePillarModel::new);
+                .register(ModBlocks.FLAMMABLE_ICE_PILLAR.getId(), FlammableIcePillarModel::create);
+    }
+
+    /**
+     * 烘焙期才建两张 sprite（柱身 {@link AllCTTypes#RECTANGLE} 4×4、端面
+     * {@link AllCTTypes#OMNIDIRECTIONAL} 8×8）。
+     * <p>
+     * 不放在 {@code static final} 字段上，是因为要等图集拼好再取：早于图集去取，名字一样也只会拿到
+     * 占位 sprite，而 CT 只在「面当前用的贴图 == shift 的 original」时才重映射
+     * （见 {@code CTModel#getQuads}），一错就是整块退回平贴图、静默失效。
+     */
+    private static FlammableIcePillarModel create(BakedModel originalModel) {
+        return new FlammableIcePillarModel(originalModel, new RotatedPillarCTBehaviour(
+                ctShift("pillar", AllCTTypes.RECTANGLE),
+                ctShift("cap", AllCTTypes.OMNIDIRECTIONAL)));
     }
 
     /** 配对命名：{@code <名字>} 与 {@code <名字>_connected}，与资源目录下的文件名一致 */
@@ -53,7 +63,7 @@ public class FlammableIcePillarModel extends CTModel {
         return CTSpriteShifter.getCT(type, base, base.withSuffix("_connected"));
     }
 
-    private FlammableIcePillarModel(BakedModel originalModel) {
-        super(originalModel, new RotatedPillarCTBehaviour(PILLAR_SHIFT, CAP_SHIFT));
+    private FlammableIcePillarModel(BakedModel originalModel, RotatedPillarCTBehaviour behaviour) {
+        super(originalModel, behaviour);
     }
 }

@@ -64,6 +64,9 @@ public class ModRenderers {
             new ModelResourceLocation(
                     ResourceLocation.fromNamespaceAndPath(Yunxian.MODID, "echo_spyglass"), "inventory");
 
+    /** 连接材质模型只往 Create 的替换器里登记一次（见 {@link #registerConnectedModelSwaps()}） */
+    private static boolean connectedModelsRegistered;
+
     /**
      * 只允许由客户端调用（入口见 {@link Yunxian} 里那个 {@code FMLEnvironment.dist.isClient()} 判断）——
      * 这个类本身是客户端专用的，服务端够不到它就不该有任何入口。
@@ -85,7 +88,36 @@ public class ModRenderers {
         ResonanceNetworkOutlineRenderer.register();
     }
 
+    /**
+     * 连接材质模型（Create 的 {@code MODEL_SWAPPER}）必须在「本会话第一次烘焙」之前登记。
+     * <p>
+     * Create 自己在方块注册那一步（{@code CreateRegistrate#connectedTextures}）就把工厂挂进去了，
+     * 而 {@code CustomBlockModels} 只在第一次 {@code ModifyBakingResult} 时把注册表快照一份
+     * （{@code funcsLoaded} 置真之后再也不读新登记）——晚一步不是「下一帧生效」，而是整局都不生效，
+     * F3+T 也救不回来。所以这里挪到 {@link ModelEvent.RegisterAdditional}：它必定排在
+     * {@code ModifyBakingResult} 之前，且此时方块 id 已经取得到。
+     * <p>
+     * 幂等：一次会话只登记一次。{@code RegisterAdditional} 每次资源重载都会发，
+     * 重复登记会让同一个模型被多包一层 {@code CTModel}，UV 被重映射两遍。
+     */
+    private static void registerConnectedModelSwaps() {
+        if (connectedModelsRegistered) {
+            return;
+        }
+        connectedModelsRegistered = true;
+        // 可燃冰柱：连接材质（柱身 4x4 图集、端面 8x8 图集），仿 Create 的装饰柱那一档
+        FlammableIcePillarModel.register();
+        // 层叠可燃冰块：连接材质（侧面 2x2 图集、端面与柱子共用）
+        FlammableIceLayeredModel.register();
+        // 智能温控室：连接材质。侧面是横排三格（不是方格阵），所以没走 Create 的 CTModel，
+        // 自绘了 UV 换算，见那个类的注释
+        SmartTemperatureChamberModel.register();
+    }
+
     private static void onRegisterAdditional(ModelEvent.RegisterAdditional event) {
+        // 连接材质模型：必须赶在本轮烘焙的 ModifyBakingResult 之前登记（原因见方法注释）
+        registerConnectedModelSwaps();
+
         // 关键修复：强制渲染器类在此刻加载（触发 PartialModel.of），并把其模型位置
         // 登记进本次烘焙，保证冷启动首次烘焙就包含这些 partial（替代手动 F3+T）。
         registerPartial(event, SmartDrillRenderer.HEAD);
@@ -157,17 +189,13 @@ public class ModRenderers {
                             entity != null && entity.isUsingItem() && entity.getUseItem() == stack
                                     ? 1.0F : 0.0F);
 
-            // 水晶电池：连接材质 / 侧面剔除模型。
+            // 水晶电池：连接材质 / 侧面剔除模型（半成品，暂不并入下面那次统一登记）。
             // 渲染层（窗那几片薄面要镂空）写在模型文件的 render_type 里，不走已过时的
             // ItemBlockRenderTypes.setRenderLayer
             CrystalBatteryModel.register();
-            // 可燃冰柱：连接材质（柱身 4x4 图集、端面 8x8 图集），仿 Create 的装饰柱那一档
-            FlammableIcePillarModel.register();
-            // 层叠可燃冰块：连接材质（侧面 2x2 图集、端面与柱子共用）
-            FlammableIceLayeredModel.register();
-            // 智能温控室：连接材质。侧面是横排三格（不是方格阵），所以没走 Create 的 CTModel，
-            // 自绘了 UV 换算，见那个类的注释
-            SmartTemperatureChamberModel.register();
+            // 可燃冰柱 / 层叠可燃冰 / 智能温控室：正常早在 onRegisterAdditional 里登记过了，
+            // 这里只是兜底（万一那一趟没跑到，至少还赶得上随后的资源重载）
+            registerConnectedModelSwaps();
             // ===== 物品提示（机械动力风格，统一走 GenericTooltipModifier）=====
             // 夜视仪护目镜：简介含当前按键名，动态求值
             GenericTooltipModifier.register(ModItems.NIGHT_VISION_GOGGLES.get(),

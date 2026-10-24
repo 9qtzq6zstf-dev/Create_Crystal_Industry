@@ -30,18 +30,24 @@ import net.minecraft.resources.ResourceLocation;
  */
 public class FlammableIceLayeredModel extends CTModel {
 
-    /** 侧面：2×2 图集 */
-    private static final CTSpriteShiftEntry LAYERED_SHIFT =
-            ctShift("layered_flammable_ice", AllCTTypes.HORIZONTAL_KRYPPERS);
-
-    /** 端面：8×8 图集，与柱子共用 */
-    private static final CTSpriteShiftEntry CAP_SHIFT =
-            ctShift("flammable_ice_cap", AllCTTypes.OMNIDIRECTIONAL);
-
-    /** 在客户端初始化时挂到 Create 的模型替换器上 */
+    /**
+     * 在首次烘焙之前挂到 Create 的模型替换器上（调用点见 {@code ModRenderers#registerConnectedModelSwaps}）。
+     * 只登记工厂、不在这里解析贴图，与 Create 的 {@code registerCTBehviour} 同一时机。
+     */
     public static void register() {
         CreateClient.MODEL_SWAPPER.getCustomBlockModels()
-                .register(ModBlocks.LAYERED_FLAMMABLE_ICE.getId(), FlammableIceLayeredModel::new);
+                .register(ModBlocks.LAYERED_FLAMMABLE_ICE.getId(), FlammableIceLayeredModel::create);
+    }
+
+    /**
+     * 烘焙期才建两张 sprite（侧面 {@link AllCTTypes#HORIZONTAL_KRYPPERS} 2×2、端面
+     * {@link AllCTTypes#OMNIDIRECTIONAL} 8×8，端面那对与柱子共用）。
+     * 早于图集去取只会拿到占位 sprite，CT 那句「面贴图 == original」就不成立，连接材质静默失效。
+     */
+    private static FlammableIceLayeredModel create(BakedModel originalModel) {
+        return new FlammableIceLayeredModel(originalModel, new HorizontalCTBehaviour(
+                ctShift("layered_flammable_ice", AllCTTypes.HORIZONTAL_KRYPPERS),
+                ctShift("flammable_ice_cap", AllCTTypes.OMNIDIRECTIONAL)));
     }
 
     /** 配对命名：{@code <名字>} 与 {@code <名字>_connected}，与资源目录下的文件名一致 */
@@ -51,7 +57,7 @@ public class FlammableIceLayeredModel extends CTModel {
         return CTSpriteShifter.getCT(type, base, base.withSuffix("_connected"));
     }
 
-    private FlammableIceLayeredModel(BakedModel originalModel) {
-        super(originalModel, new HorizontalCTBehaviour(LAYERED_SHIFT, CAP_SHIFT));
+    private FlammableIceLayeredModel(BakedModel originalModel, HorizontalCTBehaviour behaviour) {
+        super(originalModel, behaviour);
     }
 }
