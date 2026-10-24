@@ -642,13 +642,13 @@ public class SmartTemperatureChamberBlock extends BaseEntityBlock implements IWr
      * 拆掉一格之后善后：它原来那一组剩下的格子不再是一个矩形，所以只把<b>那一组</b>重切一次
      * （用纯函数那套），其余各组原样不动。切完给每一片重新定锚点（取该片最小 x/z 的那一格）。
      * <p>
+     * 连接位必须<b>按片</b>重刷：拿整片残余一起去算，等于告诉渲染"这几格互相都连着"，
+     * 拆出一个洞之后就会画出 L 形、C 形、圆环，而温控室只认矩形。所以这里是一片一片地刷。
+     * <p>
      * 残余是从四邻找出来的：邻居里同锚点的那些格，就是这一组去掉 {@code pos} 之后剩下的
      * ——方块这时已经被拆掉了，扫连通域不会再包含它。
-     * <p>
-     * 返回重切过的那些格（也就是还活着的那一组），调用方拿它去刷渲染：重定锚点之后，
-     * 每一片的连接材质都变了。
      */
-    private static List<BlockPos> regroupAfterRemoval(Level level, BlockPos pos) {
+    private static void regroupAfterRemoval(Level level, BlockPos pos) {
         List<BlockPos> survivors = new ArrayList<>();
         Set<BlockPos> seen = new HashSet<>();
         // 拆掉的那一格自己要排掉：方块实体可能还留着（取决于 onRemove 与方块实体移除的先后），
@@ -667,15 +667,16 @@ public class SmartTemperatureChamberBlock extends BaseEntityBlock implements IWr
             }
         }
         if (survivors.isEmpty()) {
-            return List.of();
+            return;
         }
         for (List<BlockPos> piece : canonicalPieces(componentOf(survivors))) {
             BlockPos anchor = anchorOf(piece);
             for (BlockPos cell : piece) {
                 setAnchor(level, cell, anchor);
             }
+            // 逐片刷：整片 survivors 一起算，不同片之间也会被连上（见方法注释）
+            applyConnections(level, piece);
         }
-        return survivors;
     }
 
     /**
@@ -893,7 +894,8 @@ public class SmartTemperatureChamberBlock extends BaseEntityBlock implements IWr
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
         if (!state.is(newState.getBlock()) && !level.isClientSide) {
-            applyConnections(level, regroupAfterRemoval(level, pos));
+            // 重切与重刷连接位都在里面（重切完要按片刷，见那个方法）
+            regroupAfterRemoval(level, pos);
             notifyBasinAbove(level, pos);
         }
         super.onRemove(state, level, pos, newState, isMoving);
