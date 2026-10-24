@@ -109,9 +109,6 @@ public class ModRenderers {
         FlammableIcePillarModel.register();
         // 层叠可燃冰块：连接材质（侧面 2x2 图集、端面与柱子共用）
         FlammableIceLayeredModel.register();
-        // 智能温控室：连接材质。侧面是横排三格（不是方格阵），所以没走 Create 的 CTModel，
-        // 自绘了 UV 换算，见那个类的注释
-        SmartTemperatureChamberModel.register();
     }
 
     private static void onRegisterAdditional(ModelEvent.RegisterAdditional event) {
@@ -193,7 +190,10 @@ public class ModRenderers {
             // 渲染层（窗那几片薄面要镂空）写在模型文件的 render_type 里，不走已过时的
             // ItemBlockRenderTypes.setRenderLayer
             CrystalBatteryModel.register();
-            // 可燃冰柱 / 层叠可燃冰 / 智能温控室：正常早在 onRegisterAdditional 里登记过了，
+            // 智能温控室：连接材质。侧面是横排三格（不是方格阵），所以没走 Create 的 CTModel，
+            // 自绘了 UV 换算，见那个类的注释
+            SmartTemperatureChamberModel.register();
+            // 可燃冰柱 / 层叠可燃冰：正常早在 onRegisterAdditional 里登记过了，
             // 这里只是兜底（万一那一趟没跑到，至少还赶得上随后的资源重载）
             registerConnectedModelSwaps();
             // ===== 物品提示（机械动力风格，统一走 GenericTooltipModifier）=====

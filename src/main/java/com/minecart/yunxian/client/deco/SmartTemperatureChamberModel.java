@@ -71,39 +71,21 @@ public class SmartTemperatureChamberModel extends BakedModelWrapperWithData {
     private static final int BRASS_COLUMNS = AllCTTypes.RECTANGLE.getSheetSize();
     private static final int BRASS_ROWS = AllCTTypes.RECTANGLE.getSheetSize();
 
-    /** 侧面的一对 sprite */
-    private static CTSpriteShiftEntry sideShift;
-
-    /** 顶/底面的一对 sprite：基础图就是 Create 的黄铜块，连接图是美术给的那张 4x4 */
-    private static CTSpriteShiftEntry brassShift;
-
     /**
      * 侧面的一对 sprite。类型参数写 {@code HORIZONTAL} 只是为了让 {@code CTSpriteShifter} 收下它、
      * 顺带拿到可靠的重载刷新（{@code StitchedSprite} 自己会重新贴图）——<b>它的 UV 换算我们不调用</b>，
-     * 用的是 {@code getQuads} 里自己那套（见类注释：3x1 不是方格阵，算不了）。
-     * <p>
-     * 两对都拖到第一次真正用到时才建，而不是类初始化时：那会儿图集还没拼，
-     * 取到的 original 是占位 sprite，{@code getQuads} 里比对贴图那两句就永远不成立。
+     * 用的是 {@link #rewrite} 里自己那套（见类注释：3x1 不是方格阵，算不了）。
      */
-    private static CTSpriteShiftEntry side() {
-        if (sideShift == null) {
-            sideShift = CTSpriteShifter.getCT(AllCTTypes.HORIZONTAL,
-                    ResourceLocation.fromNamespaceAndPath(Yunxian.MODID,
-                            "block/smart_temperature_chamber/smart_temperature_chamber"),
-                    ResourceLocation.fromNamespaceAndPath(Yunxian.MODID,
-                            "block/smart_temperature_chamber/smart_temperature_chamber_connected"));
-        }
-        return sideShift;
-    }
+    private static final CTSpriteShiftEntry SIDE = CTSpriteShifter.getCT(AllCTTypes.HORIZONTAL,
+            ResourceLocation.fromNamespaceAndPath(Yunxian.MODID,
+                    "block/smart_temperature_chamber/smart_temperature_chamber"),
+            ResourceLocation.fromNamespaceAndPath(Yunxian.MODID,
+                    "block/smart_temperature_chamber/smart_temperature_chamber_connected"));
 
-    private static CTSpriteShiftEntry brass() {
-        if (brassShift == null) {
-            brassShift = CTSpriteShifter.getCT(AllCTTypes.RECTANGLE,
-                    ResourceLocation.fromNamespaceAndPath("create", "block/brass_block"),
-                    ResourceLocation.fromNamespaceAndPath(Yunxian.MODID, "block/common/brass_block_connected"));
-        }
-        return brassShift;
-    }
+    /** 顶/底面的一对 sprite：基础图就是 Create 的黄铜块，连接图是美术给的那张 4x4 */
+    private static final CTSpriteShiftEntry BRASS = CTSpriteShifter.getCT(AllCTTypes.RECTANGLE,
+            ResourceLocation.fromNamespaceAndPath("create", "block/brass_block"),
+            ResourceLocation.fromNamespaceAndPath(Yunxian.MODID, "block/common/brass_block_connected"));
 
     private static final ContextRequirement HORIZONTAL = ContextRequirement.builder()
             .horizontal()
@@ -189,7 +171,7 @@ public class SmartTemperatureChamberModel extends BakedModelWrapperWithData {
         private final Set<BlockPos> members;
 
         private GroupAwareBehaviour(Set<BlockPos> members) {
-            super(side());
+            super(SIDE);
             this.members = members;
         }
 
@@ -208,12 +190,10 @@ public class SmartTemperatureChamberModel extends BakedModelWrapperWithData {
             return quads;
         }
         int packed = extraData.get(TILE_INDICES);
-        CTSpriteShiftEntry sideEntry = side();
-        CTSpriteShiftEntry brassEntry = brass();
-        TextureAtlasSprite sideBase = sideEntry.getOriginal();
-        TextureAtlasSprite sideTarget = sideEntry.getTarget();
-        TextureAtlasSprite brassBase = brassEntry.getOriginal();
-        TextureAtlasSprite brassTarget = brassEntry.getTarget();
+        TextureAtlasSprite sideBase = SIDE.getOriginal();
+        TextureAtlasSprite sideTarget = SIDE.getTarget();
+        TextureAtlasSprite brassBase = BRASS.getOriginal();
+        TextureAtlasSprite brassTarget = BRASS.getTarget();
         if (sideBase == null || sideTarget == null || brassBase == null || brassTarget == null) {
             return quads;
         }

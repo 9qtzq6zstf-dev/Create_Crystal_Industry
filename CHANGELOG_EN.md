@@ -29,7 +29,7 @@ section at the top.
 
 ### Fixed
 
-- Connected textures on Flammable Ice Pillars, Layered Flammable Ice and Smart Temperature Chambers no longer fail to appear in some environments.
+- Connected textures on Flammable Ice Pillars and Layered Flammable Ice no longer fail to appear in some environments.
 - Smart Temperature Chambers now join their connected textures as soon as they are placed, removed or loaded, instead of waiting for a block update.
 - Smart Temperature Chambers only draw their connected textures between chambers that actually share capacity, so two pieces left side by side after one is removed no longer join up.
 - A Pressure Relief Hatch now vents a single kind of item per batch instead of mixing several kinds into one batch.
