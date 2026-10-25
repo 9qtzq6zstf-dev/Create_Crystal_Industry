@@ -31,7 +31,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -46,7 +45,8 @@ import java.util.UUID;
  *   <li>潜行右键共振台：让过滤器接入该台所在的网络（<b>组网本身</b>走
  *       {@code ResonanceTableItem#useOn}，和本类无关）；</li>
  *   <li>把网络 id 写进物品的 DataComponent，另外维护一份网络名字的副本供工具提示显示；</li>
- *   <li>非潜行右键打开 {@link ResonanceFilterMenu}（判定逻辑一概不经过那个界面）。</li>
+ *   <li>非潜行右键打开 {@link ResonanceFilterMenu}（判定逻辑一概不经过那个界面）——
+ *       没接入网络时打不开，只提示一句，因为界面里能显示的每一样东西都来自网络；</li>
  * </ol>
  * <b>网络 id 必须存在物品自己身上</b>：{@code FilteringBehaviour.read()} 是从 NBT 反序列化出的
  * ItemStack 重新 {@code FilterItemStack.of(...)} 构造判定对象的，方块实体那边不留任何状态，
@@ -108,7 +108,8 @@ public class ResonanceFilterItem extends FilterItem {
 
     /**
      * 提示行：接入网络后先是 Create 那句「已接入物流网络」，再跟一行网络的名字（没起名字就不加）。
-     * 未接入网络时不加任何提示行 —— Create 的仓储链接站也是这样，频道的 UUID 不给玩家看。
+     * 未接入网络时只有一行，说明它此刻只过滤它自己 —— 这条规矩在过滤槽里是真的会生效的
+     * （见 {@code ResonanceFilterItemStack#test}），不说玩家只能自己试出来。
      * <p>
      * 名字读的是物品自己身上那份副本（{@link ModDataComponents#RESONANCE_NETWORK_NAME}）：
      * 提示行在客户端画，客户端够不到服务端那张名字表。副本由服务端维护，见 {@link #inventoryTick}。
@@ -116,7 +117,9 @@ public class ResonanceFilterItem extends FilterItem {
     @Override
     public List<Component> makeSummary(ItemStack filter) {
         if (!isTuned(filter))
-            return Collections.emptyList();
+            return List.of(Component
+                    .translatable("create_crystal_industry.resonance_filter.unlinked.summary")
+                    .withStyle(ChatFormatting.GRAY));
 
         List<Component> summary = new ArrayList<>();
         summary.add(CreateLang.translateDirect("logistically_linked.tooltip")
@@ -216,18 +219,34 @@ public class ResonanceFilterItem extends FilterItem {
     }
 
     /**
-     * 非潜行右键主手 = 打开界面，潜行右键空气 = 退出网络（措辞与音效都照抄 Create 仓储链接站的清除动作）。
+     * 非潜行右键主手 = 打开界面（<b>只限已接入网络的</b>），潜行右键空气 = 退出网络
+     * （措辞与音效都照抄 Create 仓储链接站的清除动作）。
      * <p>
      * <b>开界面这一段不能交回 {@code super}</b>：{@code FilterItem#use} 只往数据流里写手里这叠物品，
      * 而网络名字存在世界存档里、客户端没有，只能在这一下一起带过去
      * （读法在 {@code ResonanceFilterMenu#createOnClient}，两边的顺序必须一致）。
      * 潜行与副手仍照 Create 的样子返回 {@code pass}。
+     * <p>
+     * <b>没接入网络时不开界面，只提示一句。</b> 那个窗口里要显示的每一样东西都来自网络：
+     * 网络名、台面镜像的物品、以及四个开关实际影响的判定结果 —— 一份没接入网络的过滤器
+     * 打开它只会是个空壳，开关动了也没有任何一次判定会读到。与其放一个改不动结果的界面进来，
+     * 不如当场把缺的那件事说出来（提示用 {@code network_name.unlinked}，和界面标题里
+     * "未接入网络"是同一句）。
      */
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
 
         if (!player.isShiftKeyDown() && hand == InteractionHand.MAIN_HAND) {
+            // 没接入网络就没有可开的东西：界面上每一行都来自网络（见上面那段注释）。
+            // 提示用屏幕标题里同一句"未接入网络"，不另造词。
+            if (!isTuned(stack)) {
+                if (!level.isClientSide)
+                    player.displayClientMessage(
+                            Component.translatable("create_crystal_industry.resonance_filter.network_name.unlinked"), true);
+                return InteractionResultHolder.success(stack);
+            }
+
             if (!level.isClientSide && player instanceof ServerPlayer)
                 player.openMenu(this, buf -> {
                     ItemStack.STREAM_CODEC.encode(buf, stack);

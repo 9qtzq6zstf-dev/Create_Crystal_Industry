@@ -2,6 +2,7 @@ package com.minecart.yunxian.item;
 
 import com.minecart.yunxian.blockentity.ResonanceTableBlockEntity;
 import com.minecart.yunxian.registry.ModDataComponents;
+import com.simibubi.create.content.logistics.filter.FilterItem;
 import com.simibubi.create.content.logistics.filter.FilterItemStack;
 import com.simibubi.create.content.logistics.packagerLink.LogisticallyLinkedBehaviour;
 import net.minecraft.world.item.ItemStack;
@@ -33,22 +34,27 @@ import java.util.function.Supplier;
  * （它在构造器里就把 18 格读进 containedItems 了）。本类的解析发生在 {@link #resolveAll} 里、
  * 按游戏刻缓存。
  * <p>
- * 三种情况，界限划得很清楚：
+ * 四种情况，界限划得很清楚：
  * <ol>
  *   <li><b>网络里有台子放着东西 → 取并集，空台面被忽略。</b>
  *       空台子不产出过滤器、也不影响别人 —— 否则一张空台子就能把整个网络放开，
  *       其余台子放什么都白搭。</li>
  *   <li><b>台子全都空着 → 全集</b>，和「过滤槽里没插过滤器」同一个意思
  *       （空的 {@code FilterItemStack} 的 test 恒为 true，物品和流体都是）。</li>
- *   <li><b>根本读不到 → 什么都不通过</b>（fail-closed）：没绑网络、网络里一台都没有、
+ *   <li><b>没接入网络、而且是被过滤槽直接问到的那一份 → 过滤物就是它自己</b>：
+ *       白名单下只认共振过滤器，黑名单下其余全部放行；「匹配物品属性」打开时，
+ *       只有同样没接入网络的才算（网络 id 存在数据组件里，会被一起比掉）。
+ *       见 {@link #filtersItself()} —— 台面上那份没接入网络的过滤器不在此列。</li>
+ *   <li><b>其余读不到 → 什么都不通过</b>（fail-closed）：网络里一台都没有、
  *       台子的区块没加载、被拆了、台面上那个共振过滤器接成了环。</li>
  * </ol>
- * 2 与 3 的分界是有意为之：台面空了是玩家自己动的手、看得见，跟空过滤槽一致；
+ * 2 与 4 的分界是有意为之：台面空了是玩家自己动的手、看得见，跟空过滤槽一致；
  * 而"读不到"是环境造成的、或者是环，那时候放开就等于「区块一卸载漏斗突然放行全部物品」。
  * <p>
  * <b>台面上可以再放一个共振过滤器</b>：只要它绑的是<b>别的</b>网络，就会被照常解析 ——
  * 也就是「A 网络的台子读得到 B 网络在过滤什么」，还能一层层套下去（A→B→C）。
- * 绑的是本网络、或者没绑网络时它读不出东西，判定入口的重入护栏会把那种情况挡成"读不到"。
+ * 绑的是本网络、或者没绑网络时它读不出东西，判定入口的重入护栏会把那种情况挡成"读不到"
+ * （台面这条链上<b>不</b>走「过滤物为它自己」，理由见 {@link #filtersItself()}）。
  * 挡的是<b>环</b>（解析链上出现过这个网络没有），不是"台面上有共振过滤器"这个事实本身
  * —— 后者正是跨网络兼容要放开的东西，见 {@link #RESOLVING_NETWORKS}。
  * <p>
@@ -96,9 +102,13 @@ public class ResonanceFilterItemStack extends FilterItemStack {
 
     @Override
     public boolean test(Level world, ItemStack stack, boolean matchNBT) {
+        // 没接入网络：规则就是它自己，直判即可，不需要解析、也进不了环
+        if (filtersItself())
+            return blacklist() != FilterItem.testDirect(item(), stack, strict(matchNBT));
+
         return guarded(() -> {
             List<FilterItemStack> filters = resolveAll(world);
-            // 读不到（没绑网络 / 台子全不可达 / 环）→ fail-closed
+            // 读不到（台面这条链上没绑网络 / 台子全不可达 / 环）→ fail-closed
             if (filters.isEmpty())
                 return false;
             // 台面全空的哨兵（见 resolveAllUncached）：没有规则可反，两种名单模式都放行
@@ -118,8 +128,16 @@ public class ResonanceFilterItemStack extends FilterItemStack {
         }, false);
     }
 
+    /**
+     * 流体那一半：它自己是一样物品，不可能命中任何流体，于是"命中"恒为 false，
+     * 结果照旧由名单开关决定 —— 黑名单下「除它以外全通过」，流过它的流体全都放行。
+     * 与「台面上放着一件普通物品」时是同一份规则，区别只在这条规则的来源。
+     */
     @Override
     public boolean test(Level world, FluidStack stack, boolean matchNBT) {
+        if (filtersItself())
+            return blacklist();
+
         return guarded(() -> {
             List<FilterItemStack> filters = resolveAll(world);
             if (filters.isEmpty())
@@ -158,6 +176,25 @@ public class ResonanceFilterItemStack extends FilterItemStack {
 
     private boolean strict(boolean matchNBT) {
         return matchNBT || respectsData();
+    }
+
+    /**
+     * 这次判定该不该走「过滤物就是它自己」：<b>没接入网络</b>，且<b>这是最外层的那一次判定</b>。
+     * <p>
+     * 为什么要卡"最外层"：同一个对象也会被当成<b>台面上的物品</b>去解析 —— 谁在网络里某张台子上
+     * 放了一个没接入网络的共振过滤器，那边的解析就会把它包成一份本类对象来问。那种场合它没有
+     * 网络可读，老规矩是"读不出东西、什么也不产出"，显示板
+     * （{@code ResonanceTableBlockEntity#getNetworkFilterText}）按的也是这个口径。那里若也套上
+     * 「只认自己」，一张台子上闲置的过滤器就会悄悄让整张网络开始放行所有共振过滤器，而显示板上
+     * 什么都不写 —— 判定和显示就对不上了。
+     * <p>
+     * 插在过滤槽里则不同：那一份规则指的就是这个物品本身，机器问的是"这份过滤器认什么"。
+     * 没有可读的网络时它认自己，是玩家直接看得见、也解释得清的一种确定行为。
+     * {@link #RESOLVE_DEPTH} 正好能分开这两种场合：外层的网络解析会先加一，之后才去问解析出来的
+     * 那些过滤器，于是深度大于零就说明这是别人链上的调用。
+     */
+    private boolean filtersItself() {
+        return !ResonanceFilterItem.isTuned(item()) && RESOLVE_DEPTH.get() == 0;
     }
 
     /**
@@ -241,7 +278,7 @@ public class ResonanceFilterItemStack extends FilterItemStack {
         // 注意：基类的 filterItemStack 字段是 private，只能走公开的 item() 取。
         UUID network = item().get(ModDataComponents.RESONANCE_NETWORK.get());
         if (network == null)
-            return List.of();                   // 没绑网络
+            return List.of();                   // 没绑网络（走到这里说明不是过滤槽直接问的那一份，见 filtersItself）
 
         List<FilterItemStack> filters = new ArrayList<>();
         int reachable = 0;   // 够得着的台子数

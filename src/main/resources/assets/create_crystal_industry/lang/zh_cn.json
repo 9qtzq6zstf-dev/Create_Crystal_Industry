@@ -550,6 +550,7 @@
     "item.create_crystal_industry.resonance_filter": "共振过滤器",
     "create_crystal_industry.resonance_filter.network_name.hint": "网络名称",
     "create_crystal_industry.resonance_filter.network_name.unlinked": "未接入网络",
+    "create_crystal_industry.resonance_filter.unlinked.summary": "未接入网络，只过滤它自己",
     "create_crystal_industry.resonance_filter.network_name.tooltip": "网络名称：%s",
     "create_crystal_industry.resonance_filter.mode.blacklist": "黑名单",
     "create_crystal_industry.resonance_filter.mode.blacklist.description": "网络匹配的物品不通过，其余全部通过。",

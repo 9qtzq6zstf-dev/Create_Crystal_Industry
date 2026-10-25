@@ -551,6 +551,7 @@
     "item.create_crystal_industry.resonance_filter": "Resonance Filter",
     "create_crystal_industry.resonance_filter.network_name.hint": "Network name",
     "create_crystal_industry.resonance_filter.network_name.unlinked": "Not linked to a network",
+    "create_crystal_industry.resonance_filter.unlinked.summary": "Not linked to a network; it filters only itself",
     "create_crystal_industry.resonance_filter.network_name.tooltip": "Network name: %s",
     "create_crystal_industry.resonance_filter.mode.blacklist": "Blacklist",
     "create_crystal_industry.resonance_filter.mode.blacklist.description": "Items the network matches are rejected; everything else passes.",

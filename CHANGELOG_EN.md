@@ -27,6 +27,8 @@ section at the top.
 - Flammable Ice Slurry Bottles now stand upright on Depots and Belts.
 - Flammable Ice Slurry Bottles no longer grant Frost Walker, and the Flammable Sundae's Frost Walker now lasts 60 seconds.
 - Status effects are now classed by sign: Electrified, Frozen and Scorching Cold read as harmful, Flame Breath and Frost Walker as beneficial, with their tooltips shown in red or blue.
+- The Resonance Filter no longer opens its screen while unconnected to a network, and right-clicking it only says that it is unconnected.
+- A Resonance Filter that is not connected to a network filters only itself when placed in a filter slot, and its tooltip says so.
 
 ### Fixed
 
