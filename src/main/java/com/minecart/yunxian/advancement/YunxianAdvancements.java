@@ -17,10 +17,14 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.TagKey;
+import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.event.level.BlockEvent;
 import org.jetbrains.annotations.Nullable;
 
@@ -37,8 +41,12 @@ import org.jetbrains.annotations.Nullable;
  * 之所以用 {@code impossible} 而不是注册自定义触发器：这些时刻不带任何条件数据，
  * 注册一整套 {@code CriterionTrigger} 只为发一个空判据并不划算，而 {@code award} 的效果完全一样。
  * <p>
- * 机器类事件（催生器、钻头、吸尘器、母岩转化）大多发生在没有玩家引用的方块实体里，
+ * 机器类事件（催生器、钻头、吸尘器）大多发生在没有玩家引用的方块实体里，
  * 所以用 {@link #awardNear} 按距离发给附近的玩家——这些机器不需要有主人。
+ * <p>
+ * 母岩的自然转化不在此列：它既不看玩家动作、也不靠玩家搭的机器，只按距离发的话，
+ * 隔着一层岩壁转掉一块石头也会弹成就——玩家眼里就是"莫名其妙来了个成就"。
+ * 所以那一条走 {@link #awardSeen}，额外要求玩家真的看得见。
  */
 public final class YunxianAdvancements {
 
@@ -114,6 +122,46 @@ public final class YunxianAdvancements {
             awarded |= award(player, path);
         }
         return awarded;
+    }
+
+    /**
+     * 发给 {@code pos} 附近<b>看得见这次变化</b>的玩家。
+     * <p>
+     * 半径与 {@link #awardNear} 相同，但多一道视线检查：玩家眼睛到 {@code buddingPos}（母岩本身）
+     * 或 {@code changedPos}（刚被转化掉的那格）之间没有遮挡，才算"亲眼看见"。
+     * 两个点查一个通就算——站在母岩跟前看它斜对面的石头，母岩本身常常正好被自己挡住。
+     * <p>
+     * 自然生成的母岩遍布地下，范围里隔着一层岩壁的转化玩家根本不会察觉；
+     * 只按距离发会让人莫名其妙地收到成就，所以这一条必须看得见。
+     * 催生器催出来的转化照旧按距离发（{@link #awardNear} 的口径）：那台机器是玩家自己搭在身边的。
+     */
+    public static boolean awardSeen(ServerLevel level, BlockPos buddingPos, BlockPos changedPos, String path) {
+        double radiusSqr = NEARBY_RADIUS * NEARBY_RADIUS;
+        boolean awarded = false;
+        for (ServerPlayer player : level.players()) {
+            if (player.blockPosition().distSqr(buddingPos) > radiusSqr) {
+                continue;
+            }
+            if (!accelerated() && !sees(level, player, buddingPos) && !sees(level, player, changedPos)) {
+                continue;
+            }
+            awarded |= award(player, path);
+        }
+        return awarded;
+    }
+
+    /**
+     * {@code player} 的眼睛到 {@code pos} 方块中心有没有被挡住。
+     * <p>
+     * 用方块的碰撞箱当遮挡物（{@link ClipContext.Block#COLLIDER}）：火把、草、雪片这类挡不住视线的
+     * 不算遮挡。射线终点正好落在方块里，所以命中点是这一格本身；万一落空（该格没有碰撞箱，
+     * 比如被转化成了某种非实心方块）也当作看得见——那本来就在视野里。
+     */
+    private static boolean sees(ServerLevel level, ServerPlayer player, BlockPos pos) {
+        BlockHitResult hit = level.clip(new ClipContext(
+                player.getEyePosition(), Vec3.atCenterOf(pos),
+                ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player));
+        return hit.getType() == HitResult.Type.MISS || hit.getBlockPos().equals(pos);
     }
 
     // ==================== 催生器：区分"催出来的"与"自然长的" ====================

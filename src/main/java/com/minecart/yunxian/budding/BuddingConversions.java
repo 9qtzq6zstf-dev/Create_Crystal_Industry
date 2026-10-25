@@ -160,8 +160,10 @@ public final class BuddingConversions {
             }
             level.setBlockAndUpdate(targetPos, target.output());
             // 矿石母岩侵蚀出矿石 / 回响母岩蔓延出幽匿 / 粗铁块被传染成新的母岩
-            // ——这一条也是"母岩会自己扩张"的关键
-            YunxianAdvancements.awardNear(level, pos, target.output().is(Blocks.SCULK)
+            // ——这一条也是"母岩会自己扩张"的关键。
+            // 要"看得见"才发：自然生成的母岩遍布地下，只按 24 格距离发的话，
+            // 隔壁岩壁后面转掉一块石头也会弹成就（见 YunxianAdvancements#awardSeen）
+            YunxianAdvancements.awardSeen(level, pos, targetPos, target.output().is(Blocks.SCULK)
                     ? YunxianAdvancements.DEEP_SCULK_SPREAD
                     : YunxianAdvancements.BUDDING_MOTHERLODE);
             return;
