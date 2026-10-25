@@ -97,22 +97,79 @@ public class ResonanceFilterItemStack extends FilterItemStack {
     @Override
     public boolean test(Level world, ItemStack stack, boolean matchNBT) {
         return guarded(() -> {
-            // 并集：网络里任意一张台子的过滤器接受它，就算接受
-            for (FilterItemStack filter : resolveAll(world))
-                if (filter.test(world, stack, matchNBT))
-                    return true;
-            return false;
+            List<FilterItemStack> filters = resolveAll(world);
+            // 读不到（没绑网络 / 台子全不可达 / 环）→ fail-closed
+            if (filters.isEmpty())
+                return false;
+            // 台面全空的哨兵（见 resolveAllUncached）：没有规则可反，两种名单模式都放行
+            if (!hasRules(filters))
+                return true;
+
+            boolean strict = strict(matchNBT);
+            boolean matched = false;
+            for (FilterItemStack filter : filters) {
+                if (filter.test(world, stack, strict)) {
+                    matched = true;
+                    break;
+                }
+            }
+            // 白名单：命中才放行；黑名单：命中反而不放行
+            return blacklist() != matched;
         }, false);
     }
 
     @Override
     public boolean test(Level world, FluidStack stack, boolean matchNBT) {
         return guarded(() -> {
-            for (FilterItemStack filter : resolveAll(world))
-                if (filter.test(world, stack, matchNBT))
-                    return true;
-            return false;
+            List<FilterItemStack> filters = resolveAll(world);
+            if (filters.isEmpty())
+                return false;
+            if (!hasRules(filters))
+                return true;
+
+            boolean strict = strict(matchNBT);
+            boolean matched = false;
+            for (FilterItemStack filter : filters) {
+                if (filter.test(world, stack, strict)) {
+                    matched = true;
+                    break;
+                }
+            }
+            return blacklist() != matched;
         }, false);
+    }
+
+    // ==================== 两个开关 ====================
+
+    /** 名单模式：{@code true} = 黑名单（把并集结果取反），缺省 = 白名单 */
+    private boolean blacklist() {
+        return item().getOrDefault(ModDataComponents.RESONANCE_FILTER_BLACKLIST.get(), false);
+    }
+
+    /**
+     * 匹配模式：{@code true} = 连数据组件一起比。
+     * <p>
+     * <b>只收紧、不放松</b>：缺省时原样沿用调用方传进来的 {@code matchNBT}，
+     * 所以没动过这个开关的过滤器，判法与加开关之前逐字一致。
+     */
+    private boolean respectsData() {
+        return item().getOrDefault(ModDataComponents.RESONANCE_FILTER_RESPECT_DATA.get(), false);
+    }
+
+    private boolean strict(boolean matchNBT) {
+        return matchNBT || respectsData();
+    }
+
+    /**
+     * 解析结果里有没有「真规则」。全是空 {@code FilterItemStack} 说明台面一张都没放东西 ——
+     * 那是 {@link #resolveAllUncached} 用哨兵表达的「全集」，不是一条会命中一切的规则，
+     * 所以不参与黑名单取反（否则黑名单会把「台面空着」翻成「什么都不放行」）。
+     */
+    private static boolean hasRules(List<FilterItemStack> filters) {
+        for (FilterItemStack filter : filters)
+            if (!filter.isEmpty())
+                return true;
+        return false;
     }
 
     /**

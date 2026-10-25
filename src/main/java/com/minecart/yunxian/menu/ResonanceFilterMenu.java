@@ -62,6 +62,16 @@ public class ResonanceFilterMenu extends AbstractFilterMenu {
     @Nullable
     private String networkName;
 
+    /**
+     * 界面下方那四个按钮的两位状态（名单模式、匹配模式）。和 Create 的 {@code FilterMenu} 一样：
+     * 按钮改的是这两份菜单字段，物品上的组件由 {@link #saveData} 在关界面时统一写回。
+     * <p>
+     * <b>同样不能带字段初始值</b>，理由和上面两个字段一样：{@link #initAndReadInventory} 是在
+     * {@code super()} 里跑完的，这里写 {@code = false} 会把刚读到的 {@code true} 清掉。
+     */
+    private boolean blacklist;
+    private boolean respectData;
+
     /** 客户端：手持物品与当前名字都从数据流里读，顺序必须与 {@code ResonanceFilterItem#use} 的写法人一致 */
     public ResonanceFilterMenu(int id, Inventory playerInventory, RegistryFriendlyByteBuf extraData) {
         super(ModMenus.RESONANCE_FILTER_MENU.get(), id, playerInventory, extraData);
@@ -87,6 +97,9 @@ public class ResonanceFilterMenu extends AbstractFilterMenu {
     @Override
     protected void initAndReadInventory(ItemStack filterItem) {
         network = filterItem.get(ModDataComponents.RESONANCE_NETWORK.get());
+        // 缺省组件 = 白名单 + 沿用调用方的匹配要求，与加这两个开关之前的行为完全一致
+        blacklist = filterItem.getOrDefault(ModDataComponents.RESONANCE_FILTER_BLACKLIST.get(), false);
+        respectData = filterItem.getOrDefault(ModDataComponents.RESONANCE_FILTER_RESPECT_DATA.get(), false);
 
         // 名字只在服务端查得到（客户端没有世界存档），客户端那份是 createOnClient 刚读进来的，
         // 所以这里绝不能无条件盖掉 —— isClientSide 就是那条分界线。
@@ -129,12 +142,25 @@ public class ResonanceFilterMenu extends AbstractFilterMenu {
     }
 
     /**
-     * 界面不往过滤器物品上写任何东西：名字属于网络（存 {@link ResonanceNetworkNames}），
-     * 规则属于台面，物品自己身上只该有「接入的是哪张网络」这一个组件。
-     * 留这个空实现挡掉基类那套 {@code create:filter_items} 的回写。
+     * 规则本身仍然不落在这里：名字属于网络（存 {@link ResonanceNetworkNames}），
+     * 规则属于台面。写回的只有界面下方那四个按钮的两位。
+     * <p>
+     * 关掉的开关一律 {@code remove}：缺省就是 {@code false}，把默认值塞进 NBT 只会让每个
+     * 过滤器都背两个没用的组件（Create 的 {@code FilterMenu#saveData} 也是这么省的）。
+     * <p>
+     * 基类那套 {@code create:filter_items} 的回写照旧被挡掉 —— 这里不给过滤槽写任何东西。
      */
     @Override
     protected void saveData(ItemStack contentHolder) {
+        if (blacklist)
+            contentHolder.set(ModDataComponents.RESONANCE_FILTER_BLACKLIST.get(), true);
+        else
+            contentHolder.remove(ModDataComponents.RESONANCE_FILTER_BLACKLIST.get());
+
+        if (respectData)
+            contentHolder.set(ModDataComponents.RESONANCE_FILTER_RESPECT_DATA.get(), true);
+        else
+            contentHolder.remove(ModDataComponents.RESONANCE_FILTER_RESPECT_DATA.get());
     }
 
     // ==================== 给界面用的 ====================
@@ -147,6 +173,25 @@ public class ResonanceFilterMenu extends AbstractFilterMenu {
     /** 这件过滤器接入网络了没有 —— 没接入就没有名字可起，界面据此禁用输入框 */
     public boolean isLinked() {
         return network != null;
+    }
+
+    /** 名单模式：{@code true} = 黑名单（网络判定的结果取反） */
+    public boolean isBlacklist() {
+        return blacklist;
+    }
+
+    /** 匹配模式：{@code true} = 连数据组件一起比（见 {@code ResonanceFilterItemStack}） */
+    public boolean respectsData() {
+        return respectData;
+    }
+
+    /**
+     * 界面点那四个按钮时改这两位。客户端先改本端那份（画面立刻响应），同时把两位发到服务端
+     * 由 {@code SetFilterModePayload} 改服务端这份；物品上的组件等关界面时由 {@link #saveData} 写回。
+     */
+    public void applyFilterMode(boolean blacklist, boolean respectData) {
+        this.blacklist = blacklist;
+        this.respectData = respectData;
     }
 
     /**

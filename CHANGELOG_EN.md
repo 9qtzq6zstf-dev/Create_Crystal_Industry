@@ -12,11 +12,12 @@ section at the top.
 
 ---
 
-## 1.0.9 · 2026-10-18 ~ 2026-10-24
+## 1.0.9 · 2026-10-18 ~ 2026-10-25
 
 ### Added
 
 - New enchantment "Airflow Resistance": any single piece of armor with it makes the wearer immune to the push of Encased Fans and Nozzles, and to Wind Charge knockback.
+- The Resonance Filter screen now has four switches beneath the panel: blacklist, whitelist, match item data and ignore item data, with the active one marked by a green frame.
 
 ### Changed
 

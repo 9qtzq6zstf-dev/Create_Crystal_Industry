@@ -3,12 +3,14 @@ package com.minecart.yunxian.client;
 import com.google.common.collect.ImmutableList;
 import com.minecart.yunxian.Yunxian;
 import com.minecart.yunxian.menu.ResonanceFilterMenu;
+import com.minecart.yunxian.network.SetFilterModePayload;
 import com.minecart.yunxian.network.SetNetworkNamePayload;
 import com.minecart.yunxian.registry.ModBlocks;
 import com.simibubi.create.foundation.gui.AllIcons;
 import com.simibubi.create.foundation.gui.menu.AbstractSimiContainerScreen;
 import com.simibubi.create.foundation.gui.widget.IconButton;
 import net.createmod.catnip.gui.element.GuiGameElement;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.renderer.Rect2i;
@@ -99,6 +101,32 @@ public class ResonanceFilterScreen extends AbstractSimiContainerScreen<Resonance
     private static final int CONFIRM_BUTTON_X = 185;
     private static final int CONFIRM_BUTTON_Y = 55;
 
+    // ==================== 名单 / 匹配模式按钮 ====================
+
+    /**
+     * 面板下方那排四个按钮，一个不多一个不少，与 Create 的 {@code FilterScreen} 一一对应：
+     * 黑名单、白名单、匹配属性、忽略属性。
+     * <p>
+     * 坐标照那边来（18/36/60/78，y=75，面板高 99 —— 也就是"距底 24"）；我们的面板高 79，
+     * 同一个距底距离就是 y=55，正好与贴图上的确认勾同一行。
+     * {@link IconButton} 自己会画 18×18 的按钮底（{@code AllGuiTextures.BUTTON}），
+     * 不依赖贴图上的凹槽，所以摆在面板下半块空白区上是成立的。
+     */
+    private static final int MODE_BUTTON_Y = 55;
+    private static final int BLACKLIST_BUTTON_X = 18;
+    private static final int WHITELIST_BUTTON_X = 36;
+    private static final int RESPECT_BUTTON_X = 60;
+    private static final int IGNORE_BUTTON_X = 78;
+
+    private static final String BLACKLIST_KEY = "create_crystal_industry.resonance_filter.mode.blacklist";
+    private static final String BLACKLIST_DESC_KEY = BLACKLIST_KEY + ".description";
+    private static final String WHITELIST_KEY = "create_crystal_industry.resonance_filter.mode.whitelist";
+    private static final String WHITELIST_DESC_KEY = WHITELIST_KEY + ".description";
+    private static final String RESPECT_KEY = "create_crystal_industry.resonance_filter.mode.respect_data";
+    private static final String RESPECT_DESC_KEY = RESPECT_KEY + ".description";
+    private static final String IGNORE_KEY = "create_crystal_industry.resonance_filter.mode.ignore_data";
+    private static final String IGNORE_DESC_KEY = IGNORE_KEY + ".description";
+
     // ==================== 标题 ====================
 
     /** 标题写在贴图顶部的红条里（红条本身是 y=2..12） */
@@ -117,6 +145,11 @@ public class ResonanceFilterScreen extends AbstractSimiContainerScreen<Resonance
     private static final int ITEM_AREA_HEIGHT = 48;
 
     private EditBox nameBox;
+
+    private IconButton blacklistButton;
+    private IconButton whitelistButton;
+    private IconButton respectButton;
+    private IconButton ignoreButton;
 
     public ResonanceFilterScreen(ResonanceFilterMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
@@ -140,6 +173,30 @@ public class ResonanceFilterScreen extends AbstractSimiContainerScreen<Resonance
         confirmButton.withCallback(this::onClose);
         this.addRenderableWidget(confirmButton);
 
+        // 面板下方那四个：黑名单 / 白名单 / 匹配属性 / 忽略属性。
+        // 每一对互斥，点谁就把另一位关掉，但另一位照样能点回去。
+        blacklistButton = new IconButton(this.leftPos + BLACKLIST_BUTTON_X,
+                this.topPos + MODE_BUTTON_Y, AllIcons.I_BLACKLIST);
+        blacklistButton.withCallback(() -> applyFilterMode(true, menu.respectsData()));
+
+        whitelistButton = new IconButton(this.leftPos + WHITELIST_BUTTON_X,
+                this.topPos + MODE_BUTTON_Y, AllIcons.I_WHITELIST);
+        whitelistButton.withCallback(() -> applyFilterMode(false, menu.respectsData()));
+
+        respectButton = new IconButton(this.leftPos + RESPECT_BUTTON_X,
+                this.topPos + MODE_BUTTON_Y, AllIcons.I_RESPECT_NBT);
+        respectButton.withCallback(() -> applyFilterMode(menu.isBlacklist(), true));
+
+        ignoreButton = new IconButton(this.leftPos + IGNORE_BUTTON_X,
+                this.topPos + MODE_BUTTON_Y, AllIcons.I_IGNORE_NBT);
+        ignoreButton.withCallback(() -> applyFilterMode(menu.isBlacklist(), false));
+
+        this.addRenderableWidget(blacklistButton);
+        this.addRenderableWidget(whitelistButton);
+        this.addRenderableWidget(respectButton);
+        this.addRenderableWidget(ignoreButton);
+        refreshModeButtons();
+
         nameBox = new EditBox(this.font,
                 this.leftPos + NAME_BOX_X, this.topPos + NAME_BOX_Y,
                 NAME_BOX_WIDTH, NAME_BOX_HEIGHT, Component.empty());
@@ -155,6 +212,44 @@ public class ResonanceFilterScreen extends AbstractSimiContainerScreen<Resonance
         });
         this.addRenderableWidget(nameBox);
         this.setFocused(nameBox);
+    }
+
+    /**
+     * 四个按钮的绿框每 tick 刷一遍：绿框 = 当前生效的那一个。
+     * <p>
+     * 照 Create 的 {@code AbstractFilterScreen#handleIndicators} 的做法 —— 那边也是每 tick 重设，
+     * 而不是在点击回调里改一次：界面数据可能被服务端同步回来改掉，只在点击时画会与真实状态脱节。
+     */
+    @Override
+    public void containerTick() {
+        super.containerTick();
+        refreshModeButtons();
+    }
+
+    /** 本端先改（画面立刻响应），再告诉服务端；物品上的组件等关界面时由菜单写回 */
+    private void applyFilterMode(boolean blacklist, boolean respectData) {
+        menu.applyFilterMode(blacklist, respectData);
+        PacketDistributor.sendToServer(new SetFilterModePayload(blacklist, respectData));
+        refreshModeButtons();
+    }
+
+    private void refreshModeButtons() {
+        blacklistButton.green = menu.isBlacklist();
+        whitelistButton.green = !menu.isBlacklist();
+        respectButton.green = menu.respectsData();
+        ignoreButton.green = !menu.respectsData();
+
+        setModeTooltip(blacklistButton, BLACKLIST_KEY, BLACKLIST_DESC_KEY);
+        setModeTooltip(whitelistButton, WHITELIST_KEY, WHITELIST_DESC_KEY);
+        setModeTooltip(respectButton, RESPECT_KEY, RESPECT_DESC_KEY);
+        setModeTooltip(ignoreButton, IGNORE_KEY, IGNORE_DESC_KEY);
+    }
+
+    /** 名字一眼能认；按住 Shift 再挂一行说明它在判定里到底做什么（与 Create 的过滤器按钮一致） */
+    private void setModeTooltip(IconButton button, String nameKey, String descKey) {
+        button.setToolTip(Component.translatable(nameKey));
+        if (hasShiftDown())
+            button.getToolTip().add(Component.translatable(descKey).withStyle(ChatFormatting.GRAY));
     }
 
     @Override

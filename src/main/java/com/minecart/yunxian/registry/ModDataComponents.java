@@ -51,6 +51,30 @@ public final class ModDataComponents {
                     .networkSynchronized(ByteBufCodecs.STRING_UTF8)
                     .build());
 
+    /**
+     * 共振过滤器的名单模式：{@code true} = 黑名单（把网络判定的结果取反），缺省不存在 = 白名单。
+     * <p>
+     * 和网络 id 一样必须存在物品自己身上：判定对象是靠 {@code FilterItemStack.of(ItemStack)} 现场重建的。
+     * 但<b>规则不在这里</b> —— 规则永远取自共振台，这里只记「拿到网络结果之后怎么用」。
+     */
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Boolean>> RESONANCE_FILTER_BLACKLIST =
+            DATA_COMPONENTS.register("resonance_filter_blacklist", () -> DataComponentType.<Boolean>builder()
+                    .persistent(Codec.BOOL)
+                    .networkSynchronized(ByteBufCodecs.BOOL)
+                    .build());
+
+    /**
+     * 共振过滤器的匹配模式：{@code true} = 连数据组件一起比（附魔、自定义名称等不同即算不同物品）。
+     * <p>
+     * <b>只收紧、不放松</b>：缺省不存在时沿用调用方传进来的 {@code matchNBT}，行为与加这个开关之前一致；
+     * 打开后无论调用方怎么说都按严格比。这样老存档里的过滤器判法不会因为这次改动而变。
+     */
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Boolean>> RESONANCE_FILTER_RESPECT_DATA =
+            DATA_COMPONENTS.register("resonance_filter_respect_data", () -> DataComponentType.<Boolean>builder()
+                    .persistent(Codec.BOOL)
+                    .networkSynchronized(ByteBufCodecs.BOOL)
+                    .build());
+
     private ModDataComponents() {
     }
 
