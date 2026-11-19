@@ -4,21 +4,22 @@
 	"parent": "create:block/block",
 	"render_type": "cutout",
 	"textures": {
-		"0": "create_crystal_industry:block/mechanical_accelerator/accelerator_top",
-		"1": "create_crystal_industry:block/mechanical_accelerator/accelerator_side",
+		"0": "create:block/railway_casing",
 		"2": "create_crystal_industry:block/common/brass_frame",
 		"3": "create_crystal_industry:block/common/railway_gearbox",
-		"particle": "create_crystal_industry:block/mechanical_accelerator/accelerator_top"
+		"4": "create_crystal_industry:block/accelerator/accelerator",
+		"5": "create:block/railway_casing_side",
+		"particle": "create:block/railway_casing"
 	},
 	"elements": [
 		{
 			"from": [0, 0, 0],
 			"to": [16, 16, 16],
 			"faces": {
-				"north": {"uv": [0, 0, 16, 16], "texture": "#1"},
-				"east": {"uv": [0, 0, 16, 16], "texture": "#1"},
-				"south": {"uv": [0, 0, 16, 16], "texture": "#1"},
-				"west": {"uv": [0, 0, 16, 16], "texture": "#1"},
+				"north": {"uv": [0, 0, 16, 16], "texture": "#5"},
+				"east": {"uv": [0, 0, 16, 16], "texture": "#5"},
+				"south": {"uv": [0, 0, 16, 16], "texture": "#5"},
+				"west": {"uv": [0, 0, 16, 16], "texture": "#5"},
 				"up": {"uv": [0, 0, 16, 16], "texture": "#0"},
 				"down": {"uv": [0, 0, 16, 16], "texture": "#2"}
 			}
@@ -32,6 +33,32 @@
 				"south": {"uv": [2, 15, 14, 16], "texture": "#3"},
 				"west": {"uv": [2, 15, 14, 16], "texture": "#3"},
 				"down": {"uv": [2, 2, 14, 14], "texture": "#3"}
+			}
+		},
+		{
+			"from": [5, 5, -0.01],
+			"to": [11, 11, 16.01],
+			"rotation": {"angle": 0, "axis": "y", "origin": [8, 8, 8]},
+			"faces": {
+				"north": {"uv": [5, 5, 11, 11], "texture": "#4"},
+				"south": {"uv": [5, 5, 11, 11], "texture": "#4"}
+			}
+		},
+		{
+			"from": [-0.01, 5, 5],
+			"to": [16.01, 11, 11],
+			"rotation": {"angle": 0, "axis": "y", "origin": [8, 8, 8]},
+			"faces": {
+				"east": {"uv": [5, 5, 11, 11], "texture": "#4"},
+				"west": {"uv": [5, 5, 11, 11], "texture": "#4"}
+			}
+		},
+		{
+			"from": [5, 16.01, 5],
+			"to": [11, 16.01, 11],
+			"rotation": {"angle": 0, "axis": "x", "origin": [8, 8, 8]},
+			"faces": {
+				"up": {"uv": [5, 5, 11, 11], "rotation": 180, "texture": "#4"}
 			}
 		}
 	]
