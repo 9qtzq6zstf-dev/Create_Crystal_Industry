@@ -267,9 +267,8 @@
 
     "create_crystal_industry.ponder.relief_hatch_venting.header": "泄压舱口",
     "create_crystal_industry.ponder.relief_hatch_venting.text_1": "有气流流经时，泄压舱口会释放其附着容器内的物品",
-    "create_crystal_industry.ponder.relief_hatch_venting.text_2": "已删除",
-    "create_crystal_industry.ponder.relief_hatch_venting.text_3": "每次最多释放 16 个物品",
-    "create_crystal_industry.ponder.relief_hatch_venting.text_4": "可以在侧面配置槽中设置过滤",
+    "create_crystal_industry.ponder.relief_hatch_venting.text_2": "每次最多释放 16 个物品",
+    "create_crystal_industry.ponder.relief_hatch_venting.text_3": "可以在侧面配置槽中设置过滤",
 
     "create_crystal_industry.ponder.relief_hatch_nozzle.header": "分散网风力交互",
     "create_crystal_industry.ponder.relief_hatch_nozzle.text_1": "分散网会把气流分散到各个方向",
@@ -278,8 +277,7 @@
     "create_crystal_industry.ponder.smart_relief_hatch.header": "智能泄压舱口",
     "create_crystal_industry.ponder.smart_relief_hatch.text_1": "智能泄压舱口能一次释放一组物品",
     "create_crystal_industry.ponder.smart_relief_hatch.text_2": "可以在侧面过滤槽中配置数量，最多 64 个",
-    "create_crystal_industry.ponder.smart_relief_hatch.text_3": "已删除",
-    "create_crystal_industry.ponder.smart_relief_hatch.text_4": "红石信号会锁定智能泄压舱口",
+    "create_crystal_industry.ponder.smart_relief_hatch.text_3": "红石信号会锁定智能泄压舱口",
 
     "create_crystal_industry.ponder.resonance_table.header": "共振台",
     "create_crystal_industry.ponder.resonance_table.text_1": "共振台只能容纳一种物品",

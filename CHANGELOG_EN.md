@@ -12,6 +12,16 @@ section at the top.
 
 ---
 
+## 1.0.11 · 2026-11-15
+
+### Added
+
+- Flame Breath now lights Candles and Flammable Sundaes the way Flint and Steel does.
+
+### Fixed
+
+- The Pressure Relief Hatch Ponder scenes no longer show the two captions that had been left as deleted-text placeholders.
+
 ## 1.0.10 · 2026-10-30
 
 ### Added

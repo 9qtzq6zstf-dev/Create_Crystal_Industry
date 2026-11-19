@@ -1,5 +1,6 @@
 package com.minecart.yunxian.effect;
 
+import com.minecart.yunxian.block.FlammableSundaeBlock;
 import com.minecart.yunxian.particle.FlameFlowParticleData;
 import com.minecart.yunxian.registry.ModEffects;
 import com.simibubi.create.content.kinetics.belt.behaviour.TransportedItemStackHandlerBehaviour;
@@ -21,6 +22,12 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySelector;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.CandleBlock;
+import net.minecraft.world.level.block.CandleCakeBlock;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
@@ -42,6 +49,10 @@ import net.neoforged.neoforge.event.tick.PlayerTickEvent;
  * {@link AllFanProcessingTypes.BlastingType#affectEntity}——那里面已经自带了
  * 「{@code !fireImmune()} 就 {@code igniteForSeconds(10)} + {@code hurt(fanLava, 4)}」，
  * 所以本类<b>不再自己补伤害</b>，否则就是同一口气里烧两遍。
+ * <p>
+ * <b>也能点着烛</b>：火束扫过的<b>蜡烛</b>（含插在蛋糕上的）与<b>可燃冰圣代</b>会被点着，见
+ * {@link #applyToIgnitables}。走的正是原版打火石那一段（{@code LIT} 状态位、打火石音效、
+ * {@code BLOCK_CHANGE} 事件），不是另立一套"喷火专用点燃"——手、打火石、火焰弹怎么点，一口气就怎么点。
  * <p>
  * <b>粒子全部从嘴边出发再飞</b>：不再像早先那样沿着火线在半空撒点。于是每一颗都必须是「自带速度」的
  * 自定义粒子（{@code flame_flow}）——原版广播通道给不了方向，这条见
@@ -180,6 +191,7 @@ public final class FlameBreath {
         double reach = from.distanceTo(end);
         applyToEntities(level, player, mouth, look, reach);
         applyToTransportedItems(level, from, look, reach);
+        applyToIgnitables(level, player, from, look, reach, hit);
         spawnParticles(level, mouth, look, reach);
     }
 
@@ -262,6 +274,60 @@ public final class FlameBreath {
                 }
             }
         }
+    }
+
+    /**
+     * 把火束扫过的<b>蜡烛</b>与<b>可燃冰圣代</b>点着。
+     * <p>
+     * 找法和 {@link #applyToTransportedItems} 同一个走法：沿同一根眼睛射线半格一取样，撞墙即止。
+     * 只是这里<b>不往下一格补</b>——网罩下面那格是给贴地的东西留的，而烛要人瞄着才有「被喷到」这回事，
+     * 火从它头顶一格掠过时把它点着反倒像自己烧起来的。
+     * <p>
+     * 点亮那几步照抄原版 {@code FlintAndSteelItem#useOn} 点蜡烛的分支：同样的
+     * {@code FLINTANDSTEEL_USE} 音效（音高也一样）、同一个 {@code 11} 号标志位
+     * （{@code Block.UPDATE_ALL_IMMEDIATE}——不发光照更新的话，刚点着的这一刻看着还是黑的）、
+     * 同一个 {@code BLOCK_CHANGE} 游戏事件（振动与计分板认它）。
+     * 唯一的差别是音效<b>不排除施法者</b>：打火石那一下有一半声响由客户端补，喷火没有那一层，
+     * 再按原版把玩家排除掉就只剩别人听得见了。
+     * <p>
+     * 射线的终点再补查一次：取样步长是半格，最后一段可能刚好停在方块跟前。
+     */
+    private static void applyToIgnitables(ServerLevel level, ServerPlayer caster, Vec3 from, Vec3 look, double reach,
+                                          BlockHitResult hit) {
+        LongSet visited = new LongOpenHashSet();
+        double length = Math.min(RANGE, reach);
+        for (double traveled = 0.0; traveled <= length; traveled += BEAM_SAMPLE_STEP) {
+            lightUp(level, caster, BlockPos.containing(from.add(look.scale(traveled))), visited);
+        }
+        if (hit.getType() == HitResult.Type.BLOCK) {
+            lightUp(level, caster, hit.getBlockPos(), visited);
+        }
+    }
+
+    /**
+     * 这一格该点就点着。
+     * <p>
+     * 判定直接用原版的 {@code canLight}：它里面已经写全了「这个方块是不是烛」「有没有 {@code LIT}」
+     * 「是不是水淹着」「是不是已经亮着」。剩下圣代那种本模组自己的烛，单独一条——它没有走
+     * {@code AbstractCandleBlock}，只能自己比对 {@code LIT}。
+     * 已经亮着的会在判定里被挡掉，所以按住潜行对着点亮的烛时不会每 tick 重放一遍音效。
+     */
+    private static void lightUp(ServerLevel level, ServerPlayer caster, BlockPos pos, LongSet visited) {
+        if (!visited.add(pos.asLong())) {
+            return;
+        }
+        BlockState state = level.getBlockState(pos);
+        boolean candle = CandleBlock.canLight(state) || CandleCakeBlock.canLight(state);
+        boolean sundae = state.getBlock() instanceof FlammableSundaeBlock
+                && !state.getValue(FlammableSundaeBlock.LIT);
+        if (!candle && !sundae) {
+            return;
+        }
+
+        level.playSound(null, pos, SoundEvents.FLINTANDSTEEL_USE, SoundSource.BLOCKS, 1.0F,
+                level.getRandom().nextFloat() * 0.4F + 0.8F);
+        level.setBlock(pos, state.setValue(BlockStateProperties.LIT, true), Block.UPDATE_ALL_IMMEDIATE);
+        level.gameEvent(caster, GameEvent.BLOCK_CHANGE, pos);
     }
 
     /**

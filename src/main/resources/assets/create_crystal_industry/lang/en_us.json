@@ -267,8 +267,8 @@
 
 "create_crystal_industry.ponder.relief_hatch_venting.header": "Pressure Relief Hatch",
     "create_crystal_industry.ponder.relief_hatch_venting.text_1": "While in an airstream, Pressure Relief Hatches vent items out of the attached container.",
-    "create_crystal_industry.ponder.relief_hatch_venting.text_3": "A single batch consists of up to 16 items.",
-    "create_crystal_industry.ponder.relief_hatch_venting.text_4": "Filters can be set in the side configuration slot.",
+    "create_crystal_industry.ponder.relief_hatch_venting.text_2": "A single batch consists of up to 16 items.",
+    "create_crystal_industry.ponder.relief_hatch_venting.text_3": "Filters can be set in the side configuration slot.",
 
     "create_crystal_industry.ponder.relief_hatch_nozzle.header": "Nozzle Airstream Interaction",
     "create_crystal_industry.ponder.relief_hatch_nozzle.text_1": "A Nozzle spreads an airstream in all directions.",
@@ -277,7 +277,7 @@
     "create_crystal_industry.ponder.smart_relief_hatch.header": "The Smart Pressure Relief Hatch",
     "create_crystal_industry.ponder.smart_relief_hatch.text_1": "The Smart Pressure Relief Hatch can output a full stack at once.",
     "create_crystal_industry.ponder.smart_relief_hatch.text_2": "The batch size can be set in the side filter slot, up to 64 items.",
-    "create_crystal_industry.ponder.smart_relief_hatch.text_4": "Redstone Power locks the Smart Pressure Relief Hatch.",
+    "create_crystal_industry.ponder.smart_relief_hatch.text_3": "Redstone Power locks the Smart Pressure Relief Hatch.",
 
     "create_crystal_industry.ponder.resonance_table.header": "The Resonance Table",
     "create_crystal_industry.ponder.resonance_table.text_1": "A Resonance Table can only ever hold one kind of item.",

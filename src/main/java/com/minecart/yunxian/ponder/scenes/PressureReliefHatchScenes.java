@@ -73,11 +73,9 @@ public class PressureReliefHatchScenes {
         powerUp(scene, util.select().position(bigCog), util.select().position(cog),
                 util.select().position(fan), hatch);
 
-        scene.overlay().showText(95)
-                .attachKeyFrame()
-                .text("Air flowing past the grille opens the hatch")
-                .placeNearTarget()
-                .pointAt(util.vector().centerOf(hatch));
+        // 这一段原先还有一句「气流从侧面掠过网罩即可打开」，已删；开头那句「有气流流经时会释放物品」
+        // 已经把话说完了，这里就只演风源转起来、网罩开始吐货。
+        // 时长仍按原先那条文本的 95 + TEXT_GAP 走，后面几条文本的出现时刻才不会跟着挪。
         scene.idle(20);
         ventItems(scene, ventAt, new Vec3(0.05, 0.24, 0), roseQuartz(), 3, 8);
         scene.effects().indicateSuccess(hatch);
@@ -220,12 +218,7 @@ public class PressureReliefHatchScenes {
         scene.overlay().showCenteredScrollInput(hatch, Direction.EAST, 85);
         scene.idle(95 + TEXT_GAP);
 
-        // 「=」模式：凑满一批才吐
-        scene.overlay().showText(95)
-                .attachKeyFrame()
-                .text("'=' mode waits for a full batch")
-                .placeNearTarget()
-                .pointAt(util.vector().centerOf(hatch));
+        // 「=」模式那句「凑满一批才释放」已删，只留下滑块动画；时长仍按 95 + TEXT_GAP 走。
         scene.overlay().showCenteredScrollInput(hatch, Direction.EAST, 85);
         scene.idle(95 + TEXT_GAP);
 
