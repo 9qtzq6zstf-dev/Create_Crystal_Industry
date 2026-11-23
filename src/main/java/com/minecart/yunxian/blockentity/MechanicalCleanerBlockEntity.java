@@ -327,9 +327,9 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
     /**
      * 值框"数量"滑块是否显示（两端都会调用：客户端画标签、服务端判 {@code acceptsValueSettings}）。
      * <p>
-     * 数量配置只服务两处 —— 吹出模式的筛选条件（{@link #ejectItems()}）、
+     * 数量配置只服务两处 —— 吹出时每次往前方搬的批量（{@link #ejectItems()}）、
      * 以及吸气时从正前方容器直抽的取货批量（{@link #collectItemsFromContainer()}）：
-     * "≤" 是每次上限，"=" 是从单格整取的一整批。
+     * "≤" 是每批最多搬多少，"=" 是凑够一整批才搬、且只搬这一批。
      * 吹出模式恒显示；吸气模式仅当正前方真有容器时才显示，
      * 敞开吸气（无容器）时该配置永远读不到，隐藏滑块以免误导玩家。
      */
@@ -1177,29 +1177,22 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
     }
 
     /**
-     * 吹出逻辑（方案 A，与智能溜槽一致）：
-     * 数量是"筛选条件"，两种模式：
-     * - 严格模式（!filtering.upTo）：只有槽内堆叠数量 == 配置值才吹出整组；
-     * - 小于等于模式（filtering.upTo）：只有槽内堆叠数量 ≤ 配置值才吹出整组；
-     * - 数量为 0（anyAmount）或未显示数量时：不过滤，任何堆叠都吹出整组。
+     * 吹出逻辑，与智能溜槽同一套口径：
+     * 数量是"每批搬多少"，不是"槽里得攒到多少才搬"。物品匹配只看过滤（{@link #canEject}），
+     * 数量交给 {@link #getExtractionAmount()} / {@link #getExtractionMode()} 换算成批量与口径，
+     * 再由 {@link ItemHelper#extract} 按批抽出：
+     * <ul>
+     *   <li>"="（{@link ItemHelper.ExtractionCountMode#EXACTLY}）：库存里凑够 N 个才搬，
+     *       每批正好搬走 N 个；不足一整批时原样不动，零头也不会被顺带吹掉；</li>
+     *   <li>"≤"（{@link ItemHelper.ExtractionCountMode#UPTO}）：每批最多搬 N 个，
+     *       库存里有多少搬多少，可以跨格合并同种物品；一次搬不完的留在库存里，下一拍接着搬；</li>
+     *   <li>数量未显示或设为"任意数量"（anyAmount）时，按"每批最多 64 个"处理（与溜槽同口径）。</li>
+     * </ul>
+     * 真的搬出东西才按转速上冷却：库存里没得吹就每 tick 看一眼，与吸气侧同一手感。
      */
     private void ejectItems() {
         if (inventory == null)
             return;
-
-        // 从第一个"非空且符合过滤"的槽取；不符合过滤的槽跳过
-        int slotToEject = -1;
-        for (int slot = 0; slot < inventory.getSlots(); slot++) {
-            ItemStack stackInSlot = inventory.getStackInSlot(slot);
-            if (stackInSlot.isEmpty())
-                continue;
-            if (!canEject(stackInSlot))
-                continue;
-            slotToEject = slot;
-            break;
-        }
-        if (slotToEject == -1)
-            return; // 没有可吹出的物品
 
         if (Math.abs(getSpeed()) <= 0)
             return; // 无转速不喷射
@@ -1210,34 +1203,26 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
             ejectCooldown--;
             return;
         }
+
+        // 按批量抽："=" 凑不满一整批时整批不动，"≤" 有多少抽多少（可跨格合并同种物品）
+        ItemStack stack = ItemHelper.extract(inventory, this::canEject,
+                getExtractionMode(), getExtractionAmount(), false);
+        if (stack.isEmpty())
+            return;
         ejectCooldown = interval;
-
-        // ---- 数量判定（与 SmartChuteBlockEntity.getExtractionAmount/getExtractionMode 同构） ----
-        int stackCount = inventory.getStackInSlot(slotToEject).getCount();
-        int amount = getExtractionAmount();
-        boolean exactly = getExtractionMode() == ItemHelper.ExtractionCountMode.EXACTLY;
-
-        if (exactly) {
-            if (stackCount != amount)
-                return;   // 严格模式：堆叠数量必须正好等于配置值
-        } else {
-            if (stackCount > amount)
-                return;   // 小于等于模式：堆叠数量必须 ≤ 配置值
-        }
 
         Direction facing = getBlockState().getValue(MechanicalCleanerBlock.FACING);
         BlockPos frontPos = worldPosition.relative(facing);
-
-        // 吹出整组
-        ItemStack stack = inventory.extractItem(slotToEject, stackCount, false);
 
         // 正前方是容器：直接输送
         IItemHandler target = getFrontContainer();
         if (target != null) {
             ItemStack remainder = ItemHandlerHelper.insertItemStacked(target, stack, false);
             if (!remainder.isEmpty()) {
-                // 送不回去（容器满）：退回吸尘器
-                inventory.insertItem(slotToEject, remainder, false);
+                // 容器塞不下：退回吸尘器库存（刚抽出来的空间必然放得下）；万一仍放不下就掉在机器旁，不吞物品
+                ItemStack leftover = insertAll(remainder);
+                if (!leftover.isEmpty())
+                    giveBackToContainer(target, leftover);
             }
             // 与容器直接交换成功：全程没有东西掉进世界里
             if (stack.getCount() > remainder.getCount() && level instanceof ServerLevel serverLevel) {

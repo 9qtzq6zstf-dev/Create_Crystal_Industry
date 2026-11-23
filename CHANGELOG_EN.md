@@ -22,6 +22,7 @@ section at the top.
 
 - The Pressure Relief Hatch Ponder scenes no longer show the two captions that had been left as deleted-text placeholders.
 - The Pressure Relief Hatch no longer releases one extra batch at the moment the Mechanical Cleaner's inventory fills up.
+- While blowing, the Mechanical Cleaner now uses the side count slider to size each batch: ≤ sends at most N per batch and = sends a full batch of N, so a slot holding more than N items no longer stalls the output.
 
 ## 1.0.10 · 2026-10-30
 
