@@ -1,6 +1,5 @@
 package com.minecart.yunxian.effect;
 
-import com.minecart.yunxian.block.FlammableSundaeBlock;
 import com.minecart.yunxian.particle.FlameFlowParticleData;
 import com.minecart.yunxian.registry.ModEffects;
 import com.simibubi.create.content.kinetics.belt.behaviour.TransportedItemStackHandlerBehaviour;
@@ -11,6 +10,7 @@ import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -18,13 +18,15 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySelector;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.CandleBlock;
-import net.minecraft.world.level.block.CandleCakeBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.gameevent.GameEvent;
@@ -32,6 +34,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.common.ItemAbilities;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 
 /**
@@ -50,9 +53,11 @@ import net.neoforged.neoforge.event.tick.PlayerTickEvent;
  * 「{@code !fireImmune()} 就 {@code igniteForSeconds(10)} + {@code hurt(fanLava, 4)}」，
  * 所以本类<b>不再自己补伤害</b>，否则就是同一口气里烧两遍。
  * <p>
- * <b>也能点着烛</b>：火束扫过的<b>蜡烛</b>（含插在蛋糕上的）与<b>可燃冰圣代</b>会被点着，见
- * {@link #applyToIgnitables}。走的正是原版打火石那一段（{@code LIT} 状态位、打火石音效、
- * {@code BLOCK_CHANGE} 事件），不是另立一套"喷火专用点燃"——手、打火石、火焰弹怎么点，一口气就怎么点。
+ * <b>也能点着方块</b>：火束扫过、并且「打火石点得着」的方块会被点着——熄灭的营火（含灵魂营火）、
+ * 蜡烛、插在蛋糕上的蜡烛、可燃冰圣代，以及按同一套能力协议实现了点燃的模组方块（灶台之类），
+ * 见 {@link #applyToIgnitables}。判定与点火都照抄原版打火石那一段（{@code FIRESTARTER_LIGHT}
+ * 能力、打火石音效、{@code BLOCK_CHANGE} 事件），不是另立一套"喷火专用点燃"——
+ * 手、打火石、火焰弹怎么点，一口气就怎么点；对空地放火那半支没有复刻。
  * <p>
  * <b>粒子全部从嘴边出发再飞</b>：不再像早先那样沿着火线在半空撒点。于是每一颗都必须是「自带速度」的
  * 自定义粒子（{@code flame_flow}）——原版广播通道给不了方向，这条见
@@ -277,57 +282,80 @@ public final class FlameBreath {
     }
 
     /**
-     * 把火束扫过的<b>蜡烛</b>与<b>可燃冰圣代</b>点着。
+     * 把火束扫过、并且<b>认打火石</b>的方块点着。
+     * <p>
+     * 判定不点名某几种方块，走的正是原版打火石那条正路：拿一件「借来的」打火石去问
+     * {@link BlockState#getToolModifiedState}——能力是 {@link ItemAbilities#FIRESTARTER_LIGHT}。
+     * NeoForge 的默认实现里已经查全了「是不是营火 / 蜡烛 / 蛋糕上的蜡烛、有没有 {@code LIT}、
+     * 是不是水淹着、是不是已经亮着」，所以熄灭的营火、蜡烛、蛋糕蜡烛一次都覆盖到；可燃冰圣代
+     * 与模组灶台那类方块自己 override 了这个方法，也走同一条路。
+     * <p>
+     * 不认这套协议的方块还有一条兜底（见 {@link #lightUp}）：少数模组至今在 {@code useItemOn} 里
+     * 自己判「手上是不是打火石」。打火石那半支「点不着就放一把火」<b>刻意没有复刻</b>，
+     * 否则对着空气喷就满地起火。
      * <p>
      * 找法和 {@link #applyToTransportedItems} 同一个走法：沿同一根眼睛射线半格一取样，撞墙即止。
      * 只是这里<b>不往下一格补</b>——网罩下面那格是给贴地的东西留的，而烛要人瞄着才有「被喷到」这回事，
      * 火从它头顶一格掠过时把它点着反倒像自己烧起来的。
      * <p>
-     * 点亮那几步照抄原版 {@code FlintAndSteelItem#useOn} 点蜡烛的分支：同样的
-     * {@code FLINTANDSTEEL_USE} 音效（音高也一样）、同一个 {@code 11} 号标志位
-     * （{@code Block.UPDATE_ALL_IMMEDIATE}——不发光照更新的话，刚点着的这一刻看着还是黑的）、
-     * 同一个 {@code BLOCK_CHANGE} 游戏事件（振动与计分板认它）。
-     * 唯一的差别是音效<b>不排除施法者</b>：打火石那一下有一半声响由客户端补，喷火没有那一层，
-     * 再按原版把玩家排除掉就只剩别人听得见了。
-     * <p>
      * 射线的终点再补查一次：取样步长是半格，最后一段可能刚好停在方块跟前。
      */
     private static void applyToIgnitables(ServerLevel level, ServerPlayer caster, Vec3 from, Vec3 look, double reach,
                                           BlockHitResult hit) {
+        // 借来的打火石：不进物品栏、也不掉耐久，只用来声明「这一下是打火石干的」
+        ItemStack flint = new ItemStack(Items.FLINT_AND_STEEL);
         LongSet visited = new LongOpenHashSet();
         double length = Math.min(RANGE, reach);
         for (double traveled = 0.0; traveled <= length; traveled += BEAM_SAMPLE_STEP) {
-            lightUp(level, caster, BlockPos.containing(from.add(look.scale(traveled))), visited);
+            Vec3 point = from.add(look.scale(traveled));
+            BlockPos pos = BlockPos.containing(point);
+            if (!visited.add(pos.asLong())) {
+                continue;
+            }
+            Direction face = Direction.getNearest(-look.x, -look.y, -look.z);
+            lightUp(level, caster, flint, new BlockHitResult(point, face, pos, false));
         }
-        if (hit.getType() == HitResult.Type.BLOCK) {
-            lightUp(level, caster, hit.getBlockPos(), visited);
+        if (hit.getType() == HitResult.Type.BLOCK && visited.add(hit.getBlockPos().asLong())) {
+            lightUp(level, caster, flint, hit);
         }
     }
 
     /**
      * 这一格该点就点着。
      * <p>
-     * 判定直接用原版的 {@code canLight}：它里面已经写全了「这个方块是不是烛」「有没有 {@code LIT}」
-     * 「是不是水淹着」「是不是已经亮着」。剩下圣代那种本模组自己的烛，单独一条——它没有走
-     * {@code AbstractCandleBlock}，只能自己比对 {@code LIT}。
-     * 已经亮着的会在判定里被挡掉，所以按住潜行对着点亮的烛时不会每 tick 重放一遍音效。
+     * 亮点那几步照抄原版 {@code FlintAndSteelItem#useOn} 的非 null 分支：同样的
+     * {@code FLINTANDSTEEL_USE} 音效（音高也一样）、同一个 {@code 11} 号标志位
+     * （{@code Block.UPDATE_ALL_IMMEDIATE}——不发光照更新的话，刚点着的这一刻看着还是黑的）、
+     * 同一个 {@code BLOCK_CHANGE} 游戏事件（振动与计分板认它）。
+     * 唯一的差别是音效<b>不排除施法者</b>：打火石那一下有一半声响由客户端补，喷火没有那一层，
+     * 再按原版把玩家排除掉就只剩别人听得见了。
+     * <p>
+     * {@code simulate} 传 {@code false}，和打火石一致：原版也是先问真话、再自己动手改世界。
+     * 已经亮着的方块在上面那问里就返回 {@code null}，所以按住潜行对着点亮的烛不会每 tick 重放音效。
+     * <p>
+     * 问不出结果时再兜底一次 {@code useItemOn}：少数模组是在右键入口里自己判「手上是不是打火石」的，
+     * 那条老写法绕过了能力系统。兜底的触发条件收紧到「这一格有 {@code LIT}、且还没亮」——于是蛋糕那种
+     * 不认物品、见谁都咬一口的 {@code useItemOn} 碰不到，已经点着的也不会被再按一下反向熄掉。
      */
-    private static void lightUp(ServerLevel level, ServerPlayer caster, BlockPos pos, LongSet visited) {
-        if (!visited.add(pos.asLong())) {
-            return;
-        }
+    private static void lightUp(ServerLevel level, ServerPlayer caster, ItemStack flint, BlockHitResult hit) {
+        BlockPos pos = hit.getBlockPos();
         BlockState state = level.getBlockState(pos);
-        boolean candle = CandleBlock.canLight(state) || CandleCakeBlock.canLight(state);
-        boolean sundae = state.getBlock() instanceof FlammableSundaeBlock
-                && !state.getValue(FlammableSundaeBlock.LIT);
-        if (!candle && !sundae) {
+        UseOnContext context = new UseOnContext(level, caster, InteractionHand.MAIN_HAND, flint, hit);
+        BlockState lit = state.getToolModifiedState(context, ItemAbilities.FIRESTARTER_LIGHT, false);
+        if (lit != null && lit != state) {
+            level.playSound(null, pos, SoundEvents.FLINTANDSTEEL_USE, SoundSource.BLOCKS, 1.0F,
+                    level.getRandom().nextFloat() * 0.4F + 0.8F);
+            level.setBlock(pos, lit, Block.UPDATE_ALL_IMMEDIATE);
+            level.gameEvent(caster, GameEvent.BLOCK_CHANGE, pos);
             return;
         }
 
-        level.playSound(null, pos, SoundEvents.FLINTANDSTEEL_USE, SoundSource.BLOCKS, 1.0F,
-                level.getRandom().nextFloat() * 0.4F + 0.8F);
-        level.setBlock(pos, state.setValue(BlockStateProperties.LIT, true), Block.UPDATE_ALL_IMMEDIATE);
-        level.gameEvent(caster, GameEvent.BLOCK_CHANGE, pos);
+        // 兜底给「在 useItemOn 里自己判打火石」的老写法（走不到能力协议的那些灶台）。
+        // 只碰「有 LIT、且还没亮」的方块：蛋糕那种不认物品、见谁都咬一口的 useItemOn 因此碰不到，
+        // 也已经亮着的也不会被再按一下反向熄掉。
+        if (state.hasProperty(BlockStateProperties.LIT) && !state.getValue(BlockStateProperties.LIT)) {
+            state.useItemOn(flint, level, caster, InteractionHand.MAIN_HAND, hit);
+        }
     }
 
     /**

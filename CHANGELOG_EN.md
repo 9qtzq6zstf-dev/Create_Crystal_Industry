@@ -14,6 +14,10 @@ section at the top.
 
 ## 1.0.12 · 2026-11-23
 
+### Changed
+
+- Flame Breath now lights blocks through the same check Flint and Steel uses, so an unlit Campfire, a Candle and anything else a Flint and Steel can light will catch from the breath.
+
 ### Fixed
 
 - Airflow Resistance enchanted books show their Chinese name again instead of the English fallback.
