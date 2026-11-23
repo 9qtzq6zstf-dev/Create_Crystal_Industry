@@ -6,6 +6,7 @@ import com.minecart.yunxian.registry.ModItems;
 import com.minecart.yunxian.Yunxian;
 import com.minecart.yunxian.block.MechanicalAcceleratorBlock;
 import com.minecart.yunxian.blockentity.MechanicalAcceleratorBlockEntity;
+import com.minecart.yunxian.client.accelerator.AcceleratorModel;
 import com.minecart.yunxian.client.battery.CrystalBatteryModel;
 import com.minecart.yunxian.client.deco.FlammableIceLayeredModel;
 import com.minecart.yunxian.client.deco.FlammableIcePillarModel;
@@ -193,6 +194,9 @@ public class ModRenderers {
             // 渲染层（窗那几片薄面要镂空）写在模型文件的 render_type 里，不走已过时的
             // ItemBlockRenderTypes.setRenderLayer
             CrystalBatteryModel.register();
+            // 电力催生器：外壳（electric_casing）连接材质，8x8 图集；
+            // 叠在上面的十字覆盖层是另一张贴图，CTModel 不会碰它
+            AcceleratorModel.register();
             // 智能温控室：连接材质。侧面是横排三格（不是方格阵），所以没走 Create 的 CTModel，
             // 自绘了 UV 换算，见那个类的注释
             SmartTemperatureChamberModel.register();

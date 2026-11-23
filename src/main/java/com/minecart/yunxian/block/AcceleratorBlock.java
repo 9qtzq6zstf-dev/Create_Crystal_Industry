@@ -62,6 +62,26 @@ public class AcceleratorBlock extends BaseEntityBlock implements IWrenchable {
     }
 
     /**
+     * 只关心"方块"层面的变化：POWERED 切换也会走 onPlace/onRemove，
+     * 若不按方块类型过滤，每次催生开关都会让所有相连催生器的电量网络缓存失效。
+     */
+    @Override
+    protected void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean movedByPiston) {
+        super.onPlace(state, level, pos, oldState, movedByPiston);
+        if (!level.isClientSide && !state.is(oldState.getBlock())) {
+            AcceleratorBlockEntity.invalidateNetworkTopology();
+        }
+    }
+
+    @Override
+    protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
+        super.onRemove(state, level, pos, newState, movedByPiston);
+        if (!level.isClientSide && !state.is(newState.getBlock())) {
+            AcceleratorBlockEntity.invalidateNetworkTopology();
+        }
+    }
+
+    /**
      * 催生状态下的粒子效果（仅客户端调用）。
      * 随机选一个面，在表面外侧生成粒子并向外飘散。
      */

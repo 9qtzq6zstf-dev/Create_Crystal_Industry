@@ -1,6 +1,11 @@
 package com.minecart.yunxian.blockentity;
 
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Deque;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import com.minecart.yunxian.advancement.YunxianAdvancements;
 import com.minecart.yunxian.block.AcceleratorBlock;
@@ -28,9 +33,6 @@ public class AcceleratorBlockEntity extends BlockEntity implements IEnergyStorag
     private static final int MAX_RECEIVE = 100;
     private static final int ENERGY_COST_PER_OPERATION = 100;
 
-    /** 相邻催生器之间每 tick 的最大传输量 */
-    private static final int MAX_TRANSFER_PER_TICK = 4000;
-
     /**
      * 一次成功的催生<b>最多</b>对 6 个方向各施加一次 randomTick（= Direction.values().length）。
      * 实际只落在会吃随机刻的邻格上（见 {@code YunxianAdvancements#acceleratedRandomTick}），
@@ -38,8 +40,30 @@ public class AcceleratorBlockEntity extends BlockEntity implements IEnergyStorag
      */
     private static final float RANDOM_TICKS_PER_TICK = Direction.values().length;
 
+    /**
+     * 相连催生器网络拓扑的版本号。任一方块被放下/拆掉、所在区块加载/卸载都会 +1；
+     * 每个方块实体缓存一份网络成员，靠它判断缓存是否过期。
+     */
+    private static long topologyVersion;
+
+    /**
+     * 相连的催生器共享一个电量池：网络成员 = 六向相邻的 {@link AcceleratorBlockEntity} 连通域。
+     * 电量仍按格存在各自的 {@link #energyStorage} 里，对外求和、对内统一扣，不再在相邻方块之间搬运电力。
+     */
+    private record Network(long version, List<AcceleratorBlockEntity> members) {
+    }
+
     private int tickCounter;
-    private final EnergyStorage energyStorage;
+
+    /**
+     * 单格储能。读档时整体替换（带初始电量），
+     * 不能走 {@code receiveEnergy}——那会被构造时的 maxReceive=100 截断。
+     */
+    private EnergyStorage energyStorage;
+
+    /** 当前网络缓存；版本号与 {@link #topologyVersion} 不一致时重建 */
+    @Nullable
+    private Network cachedNetwork;
 
     /** 「催生器挨着原版紫水晶母岩 / 作物运转」两个成就的一次性门闩（不持久化：重登后重扫一次而已） */
     private boolean sawVanillaAmethyst;
@@ -55,15 +79,13 @@ public class AcceleratorBlockEntity extends BlockEntity implements IEnergyStorag
             return;
         }
 
-        transmitToNeighbors();   // 相邻催生器互传电力
-
         // 两次催生之间的 tick 数由配置决定（默认 1 = 每 tick 一次）；电力按「每次催生」结算
         tickCounter++;
         if (tickCounter % ModConfig.Common.acceleratorIntervalTicks() != 0) {
             return;
         }
 
-        int stored = energyStorage.getEnergyStored();
+        int stored = getEnergyStored();
 
         // 完全没有能量：关闭并返回
         if (stored <= 0) {
@@ -75,7 +97,7 @@ public class AcceleratorBlockEntity extends BlockEntity implements IEnergyStorag
 
         // 残电不足一次操作：直接扣光到 0，不执行催生
         if (stored < ENERGY_COST_PER_OPERATION) {
-            energyStorage.extractEnergy(stored, false);
+            drainNetwork(stored);
             if (state.getValue(AcceleratorBlock.POWERED)) {
                 level.setBlock(pos, state.setValue(AcceleratorBlock.POWERED, false), 3);
             }
@@ -106,82 +128,90 @@ public class AcceleratorBlockEntity extends BlockEntity implements IEnergyStorag
             sawCrops = YunxianAdvancements.awardForCrops(serverLevel, pos);
         }
 
-        energyStorage.extractEnergy(ENERGY_COST_PER_OPERATION, false);
+        drainNetwork(ENERGY_COST_PER_OPERATION);
         setChanged();
     }
 
-    private void transmitToNeighbors() {
-        if (level == null || level.isClientSide)
-            return;
-
-        for (Direction dir : Direction.values()) {
-            BlockPos neighborPos = worldPosition.relative(dir);
-            BlockEntity neighbor = level.getBlockEntity(neighborPos);
-            if (!(neighbor instanceof AcceleratorBlockEntity other))
-                continue;
-            if (other.isRemoved())
-                continue;
-
-            int myStored = energyStorage.getEnergyStored();
-            int otherStored = other.getEnergyStored();
-
-            // 只由能量多的一端向少的一端推；
-            // 同一时刻一对里不可能两端都“更多”，因此每 tick 每对至多发生一次传输
-            if (myStored <= otherStored)
-                continue;
-
-            int deficit = other.getMaxEnergyStored() - otherStored;
-            if (deficit <= 0)
-                continue;
-
-            // 传输量 = min(邻居缺口, 我的存量, 每tick上限, 差值一半)
-            // 差值一半防止单次过冲导致两边角色互换、来回震荡
-            int remaining = Math.min(
-                    Math.min(deficit, Math.min(myStored, MAX_TRANSFER_PER_TICK)),
-                    (myStored - otherStored) / 2
-            );
-            if (remaining <= 0)
-                continue;
-
-            // 循环调用 receiveEnergy，应对邻居 maxReceive=100 的单次上限
-            int acceptedTotal = 0;
-            while (remaining > 0) {
-                int accepted = other.receiveEnergy(remaining, false);
-                if (accepted <= 0)
-                    break;
-                acceptedTotal += accepted;
-                remaining -= accepted;
-            }
-
-            if (acceptedTotal > 0) {
-                energyStorage.extractEnergy(acceptedTotal, false);
-                setChanged();
-            }
+    /**
+     * 把相连网络里所有催生器的电量加在一起。
+     * <p>
+     * 客户端没有同步过来的电量，直接退回本地存储；服务端才走 BFS 缓存。
+     */
+    @Override
+    public int getEnergyStored() {
+        if (level == null || level.isClientSide) {
+            return energyStorage.getEnergyStored();
         }
+        int total = 0;
+        for (AcceleratorBlockEntity member : network().members()) {
+            if (member.isRemoved()) {
+                continue;
+            }
+            total += member.energyStorage.getEnergyStored();
+        }
+        return total;
     }
 
+    /** 网络的总容量：每格 {@link #MAX_ENERGY}。 */
+    @Override
+    public int getMaxEnergyStored() {
+        if (level == null || level.isClientSide) {
+            return energyStorage.getMaxEnergyStored();
+        }
+        int count = 0;
+        for (AcceleratorBlockEntity member : network().members()) {
+            if (!member.isRemoved()) {
+                count++;
+            }
+        }
+        return MAX_ENERGY * count;
+    }
+
+    /**
+     * 外部输入的电按 BFS 顺序摊到网络里各格（自身优先）。
+     * <p>
+     * 每个成员仍受自身 {@code maxReceive}（{@link #MAX_RECEIVE}）限制，
+     * 所以一次调用最多能收 {@code 100 × 网络格数}——网络越大，输入口越大；
+     * 不能像以前那样把整网单次输入也卡在 {@link #MAX_RECEIVE}，否则一个连接器
+     * 无论连了多少格，都只能按一个催生器的速度灌电。
+     */
     @Override
     public int receiveEnergy(int maxReceive, boolean simulate) {
-        int received = energyStorage.receiveEnergy(maxReceive, simulate);
-        if (!simulate && received > 0) {
-            setChanged();
+        if (maxReceive <= 0) {
+            return 0;
         }
-        return received;
+        if (level == null || level.isClientSide) {
+            int received = energyStorage.receiveEnergy(maxReceive, simulate);
+            if (!simulate && received > 0) {
+                setChanged();
+            }
+            return received;
+        }
+
+        int remaining = maxReceive;
+        int accepted = 0;
+        for (AcceleratorBlockEntity member : network().members()) {
+            if (remaining <= 0) {
+                break;
+            }
+            if (member.isRemoved()) {
+                continue;
+            }
+            int received = member.energyStorage.receiveEnergy(remaining, simulate);
+            if (received > 0) {
+                remaining -= received;
+                accepted += received;
+                if (!simulate) {
+                    member.setChanged();
+                }
+            }
+        }
+        return accepted;
     }
 
     @Override
     public int extractEnergy(int maxExtract, boolean simulate) {
         return 0;
-    }
-
-    @Override
-    public int getEnergyStored() {
-        return energyStorage.getEnergyStored();
-    }
-
-    @Override
-    public int getMaxEnergyStored() {
-        return energyStorage.getMaxEnergyStored();
     }
 
     @Override
@@ -192,6 +222,92 @@ public class AcceleratorBlockEntity extends BlockEntity implements IEnergyStorag
     @Override
     public boolean canReceive() {
         return true;
+    }
+
+    /** 从网络里扣电（自身优先），每扣到一格就标脏，拆分/合并时各格电量仍然各自正确。 */
+    private void drainNetwork(int amount) {
+        int remaining = amount;
+        for (AcceleratorBlockEntity member : network().members()) {
+            if (remaining <= 0) {
+                break;
+            }
+            if (member.isRemoved()) {
+                continue;
+            }
+            int drained = member.energyStorage.extractEnergy(remaining, false);
+            if (drained > 0) {
+                remaining -= drained;
+                member.setChanged();
+            }
+        }
+    }
+
+    /** 取当前网络；缓存按 {@link #topologyVersion} 失效，重建后把同一份缓存分给所有成员。 */
+    private Network network() {
+        if (level == null || level.isClientSide || isRemoved()) {
+            return new Network(topologyVersion, List.of(this));
+        }
+        if (cachedNetwork != null && cachedNetwork.version() == topologyVersion) {
+            return cachedNetwork;
+        }
+
+        List<AcceleratorBlockEntity> members = collectNetwork();
+        Network network = new Network(topologyVersion, members);
+        for (AcceleratorBlockEntity member : members) {
+            member.cachedNetwork = network;
+        }
+        return network;
+    }
+
+    /**
+     * 六向 BFS 收集相连的催生器。
+     * <p>
+     * 只走已经加载的区块：{@link Level#getBlockEntity} 在未加载区块上会强制加载，
+     * 大型网络的 BFS 绝不能因此把世界边界整片拉进来。
+     */
+    private List<AcceleratorBlockEntity> collectNetwork() {
+        List<AcceleratorBlockEntity> members = new ArrayList<>();
+        Set<BlockPos> seen = new HashSet<>();
+        Deque<BlockPos> queue = new ArrayDeque<>();
+        members.add(this);
+        seen.add(worldPosition);
+        queue.add(worldPosition);
+
+        while (!queue.isEmpty()) {
+            BlockPos current = queue.poll();
+            for (Direction direction : Direction.values()) {
+                BlockPos next = current.relative(direction);
+                if (!seen.add(next) || !level.hasChunkAt(next)) {
+                    continue;
+                }
+                if (level.getBlockEntity(next) instanceof AcceleratorBlockEntity other && !other.isRemoved()) {
+                    members.add(other);
+                    queue.add(next);
+                }
+            }
+        }
+        return members;
+    }
+
+    /** 网络拓扑变了：任一方块放下/拆掉、区块加载/卸载都调用它，让所有缓存失效。 */
+    public static void invalidateNetworkTopology() {
+        topologyVersion++;
+    }
+
+    @Override
+    public void onLoad() {
+        super.onLoad();
+        if (level != null && !level.isClientSide) {
+            invalidateNetworkTopology();
+        }
+    }
+
+    @Override
+    public void onChunkUnloaded() {
+        super.onChunkUnloaded();
+        if (level != null && !level.isClientSide) {
+            invalidateNetworkTopology();
+        }
     }
 
     @Override
@@ -241,9 +357,8 @@ public class AcceleratorBlockEntity extends BlockEntity implements IEnergyStorag
     public void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
         if (tag.contains("Energy")) {
-            int stored = Math.min(tag.getInt("Energy"), energyStorage.getMaxEnergyStored());
-            energyStorage.extractEnergy(energyStorage.getEnergyStored(), false);
-            energyStorage.receiveEnergy(stored, false);
+            // EnergyStorage 的构造会把初始电量夹到 [0, capacity]；这样读档不会被 maxReceive 截成 100
+            energyStorage = new EnergyStorage(MAX_ENERGY, MAX_RECEIVE, MAX_ENERGY, tag.getInt("Energy"));
         }
     }
 
