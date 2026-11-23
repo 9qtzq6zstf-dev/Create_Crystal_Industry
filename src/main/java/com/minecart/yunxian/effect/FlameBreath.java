@@ -27,6 +27,8 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.LevelEvent;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.gameevent.GameEvent;
@@ -53,9 +55,10 @@ import net.neoforged.neoforge.event.tick.PlayerTickEvent;
  * 「{@code !fireImmune()} 就 {@code igniteForSeconds(10)} + {@code hurt(fanLava, 4)}」，
  * 所以本类<b>不再自己补伤害</b>，否则就是同一口气里烧两遍。
  * <p>
- * <b>也能点着方块</b>：火束扫过、并且「打火石点得着」的方块会被点着——熄灭的营火（含灵魂营火）、
- * 蜡烛、插在蛋糕上的蜡烛、可燃冰圣代，以及按同一套能力协议实现了点燃的模组方块（灶台之类），
- * 见 {@link #applyToIgnitables}。判定与点火都照抄原版打火石那一段（{@code FIRESTARTER_LIGHT}
+ * <b>也能点着方块、把湿海绵烘干</b>：火束扫过、并且「打火石点得着」的方块会被点着——熄灭的营火（含灵魂营火）、
+ * 蜡烛、插在蛋糕上的蜡烛、可燃冰圣代，以及按同一套能力协议实现了点燃的模组方块（灶台之类）；
+ * 湿海绵则直接被烘成干海绵（照抄原版扔进下界时它的那几步），见 {@link #applyToBlocks}。
+ * 判定与点火都照抄原版打火石那一段（{@code FIRESTARTER_LIGHT}
  * 能力、打火石音效、{@code BLOCK_CHANGE} 事件），不是另立一套"喷火专用点燃"——
  * 手、打火石、火焰弹怎么点，一口气就怎么点；对空地放火那半支没有复刻。
  * <p>
@@ -196,7 +199,7 @@ public final class FlameBreath {
         double reach = from.distanceTo(end);
         applyToEntities(level, player, mouth, look, reach);
         applyToTransportedItems(level, from, look, reach);
-        applyToIgnitables(level, player, from, look, reach, hit);
+        applyToBlocks(level, player, from, look, reach, hit);
         spawnParticles(level, mouth, look, reach);
     }
 
@@ -282,7 +285,7 @@ public final class FlameBreath {
     }
 
     /**
-     * 把火束扫过、并且<b>认打火石</b>的方块点着。
+     * 把火束扫过的方块交代出去：湿海绵烘成干海绵，其余认打火石的照打火石点着。
      * <p>
      * 判定不点名某几种方块，走的正是原版打火石那条正路：拿一件「借来的」打火石去问
      * {@link BlockState#getToolModifiedState}——能力是 {@link ItemAbilities#FIRESTARTER_LIGHT}。
@@ -294,14 +297,16 @@ public final class FlameBreath {
      * 自己判「手上是不是打火石」。打火石那半支「点不着就放一把火」<b>刻意没有复刻</b>，
      * 否则对着空气喷就满地起火。
      * <p>
+     * 湿海绵单列一条（见 {@link #drySponge}）：打火石点不着它，但这一口气本来就该把它烘干。
+     * <p>
      * 找法和 {@link #applyToTransportedItems} 同一个走法：沿同一根眼睛射线半格一取样，撞墙即止。
      * 只是这里<b>不往下一格补</b>——网罩下面那格是给贴地的东西留的，而烛要人瞄着才有「被喷到」这回事，
      * 火从它头顶一格掠过时把它点着反倒像自己烧起来的。
      * <p>
      * 射线的终点再补查一次：取样步长是半格，最后一段可能刚好停在方块跟前。
      */
-    private static void applyToIgnitables(ServerLevel level, ServerPlayer caster, Vec3 from, Vec3 look, double reach,
-                                          BlockHitResult hit) {
+    private static void applyToBlocks(ServerLevel level, ServerPlayer caster, Vec3 from, Vec3 look, double reach,
+                                      BlockHitResult hit) {
         // 借来的打火石：不进物品栏、也不掉耐久，只用来声明「这一下是打火石干的」
         ItemStack flint = new ItemStack(Items.FLINT_AND_STEEL);
         LongSet visited = new LongOpenHashSet();
@@ -313,11 +318,38 @@ public final class FlameBreath {
                 continue;
             }
             Direction face = Direction.getNearest(-look.x, -look.y, -look.z);
-            lightUp(level, caster, flint, new BlockHitResult(point, face, pos, false));
+            applyToBlock(level, caster, flint, new BlockHitResult(point, face, pos, false));
         }
         if (hit.getType() == HitResult.Type.BLOCK && visited.add(hit.getBlockPos().asLong())) {
-            lightUp(level, caster, flint, hit);
+            applyToBlock(level, caster, flint, hit);
         }
+    }
+
+    /** 取样到的一格：湿海绵就烘，其余交给 {@link #lightUp} 去问打火石 */
+    private static void applyToBlock(ServerLevel level, ServerPlayer caster, ItemStack flint, BlockHitResult hit) {
+        BlockPos pos = hit.getBlockPos();
+        BlockState state = level.getBlockState(pos);
+        if (state.is(Blocks.WET_SPONGE)) {
+            drySponge(level, pos);
+            return;
+        }
+        lightUp(level, caster, flint, hit, state);
+    }
+
+    /**
+     * 把这一块湿海绵烘成干海绵。
+     * <p>
+     * 三步照抄原版 {@code WetSpongeBlock#onPlace} 在超热维度（下界）里做的那几行：换成
+     * {@link Blocks#SPONGE}、冒一阵水汽（{@link LevelEvent#PARTICLES_WATER_EVAPORATING}）、
+     * 放一声 {@code WET_SPONGE_DRIES}（连音高那串 {@code (1 + rand × 0.2) × 0.7} 也照抄）。
+     * 标志位仍是原版那个 {@code 3}（邻居 + 客户端）：海绵不发光，没必要惊动光照；
+     * 原版这几行里也没有 {@code BLOCK_CHANGE} 事件，这里同样不加。
+     */
+    private static void drySponge(ServerLevel level, BlockPos pos) {
+        level.setBlock(pos, Blocks.SPONGE.defaultBlockState(), Block.UPDATE_NEIGHBORS | Block.UPDATE_CLIENTS);
+        level.levelEvent(LevelEvent.PARTICLES_WATER_EVAPORATING, pos, 0);
+        level.playSound(null, pos, SoundEvents.WET_SPONGE_DRIES, SoundSource.BLOCKS, 1.0F,
+                (1.0F + level.getRandom().nextFloat() * 0.2F) * 0.7F);
     }
 
     /**
@@ -337,9 +369,9 @@ public final class FlameBreath {
      * 那条老写法绕过了能力系统。兜底的触发条件收紧到「这一格有 {@code LIT}、且还没亮」——于是蛋糕那种
      * 不认物品、见谁都咬一口的 {@code useItemOn} 碰不到，已经点着的也不会被再按一下反向熄掉。
      */
-    private static void lightUp(ServerLevel level, ServerPlayer caster, ItemStack flint, BlockHitResult hit) {
+    private static void lightUp(ServerLevel level, ServerPlayer caster, ItemStack flint, BlockHitResult hit,
+                                BlockState state) {
         BlockPos pos = hit.getBlockPos();
-        BlockState state = level.getBlockState(pos);
         UseOnContext context = new UseOnContext(level, caster, InteractionHand.MAIN_HAND, flint, hit);
         BlockState lit = state.getToolModifiedState(context, ItemAbilities.FIRESTARTER_LIGHT, false);
         if (lit != null && lit != state) {
