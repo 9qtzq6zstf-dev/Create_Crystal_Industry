@@ -88,8 +88,22 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
     /** 目标气流长度（格）：GUI 调节的数值，实际长度还会受转速上限约束 */
     private int suckRange = SUCK_RANGE_MIN;
 
-    /** 吸尘器内部库存 */
-    private final ItemStackHandler inventory = new ItemStackHandler(INVENTORY_SIZE);
+    /**
+     * 吸尘器内部库存。
+     * <p>
+     * 内容一变就立刻重算满仓标志并标脏（见 {@link #onInventoryChanged()}）：满仓判定若只在
+     * 自己 tick 开头重算，库存刚被填满的那一拍里 {@link #getSpeed()} 仍会汇报满速，
+     * 靠"风源还转不转"判断能否继续工作的泄压舱口就会多吐一批。
+     * <p>
+     * 标脏同样要紧：本库存以原始 {@link ItemStackHandler} 挂成方块能力（见 ModCapabilities），
+     * 别的机器可以直接抽走，抽出之后没人调 {@link #setChanged()} 的话这一笔不会落盘。
+     */
+    private final ItemStackHandler inventory = new ItemStackHandler(INVENTORY_SIZE) {
+        @Override
+        protected void onContentsChanged(int slot) {
+            MechanicalCleanerBlockEntity.this.onInventoryChanged();
+        }
+    };
 
     /**
      * 库存已满：27 格全部塞满，再吸不进任何物品。
@@ -476,6 +490,30 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
     }
 
     /**
+     * 库存内容发生任何变化时的即时反应，由库存的 {@code onContentsChanged} 调用。
+     * <p>
+     * 满仓标志必须"一变就更新"，不能只在自己 tick 开头重算：库存被填满之后，那一拍里
+     * {@link #getSpeed()} 还会汇报满速、{@link #airCurrent} 的范围也还是满的，按"风源还在转"
+     * 判断的机器（典型是泄压舱口）就会照旧再吐一批出来。反过来，被别的机器抽空之后也要
+     * 立刻恢复转速，不要等下一拍。
+     * <p>
+     * 客户端不重算：客户端没有库存，标志由服务端随客户端包同步（见 {@link #write}）。
+     * 读档期间 {@code level} 还没挂上，这里直接跳过，值由 {@link #read} 末尾重算。
+     */
+    private void onInventoryChanged() {
+        if (level == null)
+            return;
+        setChanged();
+        if (level.isClientSide)
+            return;
+        boolean full = isInventoryFull();
+        if (full != inventoryFull) {
+            inventoryFull = full;
+            updateAirFlow = true;
+        }
+    }
+
+    /**
      * 是否因满仓而停摆：只在吸气模式下成立。
      * 吹出模式不能被自己锁死——它正靠把库存吹出去腾地方，满仓时照常工作。
      */
@@ -559,6 +597,7 @@ public class MechanicalCleanerBlockEntity extends KineticBlockEntity
         // 满仓判定只在服务端做：客户端没有库存，结果靠下面的客户端包同步下去。
         // 翻转时顺手把气流标记为待重建——既让本侧的风场跟着收放，也借那次 sendData
         // 把标志发给客户端（扇叶冻结、风场清空、护目镜提示都靠它）。
+        // 库存变更时 onInventoryChanged 已经即时更新过一次，这里每 tick 再对一次账兜底。
         if (server) {
             boolean full = isInventoryFull();
             if (full != inventoryFull) {

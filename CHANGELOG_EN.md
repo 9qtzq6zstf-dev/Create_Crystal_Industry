@@ -12,7 +12,7 @@ section at the top.
 
 ---
 
-## 1.0.11 · 2026-11-15
+## 1.0.11 · 2026-11-23
 
 ### Added
 
@@ -21,6 +21,7 @@ section at the top.
 ### Fixed
 
 - The Pressure Relief Hatch Ponder scenes no longer show the two captions that had been left as deleted-text placeholders.
+- The Pressure Relief Hatch no longer releases one extra batch at the moment the Mechanical Cleaner's inventory fills up.
 
 ## 1.0.10 · 2026-10-30
 
