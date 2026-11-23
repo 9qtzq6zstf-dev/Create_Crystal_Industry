@@ -77,6 +77,7 @@
     "effect.create_crystal_industry.scorching_cold": "灼寒",
     "effect.create_crystal_industry.flame_breath": "火焰吐息",
     "effect.create_crystal_industry.frost_walker": "冰霜行者",
+    "enchantment.create_crystal_industry.airflow_resistance": "气流抵抗",
     "death.attack.electricShock": "%1$s死于电刑",
     "death.attack.electricShock.player": "%1$s被%2$s造成的闪电劈死了",
     "item.create_crystal_industry.echo_spyglass": "回响望远镜",

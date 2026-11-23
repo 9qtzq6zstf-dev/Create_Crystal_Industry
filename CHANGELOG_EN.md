@@ -12,6 +12,12 @@ section at the top.
 
 ---
 
+## 1.0.12 · 2026-11-23
+
+### Fixed
+
+- Airflow Resistance enchanted books show their Chinese name again instead of the English fallback.
+
 ## 1.0.11 · 2026-11-23
 
 ### Added
